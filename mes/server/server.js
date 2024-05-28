@@ -1,0 +1,67 @@
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 3003;
+const cors = require("cors");
+const crypto = require("crypto");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { getAllUser } = require("../api/userOperations/userAuthOperations");
+
+app.use(express.json());
+app.use(cookieParser());
+
+const corsOptions = {
+  origin: "http://localhost:3002", // Burada uygun origin'i belirleyin
+  credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
+  methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
+};
+
+app.use(cors(corsOptions));
+const SECRET_KEY = crypto.randomBytes(32).toString("hex");
+
+//! Gelen operator_id ile kullanıcı eşleştirmesi yapıp cookie ye token olusturan metot
+app.post("/login", async (req, res) => {
+  const { operator_id } = req.body;
+  console.log(operator_id)
+  try {
+    const users = await getAllUser();
+    const currentUser = users.find((item) => item.operator_id === operator_id);
+    if (currentUser) {
+      const token = jwt.sign({ operator_id }, SECRET_KEY, { expiresIn: "1h" });
+      res.cookie("token", token, { httpOnly: true, secure: false }); // cookie olarak kaydet...
+      res.status(200).json({ currentUser });
+    } else {
+      res.status(401).send("Kullanici bulunamadi.");
+    }
+  } catch (err) {
+    console.error("Login işlemi sırasında hata:", err);
+    res.status(500).send("Sunucu hatası.");
+  }
+});
+
+//! Oturum tokenını eğer token varsa decoded ettık user ıd yı verı tabanında aradık token varsa ve verı tabanında varsa gerı donus olarak true yolladık.
+app.get("/check-login", async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.json({ isLoggedIn: false });
+  }
+  try {
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const userId = decodedToken.userId;
+    const currentUser = await getUserById(userId);
+    if (currentUser) {
+      res.json({ isLoggedIn: true, currentUser });
+    } else {
+      res.json({ isLoggedIn: false });
+    }
+  } catch (err) {
+    console.error("Token doğrulama başarısız:", err);
+    res.json({ isLoggedIn: false });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Sunucu ${port} portunda çalışıyor`);
+});
+
+
