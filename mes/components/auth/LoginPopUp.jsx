@@ -28,7 +28,7 @@ function LoginPopUp({ setIsLoggedIn }) {
         if (response.status === 200) {
           console.log("Login isteği başarılı");
           setIsLoggedIn(true);
-          dispatch(setUserInfo(response.data.currentUser)); 
+          dispatch(setUserInfo(response.data)); 
         }
         console.log(response.data);
       } catch (err) {

@@ -1,30 +1,34 @@
-const pool = require("../../lib/dbConnect");
+const User = require("../../models/User");
 
+//! Bütün kullanıcıları getırmek ıcın calısacak query...
 async function getAllUser() {
-  let client;
   try {
-    client = await pool.connect();
-    const result = await client.query("SELECT * FROM public.operator_table");
-    return result.rows;
+    const users = await User.findAll();
+    return users;
   } catch (err) {
     console.error("Error fetching data:", err);
     throw err;
   }
-};
+}
 
-async function getUserById(userId) {
-  let client;
+//! İlgili id ye gore kullanıcı arayacak query
+const getUserById = async (userId) => {
+ 
   try {
-    client = await pool.connect();
-    const result = await client.query(
-      "SELECT * FROM public.operator_table WHERE operator_id = $1",
-      [userId]
-    );
-    return result.rows[0];
+    const user =await User.findOne({
+      where:{
+        id_dec : userId
+      }
+    });
+    if (user) {
+      return user.dataValues; // user.dataValues ile kullanıcı verilerini döndür
+    } else {
+      return null; // Kullanıcı bulunamazsa null döndür
+    };
   } catch (err) {
-    console.error("Kullanıcı verisi alınırken hata:", err);
+    console.error("Error retrieving user data:", err);
     throw err;
-  };
+  }
 }
 
 module.exports = {

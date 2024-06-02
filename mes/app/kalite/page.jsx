@@ -1,10 +1,10 @@
 import React from 'react'
-
+import Section from '@/components/Section'
 function page() {
   return (
-    <div>
-      
-    </div>
+    <main className='relative'>
+      <Section/>
+    </main>
   )
 }
 

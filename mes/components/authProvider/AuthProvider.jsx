@@ -20,6 +20,7 @@ const AuthProvider = ({ children }) => {
         if (response.status === 200) {
           setIsLoggedIn(response.data.isLoggedIn);
           dispatch(setUserInfo(response.data.currentUser));
+          console.log(response.data.isLoggedIn)
         }
       } catch (error) {
         console.error("Login check failed:", error);

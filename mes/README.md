@@ -14,23 +14,37 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Git İşlemleri
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Son Commit'i Silmek ve Değişiklikleri Korumak
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Son commit'i silmek ve değişiklikleri korumak için aşağıdaki komutu kullanabilirsiniz:
 
-## Learn More
+```bash
+git reset --soft HEAD~1
 
-To learn more about Next.js, take a look at the following resources:
+git push origin main --force
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+# Sequelize
 
-## Deploy on Vercel
+- Sequelize Node js (orm aracı)... crud operasyonlarını basıte ındırır ve ısteklerde sql kodu yazmamızın onune gecer...
+  Öncelikle veri tabanına sequelize ile bir bağlantı olusutur
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+  const { Sequelize } = require('sequelize');
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+const sequelize = new Sequelize('db name', 'user name', 'passowrd', {
+host: '',
+dialect: 'mysql',
+pool: {
+max: 5, // Aynı anda en fazla 5 bağlantı olabilir.
+min: 0, // Bağlantı sayısı ihtiyaç olmadığında 0'a kadar düşebilir.
+acquire: 60000, // Bir bağlantının kullanılabilir hale gelmesi için en fazla 30 saniye beklenir.
+idle: 10000 // 10 saniye kullanılmayan bağlantı kapatılır.
+}
+});
+
+module.exports = sequelize;
+```
