@@ -48,3 +48,11 @@ idle: 10000 // 10 saniye kullanılmayan bağlantı kapatılır.
 
 module.exports = sequelize;
 ```
+
+
+- MUI table componenti ıcın gerekli paketler (gerek duymadıgında kaldır...)
+````
+npm install @mui/material @emotion/react @emotion/styled
+npm install @mui/icons-material
+npm install @mui/x-data-grid
+````

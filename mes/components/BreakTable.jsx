@@ -23,10 +23,10 @@ function BreakTable() {
     <table className="min-w-full divide-y divide-gray-200 text-black">
       <thead className="bg-secondary text-black font-semibold">
         <tr>
-          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
             Operator
           </th>
-          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+          <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
             Ad-Soyad
           </th>
           <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">

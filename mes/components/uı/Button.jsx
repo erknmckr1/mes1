@@ -10,7 +10,7 @@ function Button({
   return (
     <button
       type={type}
-      className={`bg-blue-500 hover:bg-blue-600 text-white font-bold px-10  py-[15px] rounded text-center ${className} ${
+      className={`bg-blue-500 hover:bg-blue-600 text-white font-bold  py-[15px] px-[40px] rounded text-center ${className} ${
         disabled ? "bg-gray-600 hover:bg-gray-600" : ""
       } `}
       onClick={onClick}

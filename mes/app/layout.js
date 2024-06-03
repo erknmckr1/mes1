@@ -36,9 +36,9 @@ export default function RootLayout({ children }) {
     <html lang="tr">
       <body>
         <Provider store={store}>
-          <AuthProvider>
+          
           <Layout>{children}</Layout>
-          </AuthProvider>
+          
         </Provider>
       </body>
     </html>
