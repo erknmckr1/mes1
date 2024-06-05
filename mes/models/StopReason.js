@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Veritabanı bağlantınızı doğru yoldan dahil edin
+const sequelize = require('../lib/dbConnect'); // Veritabanı bağlantınızı doğru yoldan dahil edin
 
 const StopReason = sequelize.define('StopReason', {
   stop_reason_id: {
@@ -45,5 +45,3 @@ const StopReason = sequelize.define('StopReason', {
     }
   }
 });
-
-module.exports = StopReason;

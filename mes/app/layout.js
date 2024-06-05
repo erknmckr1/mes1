@@ -15,30 +15,27 @@ import FoodPopup from "@/components/FoodPopup";
 // };
 
 function Layout({ children }) {
-  const foodPopupState = useSelector(state => state.global.foodPopupState)
+  const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
   return (
     <>
       <Header />
       <main className="relative">{children}</main>
       {isMolaPopup && <MolaPopup />}
-      {foodPopupState && <FoodPopup/>}
+      {foodPopupState && <FoodPopup />}
       <ToastContainer />
     </>
   );
 }
 
-
-
 export default function RootLayout({ children }) {
-
   return (
     <html lang="tr">
       <body>
         <Provider store={store}>
-          
-          <Layout>{children}</Layout>
-          
+          <AuthProvider>
+            <Layout>{children}</Layout>
+          </AuthProvider>
         </Provider>
       </body>
     </html>

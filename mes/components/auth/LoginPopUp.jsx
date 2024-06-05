@@ -9,7 +9,6 @@ function LoginPopUp({ setIsLoggedIn }) {
   const dispatch = useDispatch();
   //! girilen operator id yi global state'te tutuyoruz.
   const operator_id = useSelector((state) => state.user.operator_id);
-  console.log(operator_id)
   // Oturum tokenı olusturmak ıcın server a ıstek atıp tokenı session kısmına kaydettık. Session da bu token
   // oldugu surece kullanıcı ıslemlerıne devam edebılecek...
   const handleLogin = async (event) => {

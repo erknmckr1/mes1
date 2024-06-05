@@ -5,8 +5,7 @@ const Processes = sequelize.define('Processes', {
   process_id: {
     type: DataTypes.STRING(6),
     allowNull: false,
-    primaryKey: true,
-    defaultValue: sequelize.literal("to_char(nextval('process_id_seq'::regclass), 'FM000000'::text)")
+    primaryKey: true
   },
   section: {
     type: DataTypes.TEXT,
@@ -22,7 +21,29 @@ const Processes = sequelize.define('Processes', {
   }
 }, {
   tableName: 'process_table',
-  timestamps: false // createdAt ve updatedAt sütunları otomatik olarak eklenmez
+  timestamps: false, // createdAt ve updatedAt sütunları otomatik olarak eklenmez
+  hooks: {
+    beforeCreate: async (process, options) => { 
+      // En yüksek mevcut process_id'yi bul
+      const maxIdResult = await Processes.findOne({
+        attributes: [
+          [sequelize.fn('MAX', sequelize.col('process_id')), 'maxId']
+        ],
+        raw: true
+      });
+
+      let maxId = maxIdResult.maxId;
+      let newId = '000001'; // Başlangıç ID değeri
+
+      if (maxId) {
+        // Mevcut en yüksek ID'yi bir artır ve 6 haneli stringe çevir
+        let numericId = parseInt(maxId, 10) + 1;
+        newId = numericId.toString().padStart(6, '0');
+      }
+
+      process.process_id = newId;
+    }
+  }
 });
 
 module.exports = Processes;

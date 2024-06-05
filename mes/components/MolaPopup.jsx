@@ -7,16 +7,17 @@ import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
-import { fetchOnBreakUsers } from "@/redux/breakOperationsSlice";
+import { fetchOnBreakUsers,setİsCurrentBreak } from "@/redux/breakOperationsSlice";
 function MolaPopup() {
   const dispatch = useDispatch();
   const [molaReason, setMolaReason] = useState(null);
   const [araSebebi, setAraSebebi] = useState("");
   const userInfo = useSelector((state) => state.user.userInfo);
+  const {isCurrentBreak} = useSelector((state)=>state.break)
   const pathname = usePathname();
   const pageName = pathname.split("/")[1];
 
- 
+  console.log(araSebebi);
   // popup ın durumnu kontrol eden state (acık kapalı)
   const closeMolaPopup = () => {
     dispatch(setMolaPopup(false));
@@ -26,7 +27,9 @@ function MolaPopup() {
   //! Ara sebeplerini getiren metot
   const getOzelAraReason = async () => {
     try {
-      const getReason = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/breakReason`);
+      const getReason = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/breakReason`
+      );
       if (getReason.status === 200) {
         setMolaReason(getReason.data);
       }
@@ -50,26 +53,26 @@ function MolaPopup() {
       break_reason_id: araSebebi,
       operator_id: userInfo.id_dec,
       area_name: pageName,
+      op_name: userInfo.op_name,
     };
-
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBreak`,
         startLog
       );
-      if (response.status === 200) {
+
+      if (response.data.isAlreadyOnBreak === false) {
         await dispatch(fetchOnBreakUsers());
-        toast.success(`${userInfo.operator_fullname} için mola oluşturuldu.`);
+        toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
         dispatch(setMolaPopup(false));
-      } else {
-        toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
+      } else if (response.data.isAlreadyOnBreak === true) {
+        toast.error("Bu kullanici zateb molada...");
       }
     } catch (err) {
       toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
       console.log(err);
     }
   };
-
 
   const buttons = [
     {

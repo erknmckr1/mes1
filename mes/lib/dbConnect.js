@@ -1,21 +1,28 @@
-const { Sequelize } = require('sequelize');
+require("dotenv").config();
+const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize('mes', 'root', '496785cA', {
-  host: '192.168.1.10',
-  dialect: 'mssql',
-  dialectModule: require('tedious'),
-  pool: {
-    max: 5, // Aynı anda en fazla 5 bağlantı olabilir.
-    min: 0, // Bağlantı sayısı ihtiyaç olmadığında 0'a kadar düşebilir.
-    acquire: 60000, // Bir bağlantının kullanılabilir hale gelmesi için en fazla 30 saniye beklenir.
-    idle: 10000 // 10 saniye kullanılmayan bağlantı kapatılır.
-  },
-  dialectOptions: {
-    options: {
-      encrypt: false, // Eğer TLS kullanıyorsanız true yapın, yoksa false yapabilirsiniz
-      trustServerCertificate: true // SSL sertifikasını doğrulamak istemiyorsanız true yapın
-    }
+const sequelize = new Sequelize(
+  'MES',
+  'sa',
+  '496785cA',
+  {
+    host: "192.168.1.10",
+    dialect: "mssql", // Dialect burada belirtiliyor
+    dialectModule: require("tedious"),
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 60000,
+      idle: 10000,
+    },
+    dialectOptions: {
+      options: {
+        encrypt: false,
+        trustServerCertificate: true,
+        server: "192.168.1.10",
+      },
+    },
   }
-});
+);
 
 module.exports = sequelize;

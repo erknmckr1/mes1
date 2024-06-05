@@ -1,9 +1,11 @@
 import React from "react";
 import Button from "./uı/Button";
+import { useSelector } from "react-redux";
+
 function RightSideBtnArea() {
-
+  const { onBreak_users, loading, error,isCurrentBreak } = useSelector((state) => state.break);
   const filteredUser = () => {
-
+    console.log(isCurrentBreak)
   }
   const buttons_r = [
     {
@@ -11,34 +13,35 @@ function RightSideBtnArea() {
       children: "Siparişi Durdur",
       type: "button",
       className: "w-[200px]",
+      disabled:isCurrentBreak
     },
     {
       onClick: "",
       children: "Yeniden Başlat",
       type: "button",
       className: "w-[200px]",
+      disabled:isCurrentBreak
     },
     {
       onClick: "",
       children: "Prosesi Bitir",
       type: "button",
-         className: `${
-           filteredUser()
-             ? "bg-gray-600 hover:bg-gray-600 w-[200px]"
-             : "bg-red-500 hover:bg-red-600 w-[200px]"
-         }`,
+      className: "w-[200px]",
+      disabled:isCurrentBreak
     },
     {
       onClick: "",
       children: "Parçalı Bitir",
       type: "button",
       className: "w-[200px]",
+      disabled:isCurrentBreak
     },
     {
       onClick: "",
       children: "Ölçüm Veri Girişi",
       type: "button",
       className: "w-[200px]",
+      disabled:isCurrentBreak
     },
   ];
   return (
@@ -50,7 +53,7 @@ function RightSideBtnArea() {
           children={button.children}
           type={button.type}
           onClick={button.onClick}
-          // disabled={filteredUser()}
+          disabled={isCurrentBreak}
         />
       ))}
     </div>

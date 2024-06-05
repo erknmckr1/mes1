@@ -1,11 +1,32 @@
+const BreakReason = require("../models/BreakReason");
+const BreakLog = require("../models/BreakLog");
 const pool = require("../lib/dbConnect");
+const sequelize = require("../lib/dbConnect");
+
+const createBreakReason = async (breakReason) => {
+  try {
+    const existingBreakReason = await BreakReason.findOne({
+      where: { break_reason: breakReason.break_reason },
+    });
+
+    if (existingBreakReason) {
+      console.log("Break reason already exists:", existingBreakReason);
+      return existingBreakReason;
+    } else {
+      const newBreakReason = await BreakReason.create(breakReason);
+      return newBreakReason;
+    }
+  } catch (err) {
+    console.error("Error creating break reason:", err);
+    throw err;
+  }
+};
 
 //! Özel ara sebeblerini çekecek query
 const getBreakReason = async () => {
   try {
-    const breakReason = await pool.query(`SELECT *
-	FROM public.break_reason;`);
-    return breakReason.rows;
+    const breakReason = BreakReason.findAll();
+    return breakReason;
   } catch (err) {
     console.log(err);
   }
@@ -25,7 +46,8 @@ const getBreakReasonLog = async () => {
 //! Belirli bir kullanıcıyı molada mı dıye sorgulayacak query... Eğer yoksa yenı bır log atacak
 //! varsa mevcut logu donecek...
 const getIsUserOnBreak = async (startLog) => {
-  const { area_name, operator_id, break_reason_id } = startLog;
+  const { area_name, operator_id, break_reason_id, op_name } = startLog;
+  const start_date = new Date().toISOString();
   try {
     // bu kısım verı tabanında section tablosu olusturup break_log tablenın section sutunuyla ılıskılendırılebılırdı
     const section = (area_name) => {
@@ -35,24 +57,27 @@ const getIsUserOnBreak = async (startLog) => {
       return "";
     };
 
-    const isStart = await pool.query(
-      `SELECT *
-      FROM public.break_log
-      WHERE operator_id = $1
-        AND end_time IS NULL;`,
-      [operator_id]
-    );
+    // Kullanıcı molada mı onu kontrol edıyoruz...
+    const isStart = await BreakLog.findOne({
+      where: {
+        operator_id: operator_id,
+        end_date:null
+      },
+    });
 
-    if (isStart.rowCount === 0) {
-      const createBreak = await pool.query(
-        `INSERT INTO public.break_log(
-          break_reason_id, operator_id, area_name, section
-        ) VALUES ($1, $2, $3, $4) RETURNING *;`,
-        [break_reason_id, operator_id, area_name, section(area_name)]
-      );
-      return createBreak.rows[0]; // Eklenen molayı döndürüyoruz
+    // molada degılse
+    if (!isStart) {
+      const createBreak = await BreakLog.create({
+        break_reason_id: break_reason_id,
+        operator_id: operator_id,
+        start_date: start_date,
+        section: section(),
+        area_name: area_name,
+        op_name: op_name,
+      });
+      return { createBreak, isAlreadyOnBreak: false }; // Eklenen molayı döndürüyoruz
     } else {
-      return isStart.rows[0]; // Zaten kullanıcının aktif bir molası var.
+      return { isAlreadyOnBreak: true, existingBreak: isStart }; // Zaten kullanıcının aktif bir molası var.
     }
   } catch (err) {
     console.log(err);
@@ -60,16 +85,15 @@ const getIsUserOnBreak = async (startLog) => {
   }
 };
 
-//! moladaki operatorlerı donen query end_time null ise ve operator_id ile acılmıs bır log var ise
-//! operator moladadır.
+//! Aktıf olarak molada olan kullanıcıları donecek metot...
 const onBreakUsers = async () => {
   try {
-    const isStart = await pool.query(
-      `SELECT *
-      FROM public.break_log
-      WHERE end_time IS NULL;`
-    );
-    return isStart.rows;
+    const isBreakUsers = await BreakLog.findAll({
+      where: {
+        end_date: null,
+      },
+    });
+    return isBreakUsers;
   } catch (err) {
     console.log(err);
   }
@@ -78,11 +102,13 @@ const onBreakUsers = async () => {
 //! bitmiş sayılacak...
 const returnToBreak = async ({ operator_id, end_time }) => {
   try {
-    const returnBreak = await pool.query(
-      `UPDATE public.break_log
-      SET end_time = $1
-      WHERE operator_id = $2 AND end_time IS null;`,
-      [end_time, operator_id]
+    const [returnBreak] = await BreakLog.update(
+      { end_date: end_time },
+      {where:{
+        end_date:null,
+        operator_id:operator_id
+      }}
+      
     );
     return returnBreak;
   } catch (err) {
@@ -97,4 +123,5 @@ module.exports = {
   getIsUserOnBreak,
   onBreakUsers,
   returnToBreak,
+  createBreakReason,
 };

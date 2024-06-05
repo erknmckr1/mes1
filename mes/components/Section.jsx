@@ -1,10 +1,11 @@
-'use client'
+"use client";
 import React from "react";
 import LeftSideBtnArea from "./LeftSideBtnArea";
 import RightSideBtnArea from "./RightSideBtnArea";
 import BreakTable from "./BreakTable";
 import JobTable from "./JobTable";
 import ProcessArea from "./ProcessTable";
+import Date from "./uı/Date";
 function Section() {
   return (
     <div className="w-screen h-[calc(100vh_-_150px)] bg-black relative text-white ">
@@ -19,31 +20,32 @@ function Section() {
           <div className="w-full h-[60%] flex ">
             {/* Job table */}
             <div className="w-[80%] h-full ">
-              <JobTable/>
+              <JobTable />
             </div>
             <div className="w-[20%] h-full  ">
-              <RightSideBtnArea/>
+              <RightSideBtnArea />
             </div>
           </div>
-          {/* 40% h*/}
-          <div className="w-full h-[40%] flex p-1">
+          {/* 40% h break process vs. area */}
+          <div className="w-full h-[40%] flex">
+            <div className=" w-[80%]  flex p-1">
               {/* left side mola  */}
-              <div className="w-1/4 h-[full] bg-white flex">
+              <div className="w-1/2 h-[full] bg-white flex">
                 {/* table2 */}
                 <div className="flex flex-col w-full h-full">
-                  <BreakTable/>
+                  <BreakTable />
                 </div>
               </div>
               {/* w-1/2 Process area... */}
               <div className="w-2/4 h-full">
-                <ProcessArea/>
-              </div>
-              <div className="w-1/4 h-full bg-white text-black">
-              <div className="flex flex-col w-full h-full">
-                  <BreakTable/>
-                </div>
+                <ProcessArea />
               </div>
             </div>
+            {/* 20% */}
+            <div className="w-[20%] h-full bg-black text-white ">
+              <Date/>
+            </div>
+          </div>
         </div>
       </div>
     </div>

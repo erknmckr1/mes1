@@ -1,15 +1,16 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../lib/dbConnect'); // db connectiion
+const sequelize = require('../lib/dbConnect'); // db connection
 
 const User = sequelize.define('User', {
   id_dec: {
     type: DataTypes.STRING(255),
-    allowNull: false, // null degere ızın verılmeyecek... 
+    allowNull: false, // null değere izin verilmeyecek
     primaryKey: true
   },
   id_hex: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
+    primaryKey: true
   },
   op_name: {
     type: DataTypes.STRING(255),
@@ -20,11 +21,11 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   is_active: {
-    type: DataTypes.TINYINT(1),
+    type: DataTypes.TINYINT,
     allowNull: false
   },
   is_admin: {
-    type: DataTypes.TINYINT(1),
+    type: DataTypes.TINYINT,
     allowNull: false
   },
   op_password: {
@@ -44,12 +45,26 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   auth2: {
-    type: DataTypes.JSON,
-    allowNull: true
+    type: DataTypes.TEXT, // JSON verileri saklamak için
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('auth2');
+      return rawValue ? JSON.parse(rawValue) : null;
+    },
+    set(value) {
+      this.setDataValue('auth2', JSON.stringify(value));
+    }
   },
   auth1: {
-    type: DataTypes.JSON,
-    allowNull: true
+    type: DataTypes.TEXT, // JSON verileri saklamak için
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('auth1');
+      return rawValue ? JSON.parse(rawValue) : null;
+    },
+    set(value) {
+      this.setDataValue('auth1', JSON.stringify(value));
+    }
   },
   address: {
     type: DataTypes.STRING(255),

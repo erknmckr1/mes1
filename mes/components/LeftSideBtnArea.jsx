@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React from "react";
 import Image from "next/image";
 import Button from "./uı/Button";
@@ -6,14 +6,20 @@ import { useSelector } from "react-redux";
 import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
 import axios from "axios";
-import { fetchOnBreakUsers } from "@/redux/breakOperationsSlice";
+import { useEffect } from "react";
+import {
+  fetchOnBreakUsers,
+  setİsCurrentBreak,
+} from "@/redux/breakOperationsSlice";
 import { toast } from "react-toastify";
 import { setFoodPopupState } from "@/redux/globalSlice";
 
 function LeftSideBtnArea() {
   const dispatch = useDispatch();
-  const userInfo = useSelector((state)=>state.user.userInfo);
-  const { onBreak_users, loading, error } = useSelector((state) => state.break);
+  const userInfo = useSelector((state) => state.user.userInfo);
+  const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
+    (state) => state.break
+  );
 
   //! Logout fonksıyonu...
   const logoutUser = async () => {
@@ -25,8 +31,8 @@ function LeftSideBtnArea() {
           { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
         );
         if (logout.status === 200) {
-          toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`)
-          window.location.href = "/kalite"; //todo query parametresını koy 
+          toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`);
+          window.location.href = "/kalite"; //todo query parametresını koy
         }
       }
     } catch (err) {
@@ -38,41 +44,42 @@ function LeftSideBtnArea() {
     dispatch(setMolaPopup(true));
   };
 
-    // sısteme gırıs yapan kullanıcı moladaysa fonksıyon true donecek ve true ıse butonlar dısabled var.
-    const filteredUser = () => {
-      if (!userInfo || !onBreak_users) {
-        return false;
-      }
-      return onBreak_users.some(
-        (item) => item.operator_id === userInfo.id_dec
-      );
-    };
-
-    //! Return to Break
-    const returnToBreak = async (operator_id) => {
-      // Güncel tarihi ISO 8601 standardında oluşturur
-      const end_time = new Date().toISOString();
-      try {
-        const isUserFiltered = filteredUser();
-        if (isUserFiltered) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
-            { operator_id, end_time }
-          );
-          if (response.status === 200) {
-            toast.success(
-              `${userInfo.operator_fullname} moladan dönüş işlemi başarılı.`
-            );
-            await dispatch(fetchOnBreakUsers())
-          }
-        } else {
-          toast.error("Kullanıcı molada değil veya bilgiler eksik.");
+   // sısteme gırıs yapan kullanıcı moladaysa fonksıyon true donecek ve true ıse butonlar dısabled var.
+  useEffect(() => {
+    const onBreak = onBreak_users.some(
+      (item) => item.operator_id === userInfo?.id_dec
+    );
+    if (onBreak) {
+      dispatch(setİsCurrentBreak(true));
+    } else {
+      dispatch(setİsCurrentBreak(false));
+    }
+  }, [onBreak_users, userInfo, dispatch]);
+  console.log(isCurrentBreak);
+  //! Return to Break
+  const returnToBreak = async (operator_id) => {
+    // Güncel tarihi ISO 8601 standardında oluşturur
+    const end_time = new Date().toISOString();
+    try {
+      
+      if (isCurrentBreak) {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
+          {operator_id, end_time}
+        );
+        if (response.status === 200) {
+          toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
+          dispatch(setİsCurrentBreak(false));
+          await dispatch(fetchOnBreakUsers());
         }
-      } catch (err) {
-        console.log(err);
-        toast.error("Moladan dönüş işlemi başarısız.");
+      } else {
+        toast.error("Kullanıcı molada değil veya bilgiler eksik.");
       }
-    };
+    } catch (err) {
+      console.log(err);
+      toast.error("Moladan dönüş işlemi başarısız.");
+    }
+  };
 
   const buttons = [
     {
@@ -89,12 +96,18 @@ function LeftSideBtnArea() {
       type: "button",
       className: "",
     },
-    { onClick: "", children: "İzin Girişi", type: "button", className: "" },
+    {
+      onClick: "",
+      children: "İzin Girişi",
+      type: "button",
+      disabled: isCurrentBreak,
+    },
     {
       onClick: openOzelAra,
       children: "Özel araya çık",
       type: "button",
       className: "",
+      disabled: isCurrentBreak,
     },
     {
       onClick: () => returnToBreak(userInfo.id_dec),
@@ -102,7 +115,13 @@ function LeftSideBtnArea() {
       type: "button",
       className: "",
     },
-    { onClick: "", children: "Ramat", type: "button", className: "" },
+    {
+      onClick: "",
+      children: "Ramat",
+      type: "button",
+      className: "",
+      disabled: isCurrentBreak,
+    },
   ];
 
   return (
@@ -121,6 +140,7 @@ function LeftSideBtnArea() {
             key={index}
             onClick={button.onClick}
             children={button.children}
+            disabled={button.disabled}
             type={button.type}
             className={button.className}
           />

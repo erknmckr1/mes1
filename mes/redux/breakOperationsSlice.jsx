@@ -20,8 +20,13 @@ const breakSlice = createSlice({
     onBreak_users: [],
     loading: false,
     error: null,
+    isCurrentBreak:false
   },
-  reducers: {},
+  reducers: {
+    setİsCurrentBreak:(state,action)=>{
+      state.isCurrentBreak = action.payload;
+    }
+  },
   extraReducers:(builder) => {
     builder
       .addCase(fetchOnBreakUsers.pending, (state) => {
@@ -39,5 +44,5 @@ const breakSlice = createSlice({
   },
 });
 
-export const {} = breakSlice.actions;
+export const {setİsCurrentBreak} = breakSlice.actions;
 export default breakSlice.reducer;

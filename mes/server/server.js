@@ -6,15 +6,18 @@ const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const sequelize = require("../lib/dbConnect");
+const { syncModels } = require("../models/syncDBmodels");
 const {
   getAllUser,
   getUserById,
+  createUser
 } = require("../api/userOperations/userAuthOperations");
 const {
   getBreakReason,
   getIsUserOnBreak,
   returnToBreak,
   onBreakUsers,
+  getBreakReasonLog
 } = require("../api/breakOperations");
 
 app.use(express.json());
@@ -29,12 +32,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 const SECRET_KEY = crypto.randomBytes(32).toString("hex");
 
-//! Veritabanı bağlantısını ve senkronizasyonu doğrulama
+//! Sequelize ORM kullanarak bir Microsoft SQL Server veritabanına bağlanma, bağlantıyı doğrulama ve veritabanı modellerini senkronize etme işlemlerini gerçekleştirir.
 sequelize
-  .authenticate()
+  .authenticate() // veri tabanına baglantının basrılı olup olmadıgıı kontrol edılır basarılı ıse ısleme devam...
   .then(() => {
-    console.log("MySQL veritabanına bağlantı başarılı.");
-    return sequelize.sync({alter:true});
+    console.log("MsSql veritabanına bağlantı başarılı.");
+    return syncModels(); // model db senkronizasyonu
   })
   .then(() => {
     console.log("Veritabani ve tablolar senkronize edildi.");
@@ -86,59 +89,63 @@ app.get("/check-login", async (req, res) => {
 });
 
 // //! Logout endpoint
- app.post("/logout", async (req, res) => {
-   res.cookie("token", "", {
-     expires: new Date(0),
-     httpOnly: true,
-     secure: false,
-   });
-   res.status(200).json({ message: "Logout successful" });
+app.post("/logout", async (req, res) => {
+  res.cookie("token", "", {
+    expires: new Date(0),
+    httpOnly: true,
+    secure: false,
+  });
+  res.status(200).json({ message: "Logout successful" });
+});
+
+ //! mola sebeblerini dönen metot...
+ app.get("/breakReason", async (req, res) => {
+   try {
+     const break_reason = await getBreakReason();
+     res.status(200).json(break_reason);
+     console.log(break_reason)
+   } catch (err) {
+     console.error("Error fetching stop reasons", err);
+     res.status(500).json({ message: "Internal server error" });
+   }
  });
 
-// //! mola sebeblerini dönen metot...
-// app.get("/breakReason", async (req, res) => {
-//   try {
-//     const break_reason = await getBreakReason();
-//     res.status(200).json(break_reason);
-//   } catch (err) {
-//     console.error("Error fetching stop reasons", err);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// });
+ //! Mola olusturacak motot...
+ app.post("/createBreak", async (req, res) => {
+   try {
+     const startLog = req.body;
+     console.log(startLog);
+     const breakLog = await getIsUserOnBreak(startLog);
+     res.status(200).json(breakLog);
+   } catch (err) {
+     console.error("Error creating break", err);
+     res.status(500).json({ message: "Internal server error" });
+   }
+ });
 
-// //! Mola olusturacak motot...
-// app.post("/createBreak", async (req, res) => {
-//   try {
-//     const startLog = req.body;
-//     console.log(startLog);
-//     const breakLog = await getIsUserOnBreak(startLog);
-//     res.status(200).json(breakLog);
-//   } catch (err) {
-//     console.error("Error creating break", err);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// });
+ //! Moladaki kullanıcıları dönen metot...
+ app.get("/getBreakOnUsers", async (req, res) => {
+   try {
+     const result = await onBreakUsers();
+     res.status(200).json(result);
+   } catch (err) {
+     res.status(500).json({ message: "Internal server error" });
+     throw err;
+   }
+ });
 
-// //! Moladaki kullanıcıları dönen metot...
-// app.get("/getBreakOnUsers", async (req, res) => {
-//   try {
-//     const result = await onBreakUsers();
-//     res.status(200).json(result);
-//   } catch (err) {
-//     res.status(500).json({ message: "Internal server error" });
-//     throw err;
-//   }
-// });
-
-// //! Molayı bitirecek metot...
-// app.post("/returnToBreak", async (req, res) => {
-//   const { operator_id, end_time } = req.body;
-//   console.log(operator_id);
-//   try {
-//     const result = await returnToBreak({ operator_id, end_time });
-//     res.status(200).json("Moladan dnüş işlemi başarılı...");
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).json({ message: "Internal server error." });
-//   }
-// });
+ //! Molayı bitirecek metot...
+ app.post("/returnToBreak", async (req, res) => {
+   const { operator_id, end_time } = req.body;
+   try {
+     const result = await returnToBreak({ operator_id, end_time });
+     if(result === 0 ) {
+      res.status(404).json({message:"Moladan donus işlemi başarisiz"})
+     }else if (result === 1) {
+      res.status(200).json({message:"Moladan dönüş işlemi başarili."})
+     }
+   } catch (err) {
+     console.log(err);
+     res.status(500).json({ message: "Internal server error." });
+   }
+ });
