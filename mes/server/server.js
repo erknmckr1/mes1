@@ -19,6 +19,8 @@ const {
   onBreakUsers,
   getBreakReasonLog
 } = require("../api/breakOperations");
+const getStopReason = require('../api/stopReasonOperation')
+const {getCancelReason,getRepairReason} = require('../api/orderOperations');
 
 app.use(express.json());
 app.use(cookieParser());
@@ -149,3 +151,39 @@ app.post("/logout", async (req, res) => {
      res.status(500).json({ message: "Internal server error." });
    }
  });
+
+//! Durdurma sebeblerini getırecek metot url ye gore...
+app.post("/getStopReason", async (req, res) => {
+  const { area_name } = req.body;
+  try {
+    const result = await getStopReason({ area_name });
+    res.status(200).json(result);  
+  } catch (err) {
+    console.error('Error getting stop reasons:', err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! iptal sebeblerini getirecek query..
+app.get("/getCancelReason", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getCancelReason({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('Error getting stop reasons:', err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Tamir sebeplerini getirecek query..
+app.get("/getRepairReason",async(req,res)=>{
+  const {area_name} = req.query;
+  try {
+    const result = await getRepairReason({area_name});
+    res.status(200).json(result)
+  } catch (error) {
+    console.error('Error getting stop reasons:', err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+})

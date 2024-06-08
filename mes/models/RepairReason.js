@@ -1,19 +1,19 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../lib/dbConnect"); // Veritabanı bağlantınızı doğru yoldan dahil edin
+const sequelize = require("../lib/dbConnect");
 
-const StopReason = sequelize.define(
-  "StopReason",
+const RepairReason = sequelize.define(
+  "RepairReason",
   {
-    stop_reason_id: {
+    repair_reason_id: {
       type: DataTypes.STRING(6),
       allowNull: false,
       primaryKey: true,
     },
-    section: {
+    repair_reason: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    stop_reason_name: {
+    section: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
@@ -23,9 +23,10 @@ const StopReason = sequelize.define(
     },
   },
   {
-    tableName: "stop_reason_table",
+    tableName: "repair_reason_table",
     timestamps: false,
   }
 );
 
-module.exports = StopReason;
+
+module.exports= RepairReason;

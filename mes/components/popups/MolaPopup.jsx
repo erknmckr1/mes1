@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import Button from "./uı/Button";
+import Button from "../uı/Button";
 import { useSelector } from "react-redux";
 import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
@@ -17,7 +17,6 @@ function MolaPopup() {
   const pathname = usePathname();
   const pageName = pathname.split("/")[1];
 
-  console.log(araSebebi);
   // popup ın durumnu kontrol eden state (acık kapalı)
   const closeMolaPopup = () => {
     dispatch(setMolaPopup(false));

@@ -55,13 +55,12 @@ function LeftSideBtnArea() {
       dispatch(setİsCurrentBreak(false));
     }
   }, [onBreak_users, userInfo, dispatch]);
-  console.log(isCurrentBreak);
+
   //! Return to Break
   const returnToBreak = async (operator_id) => {
     // Güncel tarihi ISO 8601 standardında oluşturur
     const end_time = new Date().toISOString();
     try {
-      
       if (isCurrentBreak) {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,

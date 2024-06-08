@@ -5,7 +5,8 @@ const BreakReason = require('./BreakReason')
 const CancelReason = require('./CancelReason')
 const Processes = require('./Processes')
 const StopReason = require('./StopReason')
-
+const RepairReason = require('./RepairReason')
+const OrderTable = require("./OrderTable")
 
 const models = {
     User,
@@ -13,10 +14,11 @@ const models = {
     BreakReason,
     CancelReason,
     Processes,
-    StopReason
+    StopReason,
+    RepairReason,
+    OrderTable
 }
 
-console.log(sequelize)
 // Tüm modelleri senkronize edin
 const syncModels = async () => {
     try {
