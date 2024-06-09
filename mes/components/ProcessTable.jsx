@@ -1,7 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { usePathname } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setProcessList,
+  setSelectedProcess,
+  setSelectedMachine,
+  setMachineList,
+} from "@/redux/orderSlice";
 
-const processTypes = ["Cutting", "Welding", "Assembling", "Painting"];
 const filteredMachine = [
   { machine_name: "Machine A" },
   { machine_name: "Machine B" },
@@ -10,8 +18,53 @@ const filteredMachine = [
 ];
 
 function ProcessArea() {
-  const [onProcess, setOnProcess] = useState(null);
   const [onMachine, setOnMachine] = useState(null);
+  const pathname = usePathname();
+  const pageName = pathname.split("/")[1]; // URL'den sayfa ismini alır
+  const dispatch = useDispatch();
+  const { processList, selectedProcess, selectedMachine,machineList } = useSelector(
+    (state) => state.order
+  );
+
+  //! İlgili bölüme göre proses listesini getırecek istek...
+  const getProcessList = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getProcessTypes`,
+        {
+          params: { area_name: pageName },
+        }
+      );
+      dispatch(setProcessList(response.data));
+
+      // kalite ekranında default olarak Genel kontrol secılı gelsın...
+      if (pageName === "kalite") {
+        dispatch(setSelectedProcess("Genel (Tümü) Kontrol"));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  //! ilgili makine listesini getirecek query
+  const getMachineList = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getMachineList`,
+        {
+          params: { area_name: pageName },
+        }
+      );
+      dispatch(setMachineList(response.data));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    getProcessList();
+    getMachineList();
+  }, []);
 
   return (
     <div className="w-full h-full overflow-y-hidden bg-white text-black border-l-2">
@@ -21,19 +74,22 @@ function ProcessArea() {
             Prosesler
           </div>
           <ul className="overflow-y-auto text-center bg-white border-t-2">
-            {processTypes.map((item, index) => (
-              <li
-                onClick={() => setOnProcess(item)}
-                key={index}
-                className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                  onProcess === item
-                    ? "bg-green-600 text-white font-semibold transition-all"
-                    : ""
-                }`}
-              >
-                {item}
-              </li>
-            ))}
+            {processList &&
+              processList.map((item, index) => (
+                <li
+                  onClick={() =>
+                    dispatch(setSelectedProcess(item.process_name))
+                  }
+                  key={item.process_id}
+                  className={`p-2 hover:bg-green-600 border cursor-pointer ${
+                    selectedProcess === item.process_name
+                      ? "bg-green-600 text-white font-semibold transition-all"
+                      : ""
+                  }`}
+                >
+                  {item.process_name}
+                </li>
+              ))}
           </ul>
         </div>
         <div className="w-1/2 h-full flex flex-col bg-white">
@@ -41,17 +97,18 @@ function ProcessArea() {
             Makineler
           </div>
           <ul className="overflow-y-auto bg-white text-center border-t-2">
-            {filteredMachine.map((item, index) => (
-              <li
-                key={index}
-                className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                  onMachine === item.machine_name ? "bg-green-500" : ""
-                }`}
-                onClick={() => setOnMachine(item.machine_name)}
-              >
-                {item.machine_name}
-              </li>
-            ))}
+            {
+             machineList && machineList.map((item, index) => (
+                <li
+                  key={index}
+                  className={`p-2 hover:bg-green-600 border cursor-pointer ${
+                    onMachine === item.machine_name ? "bg-green-500" : ""
+                  }`}
+                  onClick={() => setOnMachine(item.machine_name)}
+                >
+                  {item.machine_name}
+                </li>
+              ))}
           </ul>
         </div>
       </div>

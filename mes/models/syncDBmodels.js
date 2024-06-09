@@ -7,6 +7,7 @@ const Processes = require('./Processes')
 const StopReason = require('./StopReason')
 const RepairReason = require('./RepairReason')
 const OrderTable = require("./OrderTable")
+const Machines = require("./Machines")
 
 const models = {
     User,
@@ -16,7 +17,8 @@ const models = {
     Processes,
     StopReason,
     RepairReason,
-    OrderTable
+    OrderTable,
+    Machines
 }
 
 // Tüm modelleri senkronize edin

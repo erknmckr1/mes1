@@ -10,17 +10,23 @@ const { syncModels } = require("../models/syncDBmodels");
 const {
   getAllUser,
   getUserById,
-  createUser
+  createUser,
 } = require("../api/userOperations/userAuthOperations");
 const {
   getBreakReason,
   getIsUserOnBreak,
   returnToBreak,
   onBreakUsers,
-  getBreakReasonLog
+  getBreakReasonLog,
 } = require("../api/breakOperations");
-const getStopReason = require('../api/stopReasonOperation')
-const {getCancelReason,getRepairReason} = require('../api/orderOperations');
+const getStopReason = require("../api/stopReasonOperation");
+const {
+  getCancelReason,
+  getRepairReason,
+  getOrder,
+  getProcessList,
+  getMachineList,
+} = require("../api/orderOperations");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -100,66 +106,66 @@ app.post("/logout", async (req, res) => {
   res.status(200).json({ message: "Logout successful" });
 });
 
- //! mola sebeblerini dönen metot...
- app.get("/breakReason", async (req, res) => {
-   try {
-     const break_reason = await getBreakReason();
-     res.status(200).json(break_reason);
-     console.log(break_reason)
-   } catch (err) {
-     console.error("Error fetching stop reasons", err);
-     res.status(500).json({ message: "Internal server error" });
-   }
- });
+//! mola sebeblerini dönen metot...
+app.get("/breakReason", async (req, res) => {
+  try {
+    const break_reason = await getBreakReason();
+    res.status(200).json(break_reason);
+    console.log(break_reason);
+  } catch (err) {
+    console.error("Error fetching stop reasons", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
- //! Mola olusturacak motot...
- app.post("/createBreak", async (req, res) => {
-   try {
-     const startLog = req.body;
-     console.log(startLog);
-     const breakLog = await getIsUserOnBreak(startLog);
-     res.status(200).json(breakLog);
-   } catch (err) {
-     console.error("Error creating break", err);
-     res.status(500).json({ message: "Internal server error" });
-   }
- });
+//! Mola olusturacak motot...
+app.post("/createBreak", async (req, res) => {
+  try {
+    const startLog = req.body;
+    console.log(startLog);
+    const breakLog = await getIsUserOnBreak(startLog);
+    res.status(200).json(breakLog);
+  } catch (err) {
+    console.error("Error creating break", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
- //! Moladaki kullanıcıları dönen metot...
- app.get("/getBreakOnUsers", async (req, res) => {
-   try {
-     const result = await onBreakUsers();
-     res.status(200).json(result);
-   } catch (err) {
-     res.status(500).json({ message: "Internal server error" });
-     throw err;
-   }
- });
+//! Moladaki kullanıcıları dönen metot...
+app.get("/getBreakOnUsers", async (req, res) => {
+  try {
+    const result = await onBreakUsers();
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+    throw err;
+  }
+});
 
- //! Molayı bitirecek metot...
- app.post("/returnToBreak", async (req, res) => {
-   const { operator_id, end_time } = req.body;
-   try {
-     const result = await returnToBreak({ operator_id, end_time });
-     if(result === 0 ) {
-      res.status(404).json({message:"Moladan donus işlemi başarisiz"})
-     }else if (result === 1) {
-      res.status(200).json({message:"Moladan dönüş işlemi başarili."})
-     }
-   } catch (err) {
-     console.log(err);
-     res.status(500).json({ message: "Internal server error." });
-   }
- });
+//! Molayı bitirecek metot...
+app.post("/returnToBreak", async (req, res) => {
+  const { operator_id, end_time } = req.body;
+  try {
+    const result = await returnToBreak({ operator_id, end_time });
+    if (result === 0) {
+      res.status(404).json({ message: "Moladan donus işlemi başarisiz" });
+    } else if (result === 1) {
+      res.status(200).json({ message: "Moladan dönüş işlemi başarili." });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
 
 //! Durdurma sebeblerini getırecek metot url ye gore...
 app.post("/getStopReason", async (req, res) => {
   const { area_name } = req.body;
   try {
     const result = await getStopReason({ area_name });
-    res.status(200).json(result);  
+    res.status(200).json(result);
   } catch (err) {
-    console.error('Error getting stop reasons:', err);
+    console.error("Error getting stop reasons:", err);
     res.status(500).json({ message: "Internal server error." });
   }
 });
@@ -171,19 +177,62 @@ app.get("/getCancelReason", async (req, res) => {
     const result = await getCancelReason({ area_name });
     res.status(200).json(result);
   } catch (err) {
-    console.error('Error getting stop reasons:', err);
+    console.error("Error getting stop reasons:", err);
     res.status(500).json({ message: "Internal server error." });
   }
 });
 
 //! Tamir sebeplerini getirecek query..
-app.get("/getRepairReason",async(req,res)=>{
+app.get("/getRepairReason", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getRepairReason({ area_name });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Bölüme göre process turlerını getırecek query
+app.get("/getProcessTypes", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getProcessList({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! İlgili makine bilgilerini getirecek query...
+app.get("/getMachineList", async(req,res)=>{
   const {area_name} = req.query;
   try {
-    const result = await getRepairReason({area_name});
-    res.status(200).json(result)
-  } catch (error) {
-    console.error('Error getting stop reasons:', err);
+    const result = await getMachineList({area_name});
+    console.log(result)
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Internal server error." });
   }
 })
+
+//! Okutulan siparişi cekecek servis
+app.get("/getOrder", async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const result = await getOrder({ id });
+    console.log(result.dataValues);
+    if (result.dataValues) {
+      res.status(200).json(result.dataValues);
+    } else {
+      res.status(404).json({ message: "Sipariş no bulunamadı." });
+    }
+  } catch (err) {
+    console.error("Sipariş alınırken hata:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});

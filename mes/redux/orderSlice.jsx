@@ -1,15 +1,19 @@
-// Sipariş operasyonlarının statelerını tutacak slice.. 
-
+// Sipariş operasyonlarının statelerını tutacak slice..
 
 import { createSlice } from "@reduxjs/toolkit";
 
 const orderSlice = createSlice({
   name: "order",
   initialState: {
-    selectedOrder: null,
-    stopReasonPopup: null,
-    cancelReasonPopup:null,
-    repairJobPopup:null 
+    selectedOrder: null, // seçili siparişi tutacak state...
+    stopReasonPopup: null, // sipariş durdurma popup ın durumunu tutan state
+    cancelReasonPopup: null, // sipariş iptal popupının durumunu tutan state
+    repairJobPopup: null, // sipariş tamir popupının durumunu tutan state
+    read_order: null, // okutulan sıparısında tasını tutacak state
+    selectedProcess: "", // sipariş baslatmadan once secılecek process ı tutan state
+    selectedMachine: "default", // sipariş baslatmadan once secılecek makıneyı tutan state
+    processList: null,
+    machineList: null,
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -18,15 +22,39 @@ const orderSlice = createSlice({
     setStopReasonPopup: (state, action) => {
       state.stopReasonPopup = action.payload;
     },
-    setCancelReasonPopup: (state,action) => {
+    setCancelReasonPopup: (state, action) => {
       state.cancelReasonPopup = action.payload;
     },
-    setRepairJobPopup:(state,action)=>{
+    setRepairJobPopup: (state, action) => {
       state.repairJobPopup = action.payload;
-    }
-    
+    },
+    setReadOrder: (state, action) => {
+      state.read_order = action.payload;
+    },
+    setSelectedProcess: (state, action) => {
+      state.selectedProcess = action.payload;
+    },
+    setSelectedMachine: (state, action) => {
+      state.selectedMachine = action.payload;
+    },
+    setProcessList: (state, action) => {
+      state.processList = action.payload;
+    },
+    setMachineList: (state, action) => {
+      state.machineList = action.payload;
+    },
   },
 });
 
-export const { setSelectedOrder, setStopReasonPopup,setCancelReasonPopup,setRepairJobPopup } = orderSlice.actions;
+export const {
+  setProcessList,
+  setReadOrder,
+  setSelectedOrder,
+  setStopReasonPopup,
+  setCancelReasonPopup,
+  setRepairJobPopup,
+  setSelectedMachine,
+  setSelectedProcess,
+  setMachineList
+} = orderSlice.actions;
 export default orderSlice.reducer;
