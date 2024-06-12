@@ -42,8 +42,9 @@ body {
 .MuiDataGrid-columnHeaderTitle{
   color:black !important;
 }
+/* data grid bg */
 .MuiDataGrid-filler{
-  background-color: #F0C819;
+  
 }
 .MuiSvgIcon-root{
   color: white;
@@ -58,10 +59,18 @@ body {
   cursor: pointer;
 }
 
-.selected-row {
-  background-color: #5D6D7E !important;
-  color: black !important; /* Tıklanan satırın arka plan rengi */
-}
+
 .MuiDataGrid-footerContainer{
   display: none !important;
 } 
+
+.selected-row {
+  background-color: red !important;
+}
+.green-row {
+  background-color: green !important;
+}
+.blue-row{
+  background-color: blue;
+  
+}

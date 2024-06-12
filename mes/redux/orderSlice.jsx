@@ -1,11 +1,12 @@
 // Sipariş operasyonlarının statelerını tutacak slice..
-
 import { createSlice } from "@reduxjs/toolkit";
+import { act } from "react";
 
 const orderSlice = createSlice({
   name: "order",
   initialState: {
     selectedOrder: null, // seçili siparişi tutacak state...
+    workList:[], // Mevcut işleri tutacak state
     stopReasonPopup: null, // sipariş durdurma popup ın durumunu tutan state
     cancelReasonPopup: null, // sipariş iptal popupının durumunu tutan state
     repairJobPopup: null, // sipariş tamir popupının durumunu tutan state
@@ -14,10 +15,17 @@ const orderSlice = createSlice({
     selectedMachine: "default", // sipariş baslatmadan once secılecek makıneyı tutan state
     processList: null,
     machineList: null,
+    finishedAmount:"", // Siparişin bitirilecek kısmını tutacak state gr...
+    finishedWorkPopup:null, // Bitirme popupının durumunu tutan state...
+
+
   },
   reducers: {
     setSelectedOrder: (state, action) => {
       state.selectedOrder = action.payload;
+    },
+    setWorkList:(state,action) => {
+      state.workList = action.payload;
     },
     setStopReasonPopup: (state, action) => {
       state.stopReasonPopup = action.payload;
@@ -43,7 +51,14 @@ const orderSlice = createSlice({
     setMachineList: (state, action) => {
       state.machineList = action.payload;
     },
+    setFinishedAmount:(state,action) => {
+      state.finishedAmount = action.payload;
+    },
+    setFinishedWorkPopup:(state,action) => {
+      state.finishedWorkPopup = action.payload;
+    }
   },
+
 });
 
 export const {
@@ -55,6 +70,9 @@ export const {
   setRepairJobPopup,
   setSelectedMachine,
   setSelectedProcess,
-  setMachineList
+  setMachineList,
+  setFinishedAmount,
+  setWorkList,
+  setFinishedWorkPopup
 } = orderSlice.actions;
 export default orderSlice.reducer;

@@ -14,7 +14,7 @@ function CancelJobPopup() {
   );
   const userInfo = useSelector((state) => state.user.userInfo);
   const pathname = usePathname();
-  const pageName = pathname.split("/")[1]; // URL'den sayfa ismini alır
+  const pageName = pathname.split("/")[2]; // URL'den sayfa ismini alır
   const [cancelReason, setCancelReason] = useState(null);
   const [iptalSebebi, setİptalSebebi] = useState("");
 

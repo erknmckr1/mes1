@@ -1,37 +1,94 @@
 import React from "react";
 import Button from "./uı/Button";
 import { useSelector } from "react-redux";
-import { setStopReasonPopup,cancelReasonPopup, setCancelReasonPopup,setRepairJobPopup } from "@/redux/orderSlice";
+import {
+  setStopReasonPopup,
+  cancelReasonPopup,
+  setCancelReasonPopup,
+  setRepairJobPopup,
+  setFinishedWorkPopup,
+} from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { getWorkList } from "@/api/client/cOrderOperations";
+import { usePathname } from "next/navigation";
 
 function RightSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-  const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
-  const repairJobPopup = useSelector((state) => state.order.repairJobPopup);
-  console.log(repairJobPopup)
+  const { stopReasonPopup, selectedOrder } = useSelector(
+    (state) => state.order
+  );
+  const { userInfo } = useSelector((state) => state.user);
+
   const dispatch = useDispatch();
- 
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[2];
+
+  //! stop popup ı ac
+  const handleOpenStopPopup = () => {
+    if (selectedOrder && selectedOrder.work_status === "1") {
+      dispatch(setStopReasonPopup(true));
+    } else {
+      toast.error("İşleme devam etmek için aktif bir iş seçin");
+    }
+  };
+  console.log(userInfo);
+  //! Seçili ve durdurulmus siparişi yeniden baslat...
+  const restartWork = async () => {
+    try {
+      if (selectedOrder && selectedOrder.work_status === "2") {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
+          {
+            work_log_uniq_id: selectedOrder.uniq_id,
+          }
+        );
+
+        if (response.status === 200) {
+          getWorkList(areaName, dispatch);
+          toast.success("Tekrardan başlatma işlemi başarılı.");
+        }
+      } else {
+        toast.error("Durdurulmuş bir iş seçiniz...");
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("İşlem başarısız oldu.");
+    }
+  };
+
+  const handleOpenFinishedPopup = () => {
+    if (
+      selectedOrder &&
+      selectedOrder?.work_status === "1" ||
+      selectedOrder?.work_status === "2"
+    ) {
+      dispatch(setFinishedWorkPopup(true))
+    }else{
+      toast.error("Durduracağiniz prosesi seçiniz.")
+    }
+  };
+
   const buttons_r = [
     {
-      onClick: () => {
-        dispatch(setStopReasonPopup(true));
-      },
+      onClick: handleOpenStopPopup,
       children: "Siparişi Durdur",
       type: "button",
       className: "w-[200px]",
       disabled: isCurrentBreak,
     },
     {
-      onClick: "",
+      onClick: restartWork,
       children: "Yeniden Başlat",
       type: "button",
       className: "w-[200px]",
       disabled: isCurrentBreak,
     },
     {
-      onClick: "",
+      onClick: handleOpenFinishedPopup,
       children: "Prosesi Bitir",
       type: "button",
       className: "w-[200px]",
@@ -45,14 +102,18 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: ()=>{dispatch(setCancelReasonPopup(true))},
+      onClick: () => {
+        dispatch(setCancelReasonPopup(true));
+      },
       children: "Sipariş İptal",
       type: "button",
       className: "w-[200px] bg-red-600",
       disabled: isCurrentBreak,
     },
     {
-      onClick: ()=>{dispatch(setRepairJobPopup(true))},
+      onClick: () => {
+        dispatch(setRepairJobPopup(true));
+      },
       children: "Tamire Yolla",
       type: "button",
       className: "w-[200px]",

@@ -26,7 +26,13 @@ const {
   getOrder,
   getProcessList,
   getMachineList,
+  createWork,
+  getWorks,
+  stopWork,
+  rWork,
+  finishedWork,
 } = require("../api/orderOperations");
+const { truncateSync } = require("fs");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -207,17 +213,17 @@ app.get("/getProcessTypes", async (req, res) => {
 });
 
 //! İlgili makine bilgilerini getirecek query...
-app.get("/getMachineList", async(req,res)=>{
-  const {area_name} = req.query;
+app.get("/getMachineList", async (req, res) => {
+  const { area_name } = req.query;
   try {
-    const result = await getMachineList({area_name});
-    console.log(result)
+    const result = await getMachineList({ area_name });
+    console.log(result);
     res.status(200).json(result);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error." });
   }
-})
+});
 
 //! Okutulan siparişi cekecek servis
 app.get("/getOrder", async (req, res) => {
@@ -236,3 +242,80 @@ app.get("/getOrder", async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 });
+
+//! work_log tablosunda yani bir iş başlatacak metot...
+app.post("/createWorkLog", async (req, res) => {
+  const currentDate = new Date();
+  const currentDateTimeOffset = currentDate.toISOString();
+
+  const { work_info } = req.body;
+  console.log(work_info);
+  try {
+    const result = await createWork({ work_info, currentDateTimeOffset });
+    res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+    console.error(err);
+  }
+});
+
+//! Mevcut işleri getirecek metot...
+app.get("/getWorks", async (req, res) => {
+  const { area_name } = req.query;
+  console.log(area_name)
+  try {
+    const result = await getWorks({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+    throw err;
+  }
+});
+
+//! Aktif bir işi durduracak metot
+app.post("/stopSelectedWork", async (req, res) => {
+  const { order_id, stop_reason_id, work_log_uniq_id } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+
+  try {
+    const result = await stopWork({
+      work_log_uniq_id,
+      currentDateTimeOffset,
+      order_id,
+      stop_reason_id,
+    });
+    return res.status(200).json(result);
+  } catch (err) {
+    console.log(err.message);
+    return res.status(400).json({ message: err.message });
+  }
+});
+
+//! Durdurulan bir işi tekrardan baslatacak metot...
+app.post("/restartWork", async (req, res) => {
+  const { work_log_uniq_id } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+
+  try {
+    const result = await rWork({ currentDateTimeOffset, work_log_uniq_id });
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+//! Siparişi bitirecek metot...
+app.post("/finishedWork",async(req,res)=>{
+  const {uniq_id,produced_amount,work_finished_op_dec} = req.body;
+  console.log(produced_amount)
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result  = await finishedWork({uniq_id,currentDateTimeOffset,produced_amount,work_finished_op_dec})
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+    throw err;
+  }
+})
+

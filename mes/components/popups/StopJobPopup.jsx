@@ -1,26 +1,31 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { setStopReasonPopup } from "@/redux/orderSlice";
+import { setStopReasonPopup,setSelectedOrder } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import Button from "../uı/Button";
+import { toast } from "react-toastify";
+import { getWorkList } from "@/api/client/cOrderOperations";
+
+
 function StopJobPopup() {
   const dispatch = useDispatch();
   const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
   const userInfo = useSelector((state) => state.user.userInfo);
   const pathname = usePathname();
-  const pageName = pathname.split("/")[1]; // URL'den sayfa ismini alır
+  const areaName = pathname.split("/")[2]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
-  const [molaSebebi,setMolaSebebii] = useState("")
+  const [molaSebebi, setMolaSebebii] = useState("");
+  const { selectedOrder } = useSelector((state) => state.order);
 
   //! Durdurma sebeplerini çekecek metot...
   const getBreakReason = async () => {
     try {
       const result = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/getStopReason`,
-        { area_name: pageName }
+        { area_name: areaName, }
       );
       setStopReason(result.data);
       return result.data; // Veriyi döndürelim ki çağıran fonksiyon kullanabilsin
@@ -29,10 +34,34 @@ function StopJobPopup() {
     }
   };
 
-  useEffect(()=>{
-    getBreakReason();
-  },[])
+  //! Seçilen işi durdurmak için gerekli istek...
+  const stopSelectedWork = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
+        {
+          order_id: selectedOrder.order_no,
+          stop_reason_id: molaSebebi.stop_reason_id,
+          work_log_uniq_id:selectedOrder.uniq_id,
+        }
+      );
+      if (response.status === 200) {
+        toast.success(`Siparişi durdurma işlemi başarili...`);
+        dispatch(setStopReasonPopup(false));
+        getWorkList(areaName, dispatch); // worklist i tekrardan cagır gridi yenile...
+        dispatch(setSelectedOrder(null))
+      } else {
+        toast.error("Sipariş durdurulamadi...");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
+  useEffect(() => {
+    getBreakReason();
+  }, []);
+  console.log(selectedOrder)
   const buttons = [
     {
       onClick: () => {
@@ -43,7 +72,9 @@ function StopJobPopup() {
       className: "",
     },
     {
-      onClick: "",
+      onClick: () => {
+        stopSelectedWork();
+      },
       children: "Siparişi Durdur",
       type: "button",
       className: "bg-red-600 hover:bg-red-500",
@@ -66,6 +97,7 @@ function StopJobPopup() {
     minute: "2-digit",
     second: "2-digit",
   });
+  console.log(molaSebebi)
   return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
@@ -88,11 +120,11 @@ function StopJobPopup() {
                           key={item.stop_reason_name}
                           className={`py-[15px] text-[20px] cursor-pointer hover:text-white hover:bg-gray-600  text-center border-b border-black 
                            ${
-                            molaSebebi === item.stop_reason_name
+                             molaSebebi.stop_reason_name === item.stop_reason_name
                                ? "bg-green-600 text-white"
                                : ""
                            }`}
-                          onClick={() => setMolaSebebii(item.stop_reason_name)}
+                          onClick={() => setMolaSebebii(item)}
                         >
                           {item.stop_reason_name}
                         </span>
@@ -121,7 +153,7 @@ function StopJobPopup() {
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
                           <th>{userInfo && userInfo.id_dec}</th>
                           <th>{userInfo && userInfo.op_name}</th>
-                          <th>{molaSebebi}</th>
+                          <th>{molaSebebi.stop_reason_name}</th>
                           <th>{currentDate}</th>
                         </tr>
                       </tbody>

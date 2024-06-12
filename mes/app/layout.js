@@ -12,6 +12,7 @@ import FoodPopup from "@/components/popups/FoodPopup";
 import StopJobPopup from "@/components/popups/StopJobPopup";
 import CancelJobPopup from "@/components/popups/CancelJobPopup";
 import RepairJobPopup from "@/components/popups/RepairJobPopup";
+import FinishedWorkPopup from "@/components/popups/FinishedWorkPopup";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -21,7 +22,7 @@ import RepairJobPopup from "@/components/popups/RepairJobPopup";
 function Layout({ children }) {
   const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
-  const {stopReasonPopup,cancelReasonPopup,repairJobPopup} = useSelector((state)=>state.order)
+  const {stopReasonPopup,cancelReasonPopup,repairJobPopup,finishedWorkPopup} = useSelector((state)=>state.order)
 
   return (
     <>
@@ -32,6 +33,7 @@ function Layout({ children }) {
       {stopReasonPopup && <StopJobPopup/>}
       {cancelReasonPopup && <CancelJobPopup/>}
       {repairJobPopup && <RepairJobPopup/>}
+      {finishedWorkPopup && <FinishedWorkPopup/>}
       <ToastContainer />
     </>
   );

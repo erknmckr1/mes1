@@ -20,7 +20,7 @@ const filteredMachine = [
 function ProcessArea() {
   const [onMachine, setOnMachine] = useState(null);
   const pathname = usePathname();
-  const pageName = pathname.split("/")[1]; // URL'den sayfa ismini alır
+  const pageName = pathname.split("/")[2]; // URL'den sayfa ismini alır 2. parametreyi aldık.
   const dispatch = useDispatch();
   const { processList, selectedProcess, selectedMachine,machineList } = useSelector(
     (state) => state.order
@@ -39,7 +39,13 @@ function ProcessArea() {
 
       // kalite ekranında default olarak Genel kontrol secılı gelsın...
       if (pageName === "kalite") {
-        dispatch(setSelectedProcess("Genel (Tümü) Kontrol"));
+        const genelKontrolProcess = response.data.find(
+          (process) => process.process_name === "Genel (Tümü) Kontrol"
+        );
+  
+        if (genelKontrolProcess) {
+          dispatch(setSelectedProcess(genelKontrolProcess));
+        }
       }
     } catch (err) {
       console.log(err);
@@ -78,11 +84,11 @@ function ProcessArea() {
               processList.map((item, index) => (
                 <li
                   onClick={() =>
-                    dispatch(setSelectedProcess(item.process_name))
+                    dispatch(setSelectedProcess(item))
                   }
                   key={item.process_id}
                   className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                    selectedProcess === item.process_name
+                    selectedProcess.process_name === item.process_name
                       ? "bg-green-600 text-white font-semibold transition-all"
                       : ""
                   }`}

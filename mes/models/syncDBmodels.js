@@ -8,7 +8,8 @@ const StopReason = require('./StopReason')
 const RepairReason = require('./RepairReason')
 const OrderTable = require("./OrderTable")
 const Machines = require("./Machines")
-
+const WorkLog = require("./WorkLog")
+const StoppedWorksLogs = require("./StoppedWorksLog")
 const models = {
     User,
     BreakLog,
@@ -18,13 +19,16 @@ const models = {
     StopReason,
     RepairReason,
     OrderTable,
-    Machines
+    Machines,
+    WorkLog,
+    StoppedWorksLogs
+
 }
 
 // Tüm modelleri senkronize edin
 const syncModels = async () => {
     try {
-      await sequelize.sync({ alter: false });
+      await sequelize.sync({ alter: true });
       console.log('All models were synchronized successfully.');
     } catch (error) {
       console.error('Unable to synchronize the models:', error);

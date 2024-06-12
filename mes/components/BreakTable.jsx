@@ -6,7 +6,7 @@ import { fetchOnBreakUsers } from '@/redux/breakOperationsSlice';
 function BreakTable() {
   const dispatch = useDispatch();
   const { onBreak_users, loading, error } = useSelector((state) => state.break);
-  console.log(onBreak_users)
+
   useEffect(() => {
     dispatch(fetchOnBreakUsers());
   }, [dispatch]);
