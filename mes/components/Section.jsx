@@ -11,7 +11,7 @@ function Section() {
     <div className="w-screen h-[calc(100vh_-_150px)] bg-black relative text-white ">
       <div className="flex w-full h-full p-3">
         {/* left side Image vs. %20 */}
-        <div className="w-[20%] h-full  text-white ">
+        <div className="w-[20%] h-full   text-white ">
           <LeftSideBtnArea />
         </div>
         {/* w-%80 */}
@@ -22,7 +22,7 @@ function Section() {
             <div className="w-[80%] h-full ">
               <JobTable />
             </div>
-            <div className="w-[20%] h-full  ">
+            <div className="w-[20%] h-full flex items-center justify-center  ">
               <RightSideBtnArea />
             </div>
           </div>

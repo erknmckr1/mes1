@@ -1,6 +1,5 @@
 // Sipariş operasyonlarının statelerını tutacak slice..
 import { createSlice } from "@reduxjs/toolkit";
-import { act } from "react";
 
 const orderSlice = createSlice({
   name: "order",
@@ -15,7 +14,8 @@ const orderSlice = createSlice({
     selectedMachine: "default", // sipariş baslatmadan once secılecek makıneyı tutan state
     processList: null,
     machineList: null,
-    finishedAmount:"", // Siparişin bitirilecek kısmını tutacak state gr...
+    finishedAmount:"", // Siparişin sağlıklı bitirilecek kısmını tutacak state gr ...
+    finishedKalitePopup:null, // Kalitenin bitirme popup ının durumunu tutan state 
     finishedWorkPopup:null, // Bitirme popupının durumunu tutan state...
 
 
@@ -56,6 +56,9 @@ const orderSlice = createSlice({
     },
     setFinishedWorkPopup:(state,action) => {
       state.finishedWorkPopup = action.payload;
+    },
+    setFinishedPopupKalite:(state,action)=>{
+      state.finishedKalitePopup = action.payload;
     }
   },
 

@@ -13,6 +13,8 @@ import {
 } from "@/redux/breakOperationsSlice";
 import { toast } from "react-toastify";
 import { setFoodPopupState } from "@/redux/globalSlice";
+import { usePathname } from "next/navigation";
+
 
 function LeftSideBtnArea() {
   const dispatch = useDispatch();
@@ -20,7 +22,8 @@ function LeftSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[2];
   //! Logout fonksıyonu...
   const logoutUser = async () => {
     try {
@@ -32,7 +35,7 @@ function LeftSideBtnArea() {
         );
         if (logout.status === 200) {
           toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`);
-          window.location.href = "/kalite"; //todo query parametresını koy
+          window.location.href = pathName; // çıkıs yaptıktan sonra aynı sayfaya gıt 
         }
       }
     } catch (err) {
@@ -124,8 +127,8 @@ function LeftSideBtnArea() {
   ];
 
   return (
-    <div className="flex flex-col items-center">
-      <Image alt="" height={150} width={150} src={`${"/avatar2.jpg"}`} />
+    <div className="flex flex-col items-center h-full ">
+      <Image alt="" height={200} width={200} src={`${"/avatar2.jpg"}`} />
       <div className="flex flex-col font-bold items-center pt-1  ">
         <span>User Id: {userInfo && userInfo.id_dec}</span>
         <span className="text-xl uppercase">
@@ -133,7 +136,7 @@ function LeftSideBtnArea() {
         </span>
       </div>
       {/* buttons left */}
-      <div className="flex flex-col gap-y-3 mt-3  ">
+      <div className="flex flex-col gap-y-3 mt-3 h-full justify-center  ">
         {buttons.map((button, index) => (
           <Button
             key={index}

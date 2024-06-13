@@ -112,7 +112,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       work_status: work_status,
       process_id: process_id,
       work_start_date: currentDateTimeOffset,
-     // produced_amount: produced_amount,
+      // produced_amount: produced_amount,
     });
 
     return result;
@@ -227,6 +227,10 @@ const finishedWork = async ({
   currentDateTimeOffset,
   work_finished_op_dec,
   produced_amount,
+  repair_amount,
+  scrap_amount,
+  repair_reason,
+  scrap_reason,
 }) => {
   try {
     const result = await WorkLog.update(
@@ -235,7 +239,11 @@ const finishedWork = async ({
         work_end_date: currentDateTimeOffset,
         uniq_id,
         work_finished_op_dec,
-        produced_amount
+        produced_amount,
+        repair_amount,
+        scrap_amount,
+        repair_reason,
+        scrap_reason,
       },
       {
         where: {

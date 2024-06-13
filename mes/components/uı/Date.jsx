@@ -13,7 +13,7 @@ function CurrentDate() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center w-full h-full items-center gap-y-3 text-[50px] text-secondary font-semibold">
+    <div className="flex flex-col justify-center w-full h-full items-center gap-y-3 text-[60px] text-secondary font-semibold">
       <span>{date.toLocaleTimeString()}</span>
       <span>{date.toLocaleDateString()}</span>
     </div>

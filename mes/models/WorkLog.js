@@ -30,6 +30,22 @@ const WorkLog = sequelize.define('WorkLog', {
     type:DataTypes.STRING,
     allowNull:true
   },
+  repair_amount:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  scrap_amount:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  repair_reason:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  scrap_reason:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
   work_start_date: {
     type: DataTypes.DATE,
     allowNull: false

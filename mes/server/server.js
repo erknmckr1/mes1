@@ -262,7 +262,7 @@ app.post("/createWorkLog", async (req, res) => {
 //! Mevcut işleri getirecek metot...
 app.get("/getWorks", async (req, res) => {
   const { area_name } = req.query;
-  console.log(area_name)
+  console.log(area_name);
   try {
     const result = await getWorks({ area_name });
     res.status(200).json(result);
@@ -306,16 +306,32 @@ app.post("/restartWork", async (req, res) => {
 });
 
 //! Siparişi bitirecek metot...
-app.post("/finishedWork",async(req,res)=>{
-  const {uniq_id,produced_amount,work_finished_op_dec} = req.body;
-  console.log(produced_amount)
+app.post("/finishedWork", async (req, res) => {
+  const {
+    uniq_id,
+    produced_amount,
+    work_finished_op_dec,
+    repair_amount,
+    scrap_amount,
+    repair_reason,
+    scrap_reason,
+  } = req.body;
+  console.log(produced_amount);
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    const result  = await finishedWork({uniq_id,currentDateTimeOffset,produced_amount,work_finished_op_dec})
+    const result = await finishedWork({
+      uniq_id,
+      currentDateTimeOffset,
+      produced_amount,
+      work_finished_op_dec,
+      repair_amount,
+      scrap_amount,
+      repair_reason,
+      scrap_reason,
+    });
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: "Internal server error." });
     throw err;
   }
-})
-
+});

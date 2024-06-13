@@ -35,7 +35,7 @@ function RightSideBtnArea() {
       toast.error("İşleme devam etmek için aktif bir iş seçin");
     }
   };
-  console.log(userInfo);
+ 
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
     try {
@@ -110,25 +110,9 @@ function RightSideBtnArea() {
       className: "w-[200px] bg-red-600",
       disabled: isCurrentBreak,
     },
-    {
-      onClick: () => {
-        dispatch(setRepairJobPopup(true));
-      },
-      children: "Tamire Yolla",
-      type: "button",
-      className: "w-[200px]",
-      disabled: isCurrentBreak,
-    },
-    // {
-    //   onClick: "",
-    //   children: "Ölçüm Veri Girişi",
-    //   type: "button",
-    //   className: "w-[200px]",
-    //   disabled: isCurrentBreak,
-    // },
   ];
   return (
-    <div className="flex flex-col gap-y-5 items-center  justify-center">
+    <div className="flex flex-col gap-y-5 ">
       {buttons_r.map((button, index) => (
         <Button
           key={index}
