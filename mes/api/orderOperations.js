@@ -112,7 +112,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       work_status: work_status,
       process_id: process_id,
       work_start_date: currentDateTimeOffset,
-      produced_amount: produced_amount,
+     // produced_amount: produced_amount,
     });
 
     return result;
@@ -221,6 +221,7 @@ const rWork = async ({ work_log_uniq_id, currentDateTimeOffset }) => {
   }
 };
 
+//! Seçili işi bitirecek query...
 const finishedWork = async ({
   uniq_id,
   currentDateTimeOffset,

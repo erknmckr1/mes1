@@ -65,12 +65,14 @@ body {
 } 
 
 .selected-row {
-  background-color: red !important;
+  background-color: grey !important;
 }
 .green-row {
   background-color: green !important;
 }
 .blue-row{
   background-color: blue;
-  
+}
+.red-row{
+  background-color: red;
 }

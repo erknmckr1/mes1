@@ -42,7 +42,7 @@ function OrderSearch() {
             area_name: areaName,
             work_status: "1", // 1 ise iş aktif
             process_id: selectedProcess?.process_id,
-            produced_amount: "100",
+            // produced_amount: "100",
           };
 
           if (areaName === "kalite") {

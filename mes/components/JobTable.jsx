@@ -51,6 +51,12 @@ function JobTable() {
 
 
     const columns = [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 80,
+        sortable:false
+      },
     { field: "user_id_dec", headerName: "Operator ID", width: 100 },
     { field: "order_no", headerName: "Order ID", width: 100 },
     { field: "process_id", headerName: "Process ID", width: 100 },
@@ -74,31 +80,43 @@ function JobTable() {
       width: 130,
       sortable:false
     },
+    {
+      field: "work_status",
+      headerName: "Proses Durumu",
+      width: 100,
+      sortable:true
+    },
+    {
+      field: "uniq_id",
+      headerName: "Uniq ID",
+      width: 80,
+      sortable:false
+    },
+   
   ];
 
   useEffect(() => {
     getWorkList(areaName, dispatch);
   }, [areaName, dispatch]);
 
-  console.log(workList)
-  const rows =
-    workList &&
-    workList.map((item,index) => {
-      return {
-        id:index,
-        user_id_dec: item.user_id_dec,
-        order_no: item.order_no,
-        process_id: item.process_id,
-        section: item.section,
-        process_name: item.process_name,
-        produced_amount:item.produced_amount,
-        work_start_date:item.work_start_date,
-        work_end_date:item.work_end_date,
-        work_finished_op_dec:item.work_finished_op_dec,
-        work_status:item.work_status,
-        uniq_id:item.uniq_id
-      };
-    });
+  // status degerı 4 olmayan (bitmiş bir iş olmayan) işleri listeliyoruz.
+  const rows = workList
+  .filter(item => item.work_status !== "4")
+  .map((item, index) => ({
+    id: index,
+    user_id_dec: item.user_id_dec,
+    order_no: item.order_no,
+    process_id: item.process_id,
+    section: item.section,
+    process_name: item.process_name,
+    produced_amount: item.produced_amount,
+    work_start_date: item.work_start_date,
+    work_end_date: item.work_end_date,
+    work_finished_op_dec: item.work_finished_op_dec,
+    work_status: item.work_status,
+    uniq_id: item.uniq_id,
+  }));
+
 
     const getRowClassName = (params) => {
       const { row } = params;
@@ -108,6 +126,8 @@ function JobTable() {
         return 'green-row';
       }else if (row.work_status === "2"){
         return "blue-row";
+      }else if (row.work_status === "4"){
+        return "red-row";
       }
       return '';
     };

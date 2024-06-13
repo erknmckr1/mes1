@@ -7,18 +7,23 @@ import Button from "../uı/Button";
 import Input from "../uı/Input";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getWorkList } from "@/api/client/cOrderOperations";
+import { usePathname } from "next/navigation";
 
-function FinishedWorkPopup({ buttons_finish_pieces }) {
-  const finishedAmount = useSelector((state) => state.order);
+function FinishedWorkPopup() {
+  const {finishedAmount} = useSelector((state) => state.order);
   const [finishedPiece, setFinisedPiece] = useState("");
   const dispatch = useDispatch();
   const { selectedOrder } = useSelector((state) => state.order);
   const {userInfo} = useSelector(state => state.user)
-  
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[2];
+
   const handleFinishedAmount = (e) => {
     dispatch(setFinishedAmount(e.target.value));
   };
 
+  //! Siparişi bitirmek için tetiklenecek fonksiyon...
   const finishedWork = async () => {
     try {
       if (
@@ -38,6 +43,7 @@ function FinishedWorkPopup({ buttons_finish_pieces }) {
         if (response.status === 200) {
           getWorkList(areaName, dispatch);
           toast.success("Prosesi bitirme işlemi başarili...");
+          dispatch(setFinishedWorkPopup(false));
         }
       } else {
         toast.error("Aktif bir proses seçin...");
