@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../lib/dbConnect'); // Veritabanı bağlantınızı doğru yoldan dahil edin
+const sequelize = require('../../lib/dbConnect'); // Veritabanı bağlantınızı doğru yoldan dahil edin
 
-const WorkLog = sequelize.define('WorkLog', {
+const KaliteWorkTable = sequelize.define('KaliteWorkTable', {
   uniq_id:{
     type:DataTypes.STRING(6),
     allowNull:false,
@@ -35,10 +35,6 @@ const WorkLog = sequelize.define('WorkLog', {
     allowNull:true
   },
   scrap_amount:{
-    type:DataTypes.STRING,
-    allowNull:true
-  },
-  repair_reason:{
     type:DataTypes.STRING,
     allowNull:true
   },
@@ -115,8 +111,8 @@ const WorkLog = sequelize.define('WorkLog', {
     allowNull: true
   }
 }, {
-  tableName: 'work_log',
+  tableName: 'kalite_work_table',
   timestamps: false
 });
 
-module.exports = WorkLog;
+module.exports = KaliteWorkTable;

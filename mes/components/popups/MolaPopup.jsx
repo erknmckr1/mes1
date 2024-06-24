@@ -16,6 +16,7 @@ function MolaPopup() {
   const {isCurrentBreak} = useSelector((state)=>state.break)
   const pathname = usePathname();
   const pageName = pathname.split("/")[2];
+  const section = pathname.split("/")[1];
 
   // popup ın durumnu kontrol eden state (acık kapalı)
   const closeMolaPopup = () => {
@@ -53,6 +54,7 @@ function MolaPopup() {
       operator_id: userInfo.id_dec,
       area_name: pageName,
       op_name: userInfo.op_name,
+      section:section
     };
     try {
       const response = await axios.post(

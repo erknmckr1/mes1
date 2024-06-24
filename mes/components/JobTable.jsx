@@ -54,16 +54,16 @@ function JobTable() {
       {
         field: "id",
         headerName: "ID",
-        width: 80,
+        width: 130,
         sortable:false
       },
-    { field: "user_id_dec", headerName: "Operator ID", width: 100 },
-    { field: "order_no", headerName: "Order ID", width: 100 },
-    { field: "process_id", headerName: "Process ID", width: 100 },
+    { field: "user_id_dec", headerName: "Operator ID", width: 130 },
+    { field: "order_no", headerName: "Order ID", width: 130 },
+    { field: "process_id", headerName: "Process ID", width: 130 },
     {
       field: "section",
-      headerName: "Section",
-      width: 100,
+      headerName: "Bölüm",
+      width: 130,
     },
     {
       field: "process_name",
@@ -71,7 +71,7 @@ function JobTable() {
       sortable: false,
       width: 130,
     },
-    { field: "produced_amount", headerName: "Produced Amount", width: 80 },
+
     { field: "work_start_date", headerName: "Başlama Zamanı", width: 160 },
     { field: "work_end_date", headerName: "Bitiş Zamanı", width: 160 },
     {
@@ -83,13 +83,13 @@ function JobTable() {
     {
       field: "work_status",
       headerName: "Proses Durumu",
-      width: 100,
+      width: 130,
       sortable:true
     },
     {
       field: "uniq_id",
       headerName: "Uniq ID",
-      width: 80,
+      width: 130,
       sortable:false
     },
    
@@ -107,7 +107,7 @@ function JobTable() {
     user_id_dec: item.user_id_dec,
     order_no: item.order_no,
     process_id: item.process_id,
-    section: item.section,
+    section: item.area_name,
     process_name: item.process_name,
     produced_amount: item.produced_amount,
     work_start_date: item.work_start_date,

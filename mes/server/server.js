@@ -151,11 +151,13 @@ app.get("/getBreakOnUsers", async (req, res) => {
 //! Molayı bitirecek metot...
 app.post("/returnToBreak", async (req, res) => {
   const { operator_id, end_time } = req.body;
+  console.log("Received request to return from break:", operator_id, end_time);
   try {
     const result = await returnToBreak({ operator_id, end_time });
+    console.log("Update result:", result); // Güncellenen kayıt sayısını kontrol etmek için
     if (result === 0) {
       res.status(404).json({ message: "Moladan donus işlemi başarisiz" });
-    } else if (result === 1) {
+    } else if (result > 0) {
       res.status(200).json({ message: "Moladan dönüş işlemi başarili." });
     }
   } catch (err) {
@@ -315,8 +317,11 @@ app.post("/finishedWork", async (req, res) => {
     scrap_amount,
     repair_reason,
     scrap_reason,
+    repair_reason_1,
+    repair_reason_2,
+    repair_reason_3,
+    repair_reason_4,
   } = req.body;
-  console.log(produced_amount);
   const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await finishedWork({
@@ -328,6 +333,10 @@ app.post("/finishedWork", async (req, res) => {
       scrap_amount,
       repair_reason,
       scrap_reason,
+      repair_reason_1,
+      repair_reason_2,
+      repair_reason_3,
+      repair_reason_4,
     });
     res.status(200).json(result);
   } catch (err) {

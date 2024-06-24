@@ -5,7 +5,7 @@ const RepairReason = sequelize.define(
   "RepairReason",
   {
     repair_reason_id: {
-      type: DataTypes.STRING(6),
+      type: DataTypes.TEXT,
       allowNull: false,
       primaryKey: true,
     },

@@ -23,6 +23,7 @@ function OrderSearch() {
     setOrderId(e.target.value);
   };
 
+  console.log(order_id)
   //! Gırılen sıparıs no ıcın detayları getırecek servise isteği atacak ve yeni işi olusturacak metot. metot...
   const handleGetOrder = async () => {
     if (order_id) {
@@ -34,7 +35,7 @@ function OrderSearch() {
   
         if (response.status === 200) {
           dispatch(setReadOrder(response.data));
-
+          setOrderId("")
           const work_info = {
             user_id_dec: userInfo.id_dec,
             order_id: response.data.ORDER_ID,
@@ -42,6 +43,7 @@ function OrderSearch() {
             area_name: areaName,
             work_status: "1", // 1 ise iş aktif
             process_id: selectedProcess?.process_id,
+            process_name:selectedProcess?.process_name,
             // produced_amount: "100",
           };
 
@@ -55,6 +57,7 @@ function OrderSearch() {
               if (response.status === 200) {
                 toast.success("İş başarıyla başlatıldı.");
                 getWorkList(areaName,dispatch);
+                
               } else {
                 toast.error("İş başlatma sırasında bir hata oluştu.");
               }
@@ -88,6 +91,7 @@ function OrderSearch() {
         placeholder="Sipariş No"
         onChange={(e) => handleChangeOrder(e)}
         onKeyDown={handleKeyDown}
+        value={order_id}
       />
       <Button children="Numune Yap" />
     </div>

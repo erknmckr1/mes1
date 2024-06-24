@@ -12,7 +12,7 @@ import FoodPopup from "@/components/popups/FoodPopup";
 import StopJobPopup from "@/components/popups/StopJobPopup";
 import CancelJobPopup from "@/components/popups/CancelJobPopup";
 import RepairJobPopup from "@/components/popups/RepairJobPopup";
-import FinishedWorkPopup from "@/components/popups/FinishedWorkPopup";
+import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
 
 // export const metadata = {
 //   title: "Create Next App",

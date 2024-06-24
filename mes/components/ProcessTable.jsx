@@ -77,7 +77,7 @@ function ProcessArea() {
       <div className="w-full h-full flex">
         <div className="w-1/2 h-full flex flex-col">
           <div className="px-6 py-3 text-left text-xs bg-secondary  font-medium uppercase tracking-wider">
-            Prosesler
+            {pageName === "kalite" ? "Kontrol Türleri" :"Prosesler"}
           </div>
           <ul className="overflow-y-auto text-center bg-white border-t-2">
             {processList &&

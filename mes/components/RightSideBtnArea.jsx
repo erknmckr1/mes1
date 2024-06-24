@@ -72,6 +72,18 @@ function RightSideBtnArea() {
     }
   };
 
+  const handleOpenCancelPopup = () => {
+    if (
+      selectedOrder &&
+      selectedOrder?.work_status === "1" ||
+      selectedOrder?.work_status === "2"
+    ) {
+      dispatch(setCancelReasonPopup(true))
+    }else{
+      toast.error("İptal edeceginiz prosesi seçiniz.")
+    }
+  }
+
   const buttons_r = [
     {
       onClick: handleOpenStopPopup,
@@ -95,16 +107,7 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: "",
-      children: "Parçalı Bitir",
-      type: "button",
-      className: "w-[200px]",
-      disabled: isCurrentBreak,
-    },
-    {
-      onClick: () => {
-        dispatch(setCancelReasonPopup(true));
-      },
+      onClick: handleOpenCancelPopup,
       children: "Sipariş İptal",
       type: "button",
       className: "w-[200px] bg-red-600",
