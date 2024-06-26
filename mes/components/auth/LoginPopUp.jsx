@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { setUserInfo } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 import { setOperatorid } from "@/redux/userSlice";
+import { toast } from "react-toastify";
 function LoginPopUp({ setIsLoggedIn }) {
   const dispatch = useDispatch();
   //! girilen operator id yi global state'te tutuyoruz.
@@ -31,7 +32,8 @@ function LoginPopUp({ setIsLoggedIn }) {
         }
         console.log(response.data);
       } catch (err) {
-        console.error("Login hatası:", err); // Hata mesajlarını daha açıklayıcı yapın
+        console.error("Login hatası:", err);
+        toast.error("Girilen id ye sahip bir kullanıcı yok")
       }
     }
   };

@@ -26,7 +26,7 @@ function LeftSideBtnArea() {
   const areaName = pathName.split("/")[2];
   //! Logout fonksıyonu...
 
-  console.log(onBreak_users)
+ 
   const logoutUser = async () => {
     try {
       if (confirm("Çıkış yapılsın mı?")) {

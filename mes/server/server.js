@@ -32,7 +32,6 @@ const {
   rWork,
   finishedWork,
 } = require("../api/orderOperations");
-const { truncateSync } = require("fs");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -68,7 +67,9 @@ app.post("/login", async (req, res) => {
   const { operator_id } = req.body;
   try {
     const users = await getAllUser();
-    const currentUser = users.find((item) => item.id_dec === operator_id);
+    const currentUser = users.find(
+      (item) => item.id_dec === operator_id || item.id_hex === operator_id
+    );
     if (currentUser) {
       const token = jwt.sign({ operator_id }, SECRET_KEY, { expiresIn: "1h" });
       res.cookie("token", token, { httpOnly: false, secure: false });

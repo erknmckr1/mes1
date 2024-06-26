@@ -49,10 +49,70 @@ idle: 10000 // 10 saniye kullanılmayan bağlantı kapatılır.
 module.exports = sequelize;
 ```
 
-
 - MUI table componenti ıcın gerekli paketler (gerek duymadıgında kaldır...)
-````
+
+```
 npm install @mui/material @emotion/react @emotion/styled
 npm install @mui/icons-material
 npm install @mui/x-data-grid
-````
+```
+
+# Dizi Elemanlarını İndekse Göre Güncelleme
+
+```bash
+ const [repairReasons, setRepairReasons] = useState(["", "", "", ""]);
+
+  const updateRepairReason = (index, value) => {
+    const selectedReason = repairReasonsList.find(
+      (item) => item.repair_reason_id === value
+    );
+    if (selectedReason) {
+      setRepairReasons((prev) => {
+        const newReasons = [...prev];
+        newReasons[index] = selectedReason.repair_reason;
+        return newReasons;
+      });
+    }
+  };
+
+
+
+  <div className="w-full h-[300px] mt-1 overflow-y-auto">
+    <div className="w-full h-1/2 flex p-1 gap-x-1">
+      {repairReasons.map((reason, index) => (
+        <Input
+          key={index}
+          addProps="h-20 text-[30px] text-center font-semibold text-black"
+          placeholder={`${index + 1}. Neden`}
+          onChange={(e) =>
+            updateRepairReason(index, e.target.value)
+          }
+        />
+      ))}
+    </div>
+    <div className="w-full h-1/2 flex p-1 gap-x-3">
+      {repairReasons.map((reason, index) => (
+        <span
+          key={index}
+          className="h-20 w-[135px] text-[25px] text-center font-semibold"
+        >
+          {index + 1}. {reason}
+        </span>
+      ))}
+    </div>
+    <div className="w-full h-1/2 flex p-1 gap-x-3 ">
+      {repairReasons.map((item, index) => {
+        <span className="h-20 w-[135px] text-[25px] text-center font-semibold">
+          {index + 1} {item}
+        </span>;
+      })}
+    </div>
+  </div>
+```
+
+- Yukarıdaki fonksiiyon 'repairReasons' adlı state de belirli indexteki tamir nedenini günceller.
+  - index ve value parametrelerini alır. index güncellenmesi gereken tamir nedeninin sırasını, value ise yeni değeri temsil eder.
+  - setRepairReasons fonksiyonunu kullanarak state'i güncelleriz. setRepairReasons içine bir fonksiyon geçiyoruz; bu fonksiyon önceki state'i (prev) alır.
+  - prev array'ini newReasons adında bir kopya array'e çeviririz (const newReasons = [...prev];). Bu, doğrudan state'i değiştirmemek için yapılır.
+  - newReasons[index] = value; ile belirli indeksteki değeri yeni değerle (value) güncelleriz.
+  - Son olarak, güncellenmiş newReasons array'ini döneriz ve bu array state'i günceller.

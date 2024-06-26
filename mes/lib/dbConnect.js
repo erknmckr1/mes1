@@ -4,9 +4,9 @@ const { Sequelize } = require("sequelize");
 const sequelize = new Sequelize(
   'MES',
   'sa',
-  '496785cA',
+  'PWork2024!',
   {
-    host: "192.168.1.10",
+    host: "192.168.3.5",
     dialect: "mssql", // Dialect burada belirtiliyor
     dialectModule: require("tedious"),
     pool: {
@@ -19,7 +19,7 @@ const sequelize = new Sequelize(
       options: {
         encrypt: false,
         trustServerCertificate: true,
-        server: "192.168.1.10",
+        server: "192.168.3.5",
       },
     },
   }

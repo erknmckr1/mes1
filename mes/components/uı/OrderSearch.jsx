@@ -23,7 +23,6 @@ function OrderSearch() {
     setOrderId(e.target.value);
   };
 
-  console.log(order_id)
   //! Gırılen sıparıs no ıcın detayları getırecek servise isteği atacak ve yeni işi olusturacak metot. metot...
   const handleGetOrder = async () => {
     if (order_id) {
@@ -32,7 +31,7 @@ function OrderSearch() {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
           { params: { id: order_id } }
         );
-  
+        console.log(response.data)
         if (response.status === 200) {
           dispatch(setReadOrder(response.data));
           setOrderId("")
@@ -44,7 +43,7 @@ function OrderSearch() {
             work_status: "1", // 1 ise iş aktif
             process_id: selectedProcess?.process_id,
             process_name:selectedProcess?.process_name,
-            // produced_amount: "100",
+            production_amount:response.data.PRODUCTION_AMOUNT
           };
 
           if (areaName === "kalite") {

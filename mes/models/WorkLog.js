@@ -30,6 +30,10 @@ const WorkLog = sequelize.define('WorkLog', {
     type:DataTypes.STRING,
     allowNull:true
   },
+  production_amount:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
   repair_amount:{
     type:DataTypes.STRING,
     allowNull:true

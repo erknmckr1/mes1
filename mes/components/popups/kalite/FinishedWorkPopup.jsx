@@ -16,12 +16,8 @@ function FinishedWorkPopup() {
   const [scrapAmount, setScrapAmount] = useState(0);
   const [repairAmount, setRepairAmount] = useState(0);
   const [repairReasonsList, setRepairReasonsList] = useState([]);
-  const [selectedRepairReason, setSelectedRepairReason] = useState("");
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
-  const [repairReasonOne, setRepairReasonOne] = useState("");
-  const [repairReasonTwo, setRepairReasonTwo] = useState("");
-  const [repairReasonThree, setRepairReasonThree] = useState("");
-  const [repairReasonFour, setRepairReasonFour] = useState("");
+  const [repairReasons, setRepairReasons] = useState(["", "", "", ""]);
 
   // veriler
   const dispatch = useDispatch();
@@ -58,32 +54,27 @@ function FinishedWorkPopup() {
     getRepairReason();
   }, []);
 
-  useEffect(() => {
-    const selectedReason = repairReasonsList.find(item => item.repair_reason_id === repairReasonOne);
-    setRepairReasonOne(selectedReason ? selectedReason.repair_reason : repairReasonOne);
-  }, [repairReasonOne, repairReasonsList]);
-
-  useEffect(() => {
-    const selectedReason = repairReasonsList.find(item => item.repair_reason_id === repairReasonTwo);
-    setRepairReasonTwo(selectedReason ? selectedReason.repair_reason : repairReasonTwo);
-  }, [repairReasonTwo, repairReasonsList]);
-
-  useEffect(() => {
-    const selectedReason = repairReasonsList.find(item => item.repair_reason_id === repairReasonThree);
-    setRepairReasonThree(selectedReason ? selectedReason.repair_reason : repairReasonThree);
-  }, [repairReasonThree, repairReasonsList]);
-
-  useEffect(() => {
-    const selectedReason = repairReasonsList.find(item => item.repair_reason_id === repairReasonFour);
-    setRepairReasonFour(selectedReason ? selectedReason.repair_reason : repairReasonFour);
-  }, [repairReasonFour, repairReasonsList]);
-
-  console.log(selectedScrapReason)
+  //* tamir nedenleri state ini guncelleyecek fonksıyon... 
+  const updateRepairReason = (index, value) => {
+    // ID ile eşleşen repair reason'u bul ve güncelle
+    console.log(index,value)
+    const selectedReason = repairReasonsList.find(
+      (item) => item.repair_reason_id === value
+    );
+    console.log(selectedReason)
+    if (selectedReason) {
+      setRepairReasons((prev) => {
+        const newReasons = [...prev];
+        newReasons[index] = selectedReason.repair_reason;
+        return newReasons;
+      });
+    }
+  };
 
   //! Siparişi bitirmek için tetiklenecek fonksiyon...
   const finishedWork = async () => {
-   try {
-      if(finishedAmount > 0) {
+    try {
+      if (finishedAmount > 0) {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/finishedWork`,
           {
@@ -92,15 +83,16 @@ function FinishedWorkPopup() {
             produced_amount: finishedAmount,
             repair_amount: repairAmount,
             scrap_amount: scrapAmount,
-            repair_reason_1: repairReasonOne,
-            repair_reason_2: repairReasonTwo,
-            repair_reason_3: repairReasonThree,
-            repair_reason_4: repairReasonFour,
+            repair_reason_1: repairReasons[0],
+            repair_reason_2: repairReasons[1],
+            repair_reason_3: repairReasons[2],
+            repair_reason_4: repairReasons[3],
             scrap_reason: selectedScrapReason?.repair_reason,
+            production_amount:""
           }
         );
-         // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
-        if(response.status === 200){
+        // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
+        if (response.status === 200) {
           getWorkList(areaName, dispatch);
           toast.success("Prosesi bitirme işlemi başarılı...");
           dispatch(setFinishedWorkPopup(false));
@@ -108,16 +100,16 @@ function FinishedWorkPopup() {
           dispatch(setSelectedOrder(null));
           setScrapAmount("");
           setFinishedAmount("");
-          setSelectedRepairReason("");
           setSelectedScrapReason("");
+          setRepairReasons(["", "", "", ""])
         }
-      }else{
-        toast.error("Sağlam çikan ürün miktarini giriniz.")
+      } else {
+        toast.error("Sağlam çikan ürün miktarini giriniz.");
       }
-   } catch (err) {
-    console.log(err)
-    toast.error("İşlem başarısız oldu.");
-   }
+    } catch (err) {
+      console.log(err);
+      toast.error("İşlem başarısız oldu.");
+    }
   };
 
   const buttons = [
@@ -157,14 +149,16 @@ function FinishedWorkPopup() {
                 <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Hurda Çıkan Ürün (gr)"
-                  value={scrapAmount}
+                  value={finishedAmount > 0 ? scrapAmount : ""}
                   onChange={(e) => setScrapAmount(e.target.value)}
+                  disabled={finishedAmount > 0 ? false : true}
                 />
                 <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Tamire Gidecek Ürün (gr)"
-                  value={repairAmount}
+                  value={finishedAmount > 0 ? repairAmount : ""}
                   onChange={(e) => setRepairAmount(e.target.value)}
+                  disabled={finishedAmount > 0 ? false : true}
                 />
               </div>
               {/* tamir nedenleri && hurda nedenlerı */}
@@ -176,37 +170,39 @@ function FinishedWorkPopup() {
                     </div>
                     <div className="w-full h-[300px] mt-1 overflow-y-auto">
                       {/* repair reason inputları */}
-                      <div className="w-full h-1/2 flex p-1 gap-x-3">
-                        <Input
-                          addProps="h-20 text-[30px] text-center font-semibold text-black"
-                          placeholder="Tamir Sebebi 1"
-                          onChange={(e) => setRepairReasonOne(e.target.value)}
-                        />
-                        <Input
-                          addProps="h-20 text-[30px] text-center font-semibold text-black"
-                          placeholder="Tamir Sebebi 2"
-                          onChange={(e) => setRepairReasonTwo(e.target.value)}
-                        />
-                        <Input
-                          addProps="h-20 text-[30px] text-center font-semibold text-black"
-                          placeholder="Tamir Sebebi 3"
-                          onChange={(e) => setRepairReasonThree(e.target.value)}
-                        />
-                        <Input
-                          addProps="h-20 text-[30px] text-center font-semibold text-black"
-                          placeholder="Tamir Sebebi 4"
-                          onChange={(e) => setRepairReasonFour(e.target.value)}
-                        />
+                      <div className="w-full h-1/3 flex p-1 gap-x-1">
+                        {repairReasons.map((reason, index) => (
+                          <Input
+                            key={index}
+                            addProps="h-20 text-[30px] text-center font-semibold text-black"
+                            placeholder={`${index + 1}. Neden`}
+                            onChange={(e) =>
+                              updateRepairReason(index, e.target.value)
+                            }
+                            disabled={index > 0 && !repairReasons[index-1]}
+                          />
+                        ))}
                       </div>
-                      <div className="w-full h-1/2 flex p-1 gap-x-3 ">
-                        <span className="h-20 w-[135px] text-[25px] text-center font-semibold">1. {repairReasonOne}</span>
-                        <span className="h-20 w-[135px] text-[25px] text-center font-semibold">2. {repairReasonTwo}</span>
-                        <span className="h-20 w-[135px] text-[25px] text-center font-semibold">3. {repairReasonThree}</span>
-                        <span className="h-20 w-[135px] text-[25px] text-center font-semibold">4. {repairReasonFour}</span>
+                      {/* nedenlerı kullanıcıya gosterecek alan.. . */}
+                      <div className="w-full h-1/2 flex flex-col justify-evenly ">
+                      <span className="text-center underline uppercase text-red-600 font-semibold text-[20px]">Nedenleri sırayla giriniz</span>
+                      <div className="w-full flex p-1 gap-x-3">
+                      {repairReasons.map((reason, index) => (
+                          <span
+                            key={index}
+                            className="h-20 w-[135px] text-[25px] text-center font-semibold"
+                          >
+                            {index + 1}. {reason}
+                          </span>
+                        ))}
+                      </div>
+                       
+                        
                       </div>
                     </div>
                   </div>
                 )}
+                {/* Hurda nedenleri */}
                 {scrapAmount > 0 && (
                   <div className="w-1/2">
                     <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
