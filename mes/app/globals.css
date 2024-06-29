@@ -74,5 +74,8 @@ body {
   background-color: blue;
 }
 .red-row{
-  background-color: red;
+  background-color: rgb(255, 0, 0);
+}
+.red-row:hover {
+  background-color: red !important;
 }

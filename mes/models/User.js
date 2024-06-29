@@ -14,35 +14,35 @@ const User = sequelize.define('User', {
   },
   op_name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   op_username: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   is_active: {
     type: DataTypes.TINYINT,
-    allowNull: false
+    allowNull: true
   },
   is_admin: {
     type: DataTypes.TINYINT,
-    allowNull: false
+    allowNull: true
   },
   op_password: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   op_section: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   part: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   title: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   auth2: {
     type: DataTypes.TEXT, // JSON verileri saklamak için
@@ -68,35 +68,35 @@ const User = sequelize.define('User', {
   },
   address: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   e_mail: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   shift_validator: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   gender: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   short_name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   route: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   stop_name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   izin_bakiye: {
     type: DataTypes.DECIMAL(10, 0),
-    allowNull: false
+    allowNull: true
   }
 }, {
   tableName: 'operator_table', // Veritabanı tablosu adı

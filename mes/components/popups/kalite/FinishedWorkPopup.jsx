@@ -18,6 +18,8 @@ function FinishedWorkPopup() {
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
   const [repairReasons, setRepairReasons] = useState(["", "", "", ""]);
+  const [desc,setDesc] = useState("");
+  const [selectedArea, setSelectedArea] = useState("");
 
   // veriler
   const dispatch = useDispatch();
@@ -25,6 +27,12 @@ function FinishedWorkPopup() {
   const { userInfo } = useSelector((state) => state.user);
   const pathName = usePathname();
   const areaName = pathName.split("/")[2];
+
+ 
+  // Tamır kısmında bolumu secerken tetıklenecek change eventı 
+  const handleChange = (event) => {
+    setSelectedArea(event.target.value);
+  };
 
   //! Tamir nedenlerını getıren metot...
   const getRepairReason = async () => {
@@ -40,7 +48,9 @@ function FinishedWorkPopup() {
     }
   };
 
-  // // hata sebebını sececek fonksıyon
+  const areas = ["YALDIZ", "CİLA", "MONTAJ", "MİNE", "MERKEZ", "KESME"];
+
+  // hata sebebını sececek fonksıyon
   // const handleSelectedRepairReason = (item) => {
   //   setSelectedRepairReason(item);
   // };
@@ -54,14 +64,14 @@ function FinishedWorkPopup() {
     getRepairReason();
   }, []);
 
-  //* tamir nedenleri state ini guncelleyecek fonksıyon... 
+  //* tamir nedenleri state ini guncelleyecek fonksıyon...
   const updateRepairReason = (index, value) => {
     // ID ile eşleşen repair reason'u bul ve güncelle
-    console.log(index,value)
+    console.log(index, value);
     const selectedReason = repairReasonsList.find(
       (item) => item.repair_reason_id === value
     );
-    console.log(selectedReason)
+    console.log(selectedReason);
     if (selectedReason) {
       setRepairReasons((prev) => {
         const newReasons = [...prev];
@@ -88,7 +98,8 @@ function FinishedWorkPopup() {
             repair_reason_3: repairReasons[2],
             repair_reason_4: repairReasons[3],
             scrap_reason: selectedScrapReason?.repair_reason,
-            production_amount:""
+            repair_section:selectedArea,
+            end_desc:desc
           }
         );
         // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
@@ -101,7 +112,8 @@ function FinishedWorkPopup() {
           setScrapAmount("");
           setFinishedAmount("");
           setSelectedScrapReason("");
-          setRepairReasons(["", "", "", ""])
+          setRepairReasons(["", "", "", ""]);
+          setDesc("");
         }
       } else {
         toast.error("Sağlam çikan ürün miktarini giriniz.");
@@ -127,10 +139,20 @@ function FinishedWorkPopup() {
     },
   ];
 
+  useEffect(()=>{
+    const showMore = () => {
+      if(!finishedAmount || finishedAmount <= 0 ){
+        setRepairAmount("");
+        setScrapAmount("");
+      } 
+    }
+    showMore();
+  },[finishedAmount])
+
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
       <div className="flex items-center justify-center w-full h-full">
-        <div className="w-[1200px] h-[700px] bg-black border-2 border-white p-3 static z-50 rounded-md">
+        <div className="w-[1400px] h-[700px] bg-black border-2 border-white p-3 static z-50 rounded-md">
           <div className="w-full h-full">
             {/* title */}
             <div className="h-[100px] text-[50px] font-semibold flex justify-center items-center text-white bg-secondary">
@@ -139,20 +161,20 @@ function FinishedWorkPopup() {
             {/* parametreler... */}
             <div className="w-full h-auto flex flex-col gap-y-10 mt-4">
               {/* inputlar... */}
-              <div className="w-full flex p-1 gap-x-3">
+              <div className="w-full justify-evenly flex p-1 ">
                 <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Sağlam Çıkan Ürün (gr)"
                   value={finishedAmount}
                   onChange={(e) => setFinishedAmount(e.target.value)}
                 />
-                <Input
+                {/* <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Hurda Çıkan Ürün (gr)"
                   value={finishedAmount > 0 ? scrapAmount : ""}
                   onChange={(e) => setScrapAmount(e.target.value)}
                   disabled={finishedAmount > 0 ? false : true}
-                />
+                /> */}
                 <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Tamire Gidecek Ürün (gr)"
@@ -179,53 +201,64 @@ function FinishedWorkPopup() {
                             onChange={(e) =>
                               updateRepairReason(index, e.target.value)
                             }
-                            disabled={index > 0 && !repairReasons[index-1]}
+                            disabled={index > 0 && !repairReasons[index - 1]}
                           />
                         ))}
                       </div>
                       {/* nedenlerı kullanıcıya gosterecek alan.. . */}
-                      <div className="w-full h-1/2 flex flex-col justify-evenly ">
-                      <span className="text-center underline uppercase text-red-600 font-semibold text-[20px]">Nedenleri sırayla giriniz</span>
-                      <div className="w-full flex p-1 gap-x-3">
-                      {repairReasons.map((reason, index) => (
-                          <span
-                            key={index}
-                            className="h-20 w-[135px] text-[25px] text-center font-semibold"
+                      <div className="w-full h-1/2 flex flex-col gap-y-3 justify-evenly ">
+                        <span className="text-center underline uppercase text-red-600 font-semibold text-[20px]">
+                          Nedenleri sırayla giriniz
+                        </span>
+                        {/*  */}
+                        <div className="w-full flex justify-between p-1">
+                          {repairReasons.map((reason, index) => (
+                            <span
+                              key={index}
+                              className="h-10 w-[135px] text-[15px] text-center font-semibold"
+                            >
+                              {index + 1}. {reason}
+                            </span>
+                          ))}
+                        </div>
+                        {/* Tamire gidecek bölümün secılecegı dropdown... */}
+                        <div className="text-center px-10 text-black flex flex-col gap-y-3">
+                          <select
+                            className="w-full py-3 text-[20px] rounded-md text-center"
+                            name="areas"
+                            id="areas"
+                            value={selectedArea}
+                            onChange={handleChange}
+                            
                           >
-                            {index + 1}. {reason}
-                          </span>
-                        ))}
-                      </div>
-                       
-                        
+                            <option value="">Tamire gidilecek bölüm</option>
+                            {areas.map((item, index) => (
+                              <option className="" key={index} value={item}>
+                                {item}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-white font-semibold">
+                            Seçilen Bölüm: {selectedArea}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
-                {/* Hurda nedenleri */}
-                {scrapAmount > 0 && (
+                {/* Açıklama alanı */}
+                {finishedAmount > 0 && (
                   <div className="w-1/2">
                     <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
-                      Hurda Nedenleri
+                      Açıklama Alanı
                     </div>
-                    <div className="w-full h-[300px] mt-1 overflow-y-auto">
-                      <ul className="flex flex-col gap-y-1">
-                        {repairReasonsList &&
-                          repairReasonsList.map((item, index) => (
-                            <li
-                              key={item.repair_reason_id}
-                              onClick={() => handleSelectedScrapReason(item)}
-                              className={`${
-                                item?.repair_reason_id ===
-                                selectedScrapReason?.repair_reason_id
-                                  ? "bg-green-600 text-white"
-                                  : "bg-[#EAEDED] hover:bg-[#F4F6F6]"
-                              } p-2 text-[20px] cursor-pointer border font-semibold text-black border-white text-center transition-all`}
-                            >
-                              {item.repair_reason}
-                            </li>
-                          ))}
-                      </ul>
+                    <div className="w-full h-[300px] mt-1 overflow-y-auto text-black">
+                      <Input
+                      addProps="h-[300px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
+                      placeholder="Açıklama Giriniz"
+                      onChange={(e)=>{setDesc(e.target.value)}}
+                      value={desc}
+                      />
                     </div>
                   </div>
                 )}

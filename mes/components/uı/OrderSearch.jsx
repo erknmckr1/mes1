@@ -2,7 +2,7 @@ import React from "react";
 import Input from "./Input";
 import Button from "./Button";
 import { useState } from "react";
-import { setReadOrder } from "@/redux/orderSlice";
+import { setReadOrder, setSelectedProcess } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -13,11 +13,12 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 function OrderSearch() {
   const dispatch = useDispatch();
   const [order_id, setOrderId] = useState("");
-  const {read_order,selectedProcess} = useSelector((state)=>state.order)
+  const {selectedProcess } = useSelector((state) => state.order);
+  const {isCurrentBreak} = useSelector((state)=>state.break)
   const pathName = usePathname();
-  const areaName = pathName.split("/")[2] 
-  const sectionName = pathName.split("/")[1]
-  const {userInfo} = useSelector(state=>state.user)
+  const areaName = pathName.split("/")[2];
+  const sectionName = pathName.split("/")[1];
+  const { userInfo } = useSelector((state) => state.user);
 
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
@@ -27,14 +28,16 @@ function OrderSearch() {
   const handleGetOrder = async () => {
     if (order_id) {
       try {
+        // Okutulan sipairş bilgilerini al...
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
           { params: { id: order_id } }
         );
-        console.log(response.data)
+        console.log(response.data);
+
         if (response.status === 200) {
           dispatch(setReadOrder(response.data));
-          setOrderId("")
+          setOrderId("");
           const work_info = {
             user_id_dec: userInfo.id_dec,
             order_id: response.data.ORDER_ID,
@@ -42,38 +45,38 @@ function OrderSearch() {
             area_name: areaName,
             work_status: "1", // 1 ise iş aktif
             process_id: selectedProcess?.process_id,
-            process_name:selectedProcess?.process_name,
-            production_amount:response.data.PRODUCTION_AMOUNT
+            process_name: selectedProcess?.process_name,
+            production_amount: response.data.PRODUCTION_AMOUNT,
           };
 
-          if (areaName === "kalite") {
+          if (selectedProcess?.process_id) {
             try {
               const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
                 { work_info }
               );
-  
+
               if (response.status === 200) {
                 toast.success("İş başarıyla başlatıldı.");
-                getWorkList(areaName,dispatch);
-                
-              } else {
-                toast.error("İş başlatma sırasında bir hata oluştu.");
+                getWorkList(areaName, dispatch);
+                dispatch(setSelectedProcess(""));
               }
             } catch (err) {
               console.error("İş başlatma sırasında hata:", err);
               toast.error("İş başlatma sırasında bir hata oluştu.");
             }
+          } else {
+            toast.error("Sipariş baslatmadan önce process ve makine seçiniz.");
           }
-        } else if (response.status === 404) {
-          toast.error("Girilen sipariş no'ya dair veri bulunamadı.");
         }
       } catch (err) {
         console.error("Siparişi çekerken hata:", err);
         toast.error("Siparişi çekerken bir hata oluştu.");
       }
-    } else {
+    } else if (order_id === "") {
       toast.error("Sipariş no giriniz...");
+    } else {
+      toast.error("Girdiğiniz sipariş numarası hatalı...");
     }
   };
 
@@ -86,13 +89,14 @@ function OrderSearch() {
   return (
     <div className="flex flex-col gap-y-2">
       <Input
-        addProps="text-center text-black"
+        addProps={`text-center text-black h-14`}
         placeholder="Sipariş No"
         onChange={(e) => handleChangeOrder(e)}
         onKeyDown={handleKeyDown}
         value={order_id}
+        disabled={isCurrentBreak}
       />
-      <Button children="Numune Yap" />
+      {/* <Button children="Numune Yap" /> */}
     </div>
   );
 }

@@ -75,7 +75,7 @@ function ProcessArea() {
   return (
     <div className="w-full h-full overflow-y-hidden bg-white text-black border-l-2">
       <div className="w-full h-full flex">
-        <div className="w-1/2 h-full flex flex-col">
+        <div className={`${pageName === "kalite" ? "w-full" :"w-1/2"} h-full flex flex-col`}>
           <div className="px-6 py-3 text-left text-xs bg-secondary  font-medium uppercase tracking-wider">
             {pageName === "kalite" ? "Kontrol Türleri" :"Prosesler"}
           </div>
@@ -98,7 +98,7 @@ function ProcessArea() {
               ))}
           </ul>
         </div>
-        <div className="w-1/2 h-full flex flex-col bg-white">
+        { pageName !== "kalite"  && <div className="w-1/2 h-full flex flex-col bg-white">
           <div className="px-6 py-3 text-left text-xs bg-secondary  font-medium uppercase tracking-wider">
             Makineler
           </div>
@@ -116,7 +116,7 @@ function ProcessArea() {
                 </li>
               ))}
           </ul>
-        </div>
+        </div>}
       </div>
     </div>
   );

@@ -36,11 +36,11 @@ const {
 app.use(express.json());
 app.use(cookieParser());
 
-const corsOptions = {
-  origin: "http://localhost:3000", // Burada uygun origin'i belirleyin
-  credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
-  methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
-};
+  const corsOptions = {
+    origin: "http://localhost:3000", // Burada uygun origin'i belirleyin
+    credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
+    methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
+  };
 
 app.use(cors(corsOptions));
 const SECRET_KEY = crypto.randomBytes(32).toString("hex");
@@ -322,6 +322,8 @@ app.post("/finishedWork", async (req, res) => {
     repair_reason_2,
     repair_reason_3,
     repair_reason_4,
+    repair_section,
+    end_desc
   } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -338,6 +340,8 @@ app.post("/finishedWork", async (req, res) => {
       repair_reason_2,
       repair_reason_3,
       repair_reason_4,
+      repair_section,
+      end_desc
     });
     res.status(200).json(result);
   } catch (err) {

@@ -67,25 +67,12 @@ function JobTable() {
     },
     { field: "production_amount", headerName: "Üretim Miktarı", width: 150 },
     { field: "work_start_date", headerName: "Başlama Zamanı", width: 200 },
-    // { field: "work_end_date", headerName: "Bitiş Zamanı", width: 160 },
-    // {
-    //   field: "work_finished_op_dec",
-    //   headerName: "Bitiren Operator",
-    //   width: 130,
-    //   sortable:false
-    // },
     {
       field: "work_status",
       headerName: "Proses Durumu",
       width: 130,
       sortable: true,
     },
-    // {
-    //   field: "uniq_id",
-    //   headerName: "Uniq ID",
-    //   width: 130,
-    //   sortable:false
-    // },
   ];
 
   useEffect(() => {
@@ -122,9 +109,7 @@ function JobTable() {
       return "selected-row";
     } else if (row.work_status === "1") {
       return "green-row";
-    } else if (row.work_status === "2") {
-      return "blue-row";
-    } else if (row.work_status === "4") {
+    }  else if (row.work_status === "2") {
       return "red-row";
     }
     return "";

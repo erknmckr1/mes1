@@ -87,7 +87,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     work_status,
     process_id,
     process_name,
-    production_amount
+    production_amount,
   } = work_info;
 
   // En büyük uniq_id'yi bul ve bir artır
@@ -114,7 +114,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       process_id: process_id,
       work_start_date: currentDateTimeOffset,
       process_name: process_name,
-      production_amount:production_amount
+      production_amount: production_amount,
     });
 
     return result;
@@ -237,6 +237,8 @@ const finishedWork = async ({
   repair_reason_2,
   repair_reason_3,
   repair_reason_4,
+  repair_section,
+  end_desc
 }) => {
   try {
     const result = await WorkLog.update(
@@ -254,6 +256,8 @@ const finishedWork = async ({
         repair_reason_2,
         repair_reason_3,
         repair_reason_4,
+        repair_section,
+        end_desc
       },
       {
         where: {

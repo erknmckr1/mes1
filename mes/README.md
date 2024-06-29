@@ -116,3 +116,15 @@ npm install @mui/x-data-grid
   - prev array'ini newReasons adında bir kopya array'e çeviririz (const newReasons = [...prev];). Bu, doğrudan state'i değiştirmemek için yapılır.
   - newReasons[index] = value; ile belirli indeksteki değeri yeni değerle (value) güncelleriz.
   - Son olarak, güncellenmiş newReasons array'ini döneriz ve bu array state'i günceller.
+
+
+
+
+{
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start:prod": "next start"
+  }
+}

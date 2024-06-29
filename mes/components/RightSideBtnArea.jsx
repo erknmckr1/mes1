@@ -21,7 +21,6 @@ function RightSideBtnArea() {
   const { stopReasonPopup, selectedOrder } = useSelector(
     (state) => state.order
   );
-  const { userInfo } = useSelector((state) => state.user);
 
   const dispatch = useDispatch();
   const pathName = usePathname();
@@ -35,7 +34,8 @@ function RightSideBtnArea() {
       toast.error("İşleme devam etmek için aktif bir iş seçin");
     }
   };
- 
+  
+  console.log(selectedOrder);
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
     try {
@@ -72,17 +72,17 @@ function RightSideBtnArea() {
     }
   };
 
-  const handleOpenCancelPopup = () => {
-    if (
-      selectedOrder &&
-      selectedOrder?.work_status === "1" ||
-      selectedOrder?.work_status === "2"
-    ) {
-      dispatch(setCancelReasonPopup(true))
-    }else{
-      toast.error("İptal edeceginiz prosesi seçiniz.")
-    }
-  }
+  // const handleOpenCancelPopup = () => {
+  //   if (
+  //     selectedOrder &&
+  //     selectedOrder?.work_status === "1" ||
+  //     selectedOrder?.work_status === "2"
+  //   ) {
+  //     dispatch(setCancelReasonPopup(true))
+  //   }else{
+  //     toast.error("İptal edeceginiz prosesi seçiniz.")
+  //   }
+  // }
 
   const buttons_r = [
     {
@@ -106,13 +106,13 @@ function RightSideBtnArea() {
       className: "w-[200px]",
       disabled: isCurrentBreak,
     },
-    {
-      onClick: handleOpenCancelPopup,
-      children: "Sipariş İptal",
-      type: "button",
-      className: "w-[200px] bg-red-600",
-      disabled: isCurrentBreak,
-    },
+    // {
+    //   onClick: handleOpenCancelPopup,
+    //   children: "Sipariş İptal",
+    //   type: "button",
+    //   className: "w-[200px] bg-red-600",
+    //   disabled: isCurrentBreak,
+    // },
   ];
   return (
     <div className="flex flex-col gap-y-5 ">

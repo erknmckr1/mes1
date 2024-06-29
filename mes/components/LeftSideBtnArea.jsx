@@ -119,13 +119,13 @@ function LeftSideBtnArea() {
       type: "button",
       className: "",
     },
-    {
-      onClick: "",
-      children: "Ramat",
-      type: "button",
-      className: "",
-      disabled: isCurrentBreak,
-    },
+    // {
+    //   onClick: "",
+    //   children: "Ramat",
+    //   type: "button",
+    //   className: "",
+    //   disabled: isCurrentBreak,
+    // },
   ];
 
   return (

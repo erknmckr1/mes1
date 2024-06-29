@@ -62,6 +62,10 @@ const WorkLog = sequelize.define('WorkLog', {
     type:DataTypes.STRING,
     allowNull:true
   },
+  repair_section:{
+    type:DataTypes.STRING,
+    allowNull:true,
+  },
   scrap_reason:{
     type:DataTypes.STRING,
     allowNull:true
@@ -117,6 +121,10 @@ const WorkLog = sequelize.define('WorkLog', {
   cancel_date: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  end_desc:{
+    type:DataTypes.STRING,
+    allowNull:true
   }
 }, {
   tableName: 'work_log',
