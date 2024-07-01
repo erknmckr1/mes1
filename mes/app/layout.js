@@ -1,6 +1,6 @@
 "use client";
 import "./globals.css";
-import Header from "@/components/Header";
+import Header from "@/components/headers/Header";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Provider } from "react-redux";
@@ -13,6 +13,8 @@ import StopJobPopup from "@/components/popups/StopJobPopup";
 import CancelJobPopup from "@/components/popups/CancelJobPopup";
 import RepairJobPopup from "@/components/popups/RepairJobPopup";
 import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
+import { usePathname } from "next/navigation";
+import MainHeader from "@/components/headers/MainHeader";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -20,13 +22,17 @@ import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
 // };
 
 function Layout({ children }) {
+  const pathName = usePathname();
+  const area_name = pathName.split("/")[1]
   const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
   const {stopReasonPopup,cancelReasonPopup,repairJobPopup,finishedWorkPopup} = useSelector((state)=>state.order)
 
+  console.log(area_name)
   return (
     <>
-      <Header />
+      {area_name !== "home" && <Header />}
+      {area_name === "home" &&  <MainHeader/>}
       <main className="relative">{children}</main>
       {isMolaPopup && <MolaPopup />}
       {foodPopupState && <FoodPopup />}

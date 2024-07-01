@@ -1,8 +1,8 @@
 'use client'
 import React from "react";
-import Logo from "./uı/Logo";
-import Button from "./uı/Button";
-import OrderSearch from "./uı/OrderSearch";
+import Logo from "../uı/Logo";
+import Button from "../uı/Button";
+import OrderSearch from "../uı/OrderSearch";
 import { usePathname } from 'next/navigation';
 function Header() {
   const pathname = usePathname();

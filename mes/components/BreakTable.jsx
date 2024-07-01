@@ -21,7 +21,7 @@ function BreakTable() {
 
   return (
     <table className="min-w-full divide-y divide-gray-200 text-black">
-      <thead className="bg-secondary text-black font-semibold">
+      <thead className="bg-theader text-white font-semibold">
         <tr>
           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
             Operator

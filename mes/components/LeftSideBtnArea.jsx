@@ -26,7 +26,7 @@ function LeftSideBtnArea() {
   const areaName = pathName.split("/")[2];
   //! Logout fonksıyonu...
 
- 
+  console.log(userInfo)
   const logoutUser = async () => {
     try {
       if (confirm("Çıkış yapılsın mı?")) {
@@ -98,7 +98,7 @@ function LeftSideBtnArea() {
       },
       children: "Yemek Menüsü",
       type: "button",
-      className: "",
+      className: "bg-[#E67E22]",
     },
     {
       onClick: "",
@@ -134,7 +134,7 @@ function LeftSideBtnArea() {
       <div className="flex flex-col font-bold items-center pt-1  ">
         <span>User Id: {userInfo && userInfo.id_dec}</span>
         <span className="text-xl uppercase">
-          {userInfo && userInfo.op_name}
+          {userInfo && userInfo.op_username}
         </span>
       </div>
       {/* buttons left */}

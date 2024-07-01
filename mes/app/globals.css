@@ -33,15 +33,15 @@ body {
 }
 /* MUI DATA GRID ...  */
 .MuiDataGrid-columnHeader{
-  background-color: #F0C819;
+  background-color: #2C3E50;
   color: black !important;
   border-right: 2px solid;
   border-color: white;
 }
 /* mui table header title css  */
-.MuiDataGrid-columnHeaderTitle{
+/* .MuiDataGrid-columnHeaderTitle{
   color:black !important;
-}
+} */
 /* data grid bg */
 .MuiDataGrid-filler{
   
