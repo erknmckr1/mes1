@@ -19,6 +19,7 @@ const getUserById = async (userId) => {
         id_dec: userId,
       },
     });
+    console.log(user)
     if (user) {
       return user.dataValues; // user.dataValues ile kullanıcı verilerini döndür
     } else {

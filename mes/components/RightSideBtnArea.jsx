@@ -7,6 +7,7 @@ import {
   setCancelReasonPopup,
   setRepairJobPopup,
   setFinishedWorkPopup,
+  setSelectedOrder,
 } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -50,6 +51,7 @@ function RightSideBtnArea() {
         if (response.status === 200) {
           getWorkList(areaName, dispatch);
           toast.success("Tekrardan başlatma işlemi başarılı.");
+          dispatch(setSelectedOrder(null))
         }
       } else {
         toast.error("Durdurulmuş bir iş seçiniz...");

@@ -6,7 +6,7 @@ export const fetchOnBreakUsers = createAsyncThunk(
   "fetchBreak",
   async (_, thunkAPI) => {
     try {
-      const response = await axios.get("http://localhost:3003/getBreakOnUsers");
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/getBreakOnUsers`);
       return response.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data);

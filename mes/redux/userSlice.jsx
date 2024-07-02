@@ -4,7 +4,7 @@ export const userSlice = createSlice({
   name: "user",
   initialState: {
     userInfo: null,
-    operator_id:"207927465",
+    operator_id:"",
     onBreak_users:[]
   },
   reducers: {

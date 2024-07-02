@@ -17,7 +17,7 @@ function LoginPopUp({ setIsLoggedIn }) {
       console.log("Login fonksiyonu baslatıldı.");
       try {
         const response = await axios.post(
-          "http://localhost:3003/login",  
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/login`,  
           {
             operator_id
           },
@@ -30,7 +30,6 @@ function LoginPopUp({ setIsLoggedIn }) {
           setIsLoggedIn(true);
           dispatch(setUserInfo(response.data)); 
         }
-        console.log(response.data);
       } catch (err) {
         console.error("Login hatası:", err);
         toast.error("Girilen id ye sahip bir kullanıcı yok")

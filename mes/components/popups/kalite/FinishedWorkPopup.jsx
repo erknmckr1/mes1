@@ -167,6 +167,7 @@ function FinishedWorkPopup() {
                   placeholder="Sağlam Çıkan Ürün (gr)"
                   value={finishedAmount}
                   onChange={(e) => setFinishedAmount(e.target.value)}
+                  type="number"
                 />
                 {/* <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
@@ -181,6 +182,7 @@ function FinishedWorkPopup() {
                   value={finishedAmount > 0 ? repairAmount : ""}
                   onChange={(e) => setRepairAmount(e.target.value)}
                   disabled={finishedAmount > 0 ? false : true}
+                  type="number"
                 />
               </div>
               {/* tamir nedenleri && hurda nedenlerı */}
@@ -201,6 +203,7 @@ function FinishedWorkPopup() {
                             onChange={(e) =>
                               updateRepairReason(index, e.target.value)
                             }
+                            type="number"
                             disabled={index > 0 && !repairReasons[index - 1]}
                           />
                         ))}
@@ -215,7 +218,7 @@ function FinishedWorkPopup() {
                           {repairReasons.map((reason, index) => (
                             <span
                               key={index}
-                              className="h-10 w-[135px] text-[15px] text-center font-semibold"
+                              className="h-10 w-[135px] text-[15px] text-white text-center font-semibold"
                             >
                               {index + 1}. {reason}
                             </span>

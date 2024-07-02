@@ -37,7 +37,7 @@ app.use(express.json());
 app.use(cookieParser());
 
   const corsOptions = {
-    origin: "http://localhost:3000", // Burada uygun origin'i belirleyin
+    origin: ["http://localhost:3000", "http://192.168.3.7:3000"], // Burada uygun origin'i belirleyin
     credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
     methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
   };

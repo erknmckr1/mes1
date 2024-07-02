@@ -28,7 +28,6 @@ function Layout({ children }) {
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
   const {stopReasonPopup,cancelReasonPopup,repairJobPopup,finishedWorkPopup} = useSelector((state)=>state.order)
 
-  console.log(area_name)
   return (
     <>
       {area_name !== "home" && <Header />}

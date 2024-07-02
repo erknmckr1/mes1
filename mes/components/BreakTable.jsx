@@ -15,9 +15,6 @@ function BreakTable() {
     return <div>Loading...</div>;
   }
 
-  // if (error) {
-  //   return <div className='text-black'>Error: {error}</div>;
-  // }
 
   return (
     <table className="min-w-full divide-y divide-gray-200 text-black">

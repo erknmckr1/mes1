@@ -42,6 +42,7 @@ function MolaPopup() {
     getOzelAraReason();
   }, []);
 
+  console.log(userInfo)
   //! Özel ara oluşturmak için gerekli fonksıyon, servis fonksıoyonlarının renkleri kırmızı renkte
   //! Kullanıcı hangı sayfada araya cıkıyorsa tabloda main_section ona gore dolduruluyor.
   const createBreak = async (userInfo, araSebebi) => {
@@ -53,7 +54,7 @@ function MolaPopup() {
       break_reason_id: araSebebi,
       operator_id: userInfo.id_dec,
       area_name: pageName,
-      op_name: userInfo.op_name,
+      op_name: userInfo.op_username,
       section:section
     };
     try {

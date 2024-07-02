@@ -1,14 +1,13 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { setStopReasonPopup,setSelectedOrder } from "@/redux/orderSlice";
+import { setStopReasonPopup,setSelectedOrder, } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import Button from "../uı/Button";
 import { toast } from "react-toastify";
 import { getWorkList } from "@/api/client/cOrderOperations";
-
 
 function StopJobPopup() {
   const dispatch = useDispatch();
@@ -19,7 +18,7 @@ function StopJobPopup() {
   const [stopReason, setStopReason] = useState(null);
   const [molaSebebi, setMolaSebebii] = useState("");
   const { selectedOrder } = useSelector((state) => state.order);
-
+ 
   //! Durdurma sebeplerini çekecek metot...
   const getBreakReason = async () => {
     try {
