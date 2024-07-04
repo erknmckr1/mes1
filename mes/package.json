@@ -1,6 +1,7 @@
 {
   "name": "mes",
   "version": "0.1.0",
+  "author": "Erkan Mustafa Cakir <erknm.ckr@gmail.com>",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -32,8 +33,7 @@
     "react-toastify": "^10.0.5",
     "redux": "^5.0.1",
     "sequelize": "^6.37.3",
-    "tedious": "^18.2.0",
-    "vercel": "^34.2.8"
+    "tedious": "^18.2.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",

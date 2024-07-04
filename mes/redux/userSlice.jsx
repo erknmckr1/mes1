@@ -4,8 +4,8 @@ export const userSlice = createSlice({
   name: "user",
   initialState: {
     userInfo: null,
-    operator_id:"",
-    onBreak_users:[]
+    operator_id:"0C64B8A9", // login popup ta kullanıcı ıd sını tuttugumuz state...
+    onBreak_users:[]  // moladaki kullanıcıları tutacak state
   },
   reducers: {
     setUserInfo: (state, action) => {

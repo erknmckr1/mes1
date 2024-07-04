@@ -15,6 +15,7 @@ import axios from "axios";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 
+
 function RightSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
@@ -22,10 +23,10 @@ function RightSideBtnArea() {
   const { stopReasonPopup, selectedOrder } = useSelector(
     (state) => state.order
   );
-
+  const { userInfo } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const pathName = usePathname();
-  const areaName = pathName.split("/")[2];
+  const areaName = pathName.split("/")[3];
 
   //! stop popup ı ac
   const handleOpenStopPopup = () => {
@@ -35,23 +36,24 @@ function RightSideBtnArea() {
       toast.error("İşleme devam etmek için aktif bir iş seçin");
     }
   };
-  
-  console.log(selectedOrder);
+
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
     try {
       if (selectedOrder && selectedOrder.work_status === "2") {
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
-          {
-            work_log_uniq_id: selectedOrder.uniq_id,
-          }
-        );
+        if (confirm("İş tekrardan baslatilsin mi ? ")) {
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
+            {
+              work_log_uniq_id: selectedOrder.uniq_id,
+            }
+          );
 
-        if (response.status === 200) {
-          getWorkList(areaName, dispatch);
-          toast.success("Tekrardan başlatma işlemi başarılı.");
-          dispatch(setSelectedOrder(null))
+          if (response.status === 200) {
+            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+            toast.success("Tekrardan başlatma işlemi başarılı.");
+            dispatch(setSelectedOrder(null))
+          }
         }
       } else {
         toast.error("Durdurulmuş bir iş seçiniz...");
@@ -69,23 +71,42 @@ function RightSideBtnArea() {
       selectedOrder?.work_status === "2"
     ) {
       dispatch(setFinishedWorkPopup(true))
-    }else{
+    } else {
       toast.error("Durduracağiniz prosesi seçiniz.")
     }
   };
 
-  // const handleOpenCancelPopup = () => {
-  //   if (
-  //     selectedOrder &&
-  //     selectedOrder?.work_status === "1" ||
-  //     selectedOrder?.work_status === "2"
-  //   ) {
-  //     dispatch(setCancelReasonPopup(true))
-  //   }else{
-  //     toast.error("İptal edeceginiz prosesi seçiniz.")
-  //   }
-  // }
+  //  const handleOpenCancelPopup = () => {
+  //    if (
+  //      selectedOrder &&
+  //      selectedOrder?.work_status === "1" ||
+  //      selectedOrder?.work_status === "2"
+  //    ) {
+  //      dispatch(setCancelReasonPopup(true))
+  //    }else{
+  //      toast.error("İptal edeceginiz prosesi seçiniz.")
+  //    }
+  //  }
 
+  
+  const handleCancelWork = async () => {
+    try {
+      if (selectedOrder) {
+        if (confirm("Sipariş iptal edilsin mi ?")) {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/cancelWork`, { uniq_id: selectedOrder.uniq_id });
+          if (response.status === 200) {
+            toast.success(`${selectedOrder?.uniq_id} numaralı sipariş iptal edildi...`);
+            dispatch(setSelectedOrder(null));
+            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          }
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Sipariş iptal edilemedi. Lütfen tekrar deneyin.");
+    }
+  }
+  console.log(selectedOrder)
   const buttons_r = [
     {
       onClick: handleOpenStopPopup,
@@ -108,13 +129,13 @@ function RightSideBtnArea() {
       className: "w-[200px]",
       disabled: isCurrentBreak,
     },
-    // {
-    //   onClick: handleOpenCancelPopup,
-    //   children: "Sipariş İptal",
-    //   type: "button",
-    //   className: "w-[200px] bg-red-600",
-    //   disabled: isCurrentBreak,
-    // },
+    {
+      onClick: handleCancelWork,
+      children: "Sipariş İptal",
+      type: "button",
+      className: "w-[200px] bg-red-600",
+      disabled: isCurrentBreak,
+    },
   ];
   return (
     <div className="flex flex-col gap-y-5 ">

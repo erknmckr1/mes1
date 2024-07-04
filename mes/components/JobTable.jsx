@@ -34,8 +34,9 @@ function JobTable() {
   const dispatch = useDispatch();
   const { selectedOrder, workList } = useSelector((state) => state.order);
   const pathName = usePathname();
-  const areaName = pathName.split("/")[2];
-
+  const areaName = pathName.split("/")[3];
+  const {userInfo} = useSelector((state)=>state.user)
+  
   const handleSelectedRow = (params) => {
     if (params.row.id === selectedOrder?.id) {
       dispatch(setSelectedOrder(null));
@@ -76,8 +77,10 @@ function JobTable() {
   ];
 
   useEffect(() => {
-    getWorkList(areaName, dispatch);
-  }, [areaName, dispatch]);
+    if (userInfo?.id_dec) {
+      getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+    }
+  }, [areaName, userInfo, dispatch]);
 
   // status degerı 4 olmayan (bitmiş bir iş olmayan) işleri listeliyoruz.
   const rows = workList

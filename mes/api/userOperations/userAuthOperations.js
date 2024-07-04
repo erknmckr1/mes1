@@ -14,14 +14,25 @@ async function getAllUser() {
 //! İlgili id ye gore kullanıcı arayacak query
 const getUserById = async (userId) => {
   try {
-    const user = await User.findOne({
+    // İlk olarak id_dec ile kullanıcıyı aramayı deniyoruz
+    let user = await User.findOne({
       where: {
         id_dec: userId,
       },
     });
-    console.log(user)
+
+    // Eğer kullanıcı bulunamazsa id_hex ile aramayı deniyoruz
+    if (!user) {
+      user = await User.findOne({
+        where: {
+          id_hex: userId,
+        },
+      });
+    }
+
+    // Kullanıcı bulunduysa verilerini döndür
     if (user) {
-      return user.dataValues; // user.dataValues ile kullanıcı verilerini döndür
+      return user.dataValues;
     } else {
       return null; // Kullanıcı bulunamazsa null döndür
     }

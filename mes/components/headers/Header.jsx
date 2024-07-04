@@ -6,7 +6,7 @@ import OrderSearch from "../uı/OrderSearch";
 import { usePathname } from 'next/navigation';
 function Header() {
   const pathname = usePathname();
-  const area_name = pathname.split('/')[2]; // URL'den sayfa ismini alır,
+  const area_name = pathname.split('/')[3]; // URL'den sayfa ismini alır,
   return (
     <header className="w-screen h-[150px] bg-black flex items-center border-b-2 border-secondary shadow-2xl ">
       <div className="container mx-auto">

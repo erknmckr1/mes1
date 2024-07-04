@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { setStopReasonPopup,setSelectedOrder, } from "@/redux/orderSlice";
+import { setStopReasonPopup, setSelectedOrder, } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -14,11 +14,11 @@ function StopJobPopup() {
   const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
   const userInfo = useSelector((state) => state.user.userInfo);
   const pathname = usePathname();
-  const areaName = pathname.split("/")[2]; // URL'den sayfa ismini alır
+  const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
   const [molaSebebi, setMolaSebebii] = useState("");
   const { selectedOrder } = useSelector((state) => state.order);
- 
+
   //! Durdurma sebeplerini çekecek metot...
   const getBreakReason = async () => {
     try {
@@ -41,13 +41,13 @@ function StopJobPopup() {
         {
           order_id: selectedOrder.order_no,
           stop_reason_id: molaSebebi.stop_reason_id,
-          work_log_uniq_id:selectedOrder.uniq_id,
+          work_log_uniq_id: selectedOrder.uniq_id,
         }
       );
       if (response.status === 200) {
         toast.success(`Siparişi durdurma işlemi başarili...`);
         dispatch(setStopReasonPopup(false));
-        getWorkList(areaName, dispatch); // worklist i tekrardan cagır gridi yenile...
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // worklist i tekrardan cagır gridi yenile...
         dispatch(setSelectedOrder(null))
       } else {
         toast.error("Sipariş durdurulamadi...");
@@ -110,7 +110,7 @@ function StopJobPopup() {
               <div className="w-[30%] h-full border relative p-2">
                 <div className="w-full h-full flex flex-col ">
                   <span className="absolute bg-secondary text-center w-full border-b border-black py-4 font-bold text-[25px]">
-                    Siparişi Durdurma Sebebleri
+                    Siparişi Durdurma Sebepleri
                   </span>
                   <div className="w-full h-full flex flex-col overflow-x-scroll mt-16">
                     {stopReason &&
@@ -118,11 +118,10 @@ function StopJobPopup() {
                         <span
                           key={item.stop_reason_name}
                           className={`py-[15px] text-[20px] cursor-pointer hover:text-white hover:bg-gray-600  text-center border-b border-black 
-                           ${
-                             molaSebebi.stop_reason_name === item.stop_reason_name
-                               ? "bg-green-600 text-white"
-                               : ""
-                           }`}
+                           ${molaSebebi.stop_reason_name === item.stop_reason_name
+                              ? "bg-green-600 text-white"
+                              : ""
+                            }`}
                           onClick={() => setMolaSebebii(item)}
                         >
                           {item.stop_reason_name}

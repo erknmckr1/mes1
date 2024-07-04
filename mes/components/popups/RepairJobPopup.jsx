@@ -11,7 +11,7 @@ function RepairJobPopup() {
   const dispatch = useDispatch();
   const userInfo = useSelector((state) => state.user.userInfo);
   const pathname = usePathname();
-  const pageName = pathname.split("/")[2]; // URL'den sayfa ismini alır
+  const pageName = pathname.split("/")[3]; // URL'den sayfa (bölüm) ismini alır
   const [repairReason, setRepairReason] = useState(null);
   const [tamirSebebi, setTamirSebebi] = useState("");
 

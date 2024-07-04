@@ -20,7 +20,7 @@ const filteredMachine = [
 function ProcessArea() {
   const [onMachine, setOnMachine] = useState(null);
   const pathname = usePathname();
-  const pageName = pathname.split("/")[2]; // URL'den sayfa ismini alır 2. parametreyi aldık.
+  const pageName = pathname.split("/")[3]; // URL'den sayfa ismini alır 2. parametreyi aldık.
   const dispatch = useDispatch();
   const { processList, selectedProcess, selectedMachine,machineList } = useSelector(
     (state) => state.order

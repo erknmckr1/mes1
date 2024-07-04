@@ -13,11 +13,11 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 function OrderSearch() {
   const dispatch = useDispatch();
   const [order_id, setOrderId] = useState("");
-  const {selectedProcess } = useSelector((state) => state.order);
-  const {isCurrentBreak} = useSelector((state)=>state.break)
+  const { selectedProcess } = useSelector((state) => state.order);
+  const { isCurrentBreak } = useSelector((state) => state.break)
   const pathName = usePathname();
-  const areaName = pathName.split("/")[2];
-  const sectionName = pathName.split("/")[1];
+  const areaName = pathName.split("/")[3];
+  const sectionName = pathName.split("/")[2];
   const { userInfo } = useSelector((state) => state.user);
 
   const handleChangeOrder = (e) => {
@@ -58,7 +58,7 @@ function OrderSearch() {
 
               if (response.status === 200) {
                 toast.success("İş başarıyla başlatıldı.");
-                getWorkList(areaName, dispatch);
+                getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
                 dispatch(setSelectedProcess(""));
               }
             } catch (err) {

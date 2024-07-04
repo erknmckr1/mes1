@@ -18,7 +18,7 @@ function FinishedWorkPopup() {
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
   const [repairReasons, setRepairReasons] = useState(["", "", "", ""]);
-  const [desc,setDesc] = useState("");
+  const [desc, setDesc] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
 
   // veriler
@@ -26,9 +26,9 @@ function FinishedWorkPopup() {
   const { selectedOrder } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
   const pathName = usePathname();
-  const areaName = pathName.split("/")[2];
+  const areaName = pathName.split("/")[3];
 
- 
+
   // Tamır kısmında bolumu secerken tetıklenecek change eventı 
   const handleChange = (event) => {
     setSelectedArea(event.target.value);
@@ -55,11 +55,6 @@ function FinishedWorkPopup() {
   //   setSelectedRepairReason(item);
   // };
 
-  // Hurda nedenını sec
-  const handleSelectedScrapReason = (item) => {
-    setSelectedScrapReason(item);
-  };
-
   useEffect(() => {
     getRepairReason();
   }, []);
@@ -85,6 +80,13 @@ function FinishedWorkPopup() {
   const finishedWork = async () => {
     try {
       if (finishedAmount > 0) {
+
+        // tamir miktarı gırılmısse tamır nedenı secılmedıyse uyarı ver... 
+        if (repairAmount > 0 && !repairReasons.some(reason => reason)) {
+          toast.error("Lütfen tamir nedeni giriniz.");
+          return;
+        }
+
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/finishedWork`,
           {
@@ -98,13 +100,13 @@ function FinishedWorkPopup() {
             repair_reason_3: repairReasons[2],
             repair_reason_4: repairReasons[3],
             scrap_reason: selectedScrapReason?.repair_reason,
-            repair_section:selectedArea,
-            end_desc:desc
+            repair_section: selectedArea,
+            end_desc: desc
           }
         );
         // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
         if (response.status === 200) {
-          getWorkList(areaName, dispatch);
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           toast.success("Prosesi bitirme işlemi başarılı...");
           dispatch(setFinishedWorkPopup(false));
           setRepairAmount("");
@@ -139,15 +141,15 @@ function FinishedWorkPopup() {
     },
   ];
 
-  useEffect(()=>{
+  useEffect(() => {
     const showMore = () => {
-      if(!finishedAmount || finishedAmount <= 0 ){
+      if (!finishedAmount || finishedAmount <= 0) {
         setRepairAmount("");
         setScrapAmount("");
-      } 
+      }
     }
     showMore();
-  },[finishedAmount])
+  }, [finishedAmount])
 
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
@@ -232,7 +234,7 @@ function FinishedWorkPopup() {
                             id="areas"
                             value={selectedArea}
                             onChange={handleChange}
-                            
+
                           >
                             <option value="">Tamire gidilecek bölüm</option>
                             {areas.map((item, index) => (
@@ -257,10 +259,10 @@ function FinishedWorkPopup() {
                     </div>
                     <div className="w-full h-[300px] mt-1 overflow-y-auto text-black">
                       <Input
-                      addProps="h-[300px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
-                      placeholder="Açıklama Giriniz"
-                      onChange={(e)=>{setDesc(e.target.value)}}
-                      value={desc}
+                        addProps="h-[300px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
+                        placeholder="Açıklama Giriniz"
+                        onChange={(e) => { setDesc(e.target.value) }}
+                        value={desc}
                       />
                     </div>
                   </div>

@@ -5,6 +5,7 @@ const Processes = require("../models/Processes");
 const Machines = require("../models/Machines");
 const WorkLog = require("../models/WorkLog");
 const StoppedWorksLogs = require("../models/StoppedWorksLog");
+
 //! Parametreye gore iptal sebeblerini cekecek query ( parametre url route dan alıyoruz.)
 const getCancelReason = async ({ area_name }) => {
   try {
@@ -15,6 +16,20 @@ const getCancelReason = async ({ area_name }) => {
     throw err; // Hata fırlatmak, hatanın yukarıya doğru iletilmesini sağlar
   }
 };
+
+const cancelWork = async ({ uniq_id }) => {
+  try {
+    const result = await WorkLog.destroy({
+      where: {
+        uniq_id: uniq_id
+      }
+    });
+    return result;
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
 
 //! Tamir nedenlerini çekecek query
 const getRepairReason = async ({ area_name }) => {
@@ -124,11 +139,13 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
 };
 
 //! Mevcut işleri çekecek query...
-const getWorks = async ({ area_name }) => {
+const getWorks = async ({ area_name, user_id_dec }) => {
   try {
     const result = await WorkLog.findAll({
       where: {
         area_name: area_name,
+        user_id_dec: user_id_dec,
+        work_status:"1"
       },
     });
     return result;
@@ -136,6 +153,20 @@ const getWorks = async ({ area_name }) => {
     throw err;
   }
 };
+//! Bir birimin durdurulmus işlerini çekecek query... 
+const getStoppedWorks = async({area_name,}) => {
+  try {
+    const result = await WorkLog.findAll({
+      where:{
+        area_name:area_name,
+        work_status:"2"
+      }
+    });
+    return result;
+  } catch (err) {
+    consıole.log()
+  }
+}
 
 //! Seçili işi durduracak query...
 const stopWork = async ({
@@ -188,33 +219,27 @@ const rWork = async ({ work_log_uniq_id, currentDateTimeOffset }) => {
   try {
     const stoppedWork = await StoppedWorksLogs.findOne({
       where: { work_log_uniq_id, stop_end_date: null },
+      order: [['stop_start_date', 'DESC']],
     });
 
     if (!stoppedWork) {
       throw new Error("Durdurulmuş iş bulunamadı.");
     }
 
-    const totalStopDuration = Math.floor(
-      (new Date(currentDateTimeOffset) -
-        new Date(stoppedWork.stop_start_date)) /
-        1000
-    );
-
     await StoppedWorksLogs.update(
       {
         stop_end_date: currentDateTimeOffset,
-        total_stop_duration: totalStopDuration,
       },
       {
         where: {
-          work_log_uniq_id,
-        },
+          id: stoppedWork.id, // durdurulmus ıd si durdurulmus ısı su sekılde anlıyoruz. Eğer ilgili iş(id) için bir tablo da bır durdurma kaydı yoksa yenı bır kayıt olusturuyoruz. Eğer stop_end_date dolu ıse iş tekrar baslamıstır. İşi yenıden baslatmak ıcın 
+        },                    // stop_log tablosunda ılgılı durdurulmus ısın unıq ıd si ile stop_end_date i dolduruyoruz.
       }
     );
 
     await WorkLog.update(
       { work_status: "1" },
-      { where: { uniq_id: work_log_uniq_id } }
+      { where: { uniq_id: work_log_uniq_id } } 
     );
 
     return { message: "İş başarıyla yeniden başlatıldı." };
@@ -282,4 +307,6 @@ module.exports = {
   stopWork,
   rWork,
   finishedWork,
+  cancelWork,
+  getStoppedWorks
 };
