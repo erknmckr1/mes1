@@ -38,11 +38,11 @@ const {
 app.use(express.json());
 app.use(cookieParser());
 
-  const corsOptions = {
-    origin: ["http://localhost:3000", "http://192.168.3.7:3000"], // Burada uygun origin'i belirleyin
-    credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
-    methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
-  };
+const corsOptions = {
+  origin: ["http://localhost:3000", "http://192.168.3.7:3000"], // Burada uygun origin'i belirleyin
+  credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
+  methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
+};
 
 app.use(cors(corsOptions));
 const SECRET_KEY = crypto.randomBytes(32).toString("hex");
@@ -93,7 +93,6 @@ app.get("/check-login", async (req, res) => {
   try {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const userId = decodedToken.operator_id; //? Token'dan operator_id'yi alıyoruz
-    console.log(userId)
     const currentUser = await getUserById(userId);
     if (currentUser) {
       res.json({ isLoggedIn: true, currentUser });
@@ -121,7 +120,6 @@ app.get("/breakReason", async (req, res) => {
   try {
     const break_reason = await getBreakReason();
     res.status(200).json(break_reason);
-    console.log(break_reason);
   } catch (err) {
     console.error("Error fetching stop reasons", err);
     res.status(500).json({ message: "Internal server error" });
@@ -132,7 +130,6 @@ app.get("/breakReason", async (req, res) => {
 app.post("/createBreak", async (req, res) => {
   try {
     const startLog = req.body;
-    console.log(startLog);
     const breakLog = await getIsUserOnBreak(startLog);
     res.status(200).json(breakLog);
   } catch (err) {
@@ -197,7 +194,6 @@ app.get("/getCancelReason", async (req, res) => {
 //! Seçili işi iptal edecek fonksiyon
 app.post("/cancelWork", async (req, res) => {
   const { uniq_id } = req.body;
-  console.log(uniq_id);
   try {
     const result = await cancelWork({ uniq_id });
     if (result) {
@@ -240,7 +236,6 @@ app.get("/getMachineList", async (req, res) => {
   const { area_name } = req.query;
   try {
     const result = await getMachineList({ area_name });
-    console.log(result);
     res.status(200).json(result);
   } catch (err) {
     console.log(err);
@@ -254,7 +249,6 @@ app.get("/getOrder", async (req, res) => {
 
   try {
     const result = await getOrder({ id });
-    console.log(result.dataValues);
     if (result.dataValues) {
       res.status(200).json(result.dataValues);
     } else {
@@ -272,7 +266,6 @@ app.post("/createWorkLog", async (req, res) => {
   const currentDateTimeOffset = currentDate.toISOString();
 
   const { work_info } = req.body;
-  console.log(work_info);
   try {
     const result = await createWork({ work_info, currentDateTimeOffset });
     res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
@@ -285,18 +278,17 @@ app.post("/createWorkLog", async (req, res) => {
 //! Mevcut işleri getirecek metot...
 app.get("/getWorks", async (req, res) => {
   const { area_name, user_id_dec } = req.query;
-  console.log(area_name, user_id_dec);
   try {
-     // Kullanıcının kendi işleri (aktif)
-     const userWorks = await getWorks({ area_name, user_id_dec });
+    // Kullanıcının kendi işleri (aktif)
+    const userWorks = await getWorks({ area_name, user_id_dec });
 
-     // Belirli bir area_name ile durdurulmuş tüm işler
-     const stoppedWorks = await getStoppedWorks({ area_name });
- 
-     // Kullanıcının işleri ile durdurulmuş işleri birleştir
-     const allWorks = [...userWorks, ...stoppedWorks];
- 
-     res.status(200).json(allWorks);
+    // Belirli bir area_name ile durdurulmuş tüm işler
+    const stoppedWorks = await getStoppedWorks({ area_name });
+
+    // Kullanıcının işleri ile durdurulmuş işleri birleştir
+    const allWorks = [...userWorks, ...stoppedWorks];
+
+    res.status(200).json(allWorks);
   } catch (err) {
     res.status(500).json({ message: "Internal server error." });
     throw err;
@@ -324,10 +316,10 @@ app.post("/stopSelectedWork", async (req, res) => {
 
 //! Durdurulan bir işi tekrardan baslatacak metot...
 app.post("/restartWork", async (req, res) => {
-  const { work_log_uniq_id } = req.body;
+  const { work_log_uniq_id, currentUser, startedUser, selectedOrder } = req.body;
   const currentDateTimeOffset = new Date().toLocaleString();
   try {
-    const result = await rWork({ currentDateTimeOffset, work_log_uniq_id });
+    const result = await rWork({ currentDateTimeOffset, work_log_uniq_id, currentUser, startedUser, selectedOrder });
     res.status(200).json(result);
   } catch (err) {
     console.log(err);

@@ -6,12 +6,14 @@ import BreakTable from "./BreakTable";
 import JobTable from "./JobTable";
 import ProcessArea from "./ProcessTable";
 import Date from "./uı/Date";
+import { useSelector } from "react-redux";
 function Section() {
+  const { theme } = useSelector(theme => theme.global)
   return (
-    <div className="w-screen h-[calc(100vh_-_150px)] bg-black relative text-white ">
+    <div className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}>
       <div className="flex w-full h-full p-3">
         {/* left side Image vs. %20 */}
-        <div className="w-[20%] h-full   text-white ">
+        <div className="w-[20%] h-full ">
           <LeftSideBtnArea />
         </div>
         {/* w-%80 */}
@@ -28,22 +30,19 @@ function Section() {
           </div>
           {/* 40% h break process vs. area */}
           <div className="w-full h-[40%] flex">
-            <div className=" w-[80%]  flex p-1">
-              {/* left side mola  */}
-              <div className="w-1/2 h-[full] bg-white flex">
-                {/* table2 */}
-                <div className="flex flex-col w-full h-full">
+            <div className=" w-[80%] h-full  flex justify-between ">
+              {/* left side mola area w-1/2  */}
+              <div className="w-1/2 h-full p-1 ">
                   <BreakTable />
-                </div>
               </div>
               {/* w-1/2 Process area... */}
-              <div className="w-2/4 h-full">
+              <div className="w-1/2 h-full p-1">
                 <ProcessArea />
               </div>
             </div>
-            {/* 20% */}
-            <div className="w-[20%] h-full bg-black text-white ">
-              <Date/>
+            {/* 20% saat tarıh  alanı  */}
+            <div className="w-[20%] h-full ">
+              <Date />
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ function RightSideBtnArea() {
     }
   };
 
+  console.log(userInfo?.id_dec)
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
     try {
@@ -46,6 +47,9 @@ function RightSideBtnArea() {
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
             {
               work_log_uniq_id: selectedOrder.uniq_id,
+              currentUser:userInfo.id_dec,
+              startedUser:selectedOrder.user_id_dec,
+              selectedOrder
             }
           );
 
@@ -75,18 +79,6 @@ function RightSideBtnArea() {
       toast.error("Durduracağiniz prosesi seçiniz.")
     }
   };
-
-  //  const handleOpenCancelPopup = () => {
-  //    if (
-  //      selectedOrder &&
-  //      selectedOrder?.work_status === "1" ||
-  //      selectedOrder?.work_status === "2"
-  //    ) {
-  //      dispatch(setCancelReasonPopup(true))
-  //    }else{
-  //      toast.error("İptal edeceginiz prosesi seçiniz.")
-  //    }
-  //  }
 
   
   const handleCancelWork = async () => {

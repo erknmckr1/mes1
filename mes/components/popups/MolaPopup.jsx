@@ -15,8 +15,8 @@ function MolaPopup() {
   const userInfo = useSelector((state) => state.user.userInfo);
   const {isCurrentBreak} = useSelector((state)=>state.break)
   const pathname = usePathname();
-  const pageName = pathname.split("/")[2];
-  const section = pathname.split("/")[1];
+  const pageName = pathname.split("/")[3];
+  const section = pathname.split("/")[2];
 
   // popup ın durumnu kontrol eden state (acık kapalı)
   const closeMolaPopup = () => {

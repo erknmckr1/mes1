@@ -5,6 +5,7 @@ import { fetchOnBreakUsers } from '@/redux/breakOperationsSlice';
 
 function BreakTable() {
   const dispatch = useDispatch();
+  const {theme} = useSelector(theme => theme.global)
   const { onBreak_users, loading, error } = useSelector((state) => state.break);
 
   useEffect(() => {
@@ -17,9 +18,9 @@ function BreakTable() {
 
 
   return (
-    <table className="min-w-full divide-y divide-gray-200 text-black">
-      <thead className="bg-theader text-white font-semibold">
-        <tr>
+    <table className={`w-full h-full divide-y divide-gray-200 text-black tablearea border-2 border-secondary ${theme} transition-all`}>
+      <thead className={`thead ${theme} font-semibold`}>
+        <tr className='flex justify-between'>
           <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
             Operator
           </th>
@@ -34,7 +35,7 @@ function BreakTable() {
           </th>
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
+      <tbody className={`divide-y w-full h-full divide-gray-200 overflow-y-auto flex flex-col`}>
         {onBreak_users && onBreak_users.length > 0 ? (
           onBreak_users.map((user, index) => {
             const date = new Date(user.start_date);
@@ -42,7 +43,7 @@ function BreakTable() {
             const formattedTime = date.toLocaleTimeString(); // Saati formatlar
 
             return (
-              <tr className="bg-green-600 text-white font-semibold" key={index}>
+              <tr className="bg-green-600 w-full  text-white font-semibold flex justify-between" key={index}>
                 <td className="px-6 py-3 whitespace-nowrap">{user.operator_id}</td>
                 <td className="px-6 py-3 whitespace-nowrap">{user.op_name}</td>
                 <td className="px-6 py-3 whitespace-nowrap">

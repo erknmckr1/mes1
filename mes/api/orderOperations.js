@@ -145,7 +145,7 @@ const getWorks = async ({ area_name, user_id_dec }) => {
       where: {
         area_name: area_name,
         user_id_dec: user_id_dec,
-        work_status:"1"
+        work_status: "1"
       },
     });
     return result;
@@ -154,12 +154,12 @@ const getWorks = async ({ area_name, user_id_dec }) => {
   }
 };
 //! Bir birimin durdurulmus işlerini çekecek query... 
-const getStoppedWorks = async({area_name,}) => {
+const getStoppedWorks = async ({ area_name, }) => {
   try {
     const result = await WorkLog.findAll({
-      where:{
-        area_name:area_name,
-        work_status:"2"
+      where: {
+        area_name: area_name,
+        work_status: "2"
       }
     });
     return result;
@@ -215,7 +215,8 @@ const stopWork = async ({
 };
 
 //! Seçili işi yeniden baslatacak query...
-const rWork = async ({ work_log_uniq_id, currentDateTimeOffset }) => {
+const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, startedUser, selectedOrder }) => {
+  console.log({ message: selectedOrder })
   try {
     const stoppedWork = await StoppedWorksLogs.findOne({
       where: { work_log_uniq_id, stop_end_date: null },
@@ -226,22 +227,69 @@ const rWork = async ({ work_log_uniq_id, currentDateTimeOffset }) => {
       throw new Error("Durdurulmuş iş bulunamadı.");
     }
 
-    await StoppedWorksLogs.update(
-      {
-        stop_end_date: currentDateTimeOffset,
-      },
-      {
-        where: {
-          id: stoppedWork.id, // durdurulmus ıd si durdurulmus ısı su sekılde anlıyoruz. Eğer ilgili iş(id) için bir tablo da bır durdurma kaydı yoksa yenı bır kayıt olusturuyoruz. Eğer stop_end_date dolu ıse iş tekrar baslamıstır. İşi yenıden baslatmak ıcın 
-        },                    // stop_log tablosunda ılgılı durdurulmus ısın unıq ıd si ile stop_end_date i dolduruyoruz.
+    if (startedUser === currentUser) {
+      await StoppedWorksLogs.update(
+        {
+          stop_end_date: currentDateTimeOffset,
+        },
+        {
+          where: {
+            id: stoppedWork.id, // durdurulmus ıd si durdurulmus ısı su sekılde anlıyoruz. Eğer ilgili iş(id) için bir tablo da bır durdurma kaydı yoksa yenı bır kayıt olusturuyoruz. Eğer stop_end_date dolu ıse iş tekrar baslamıstır. İşi yenıden baslatmak ıcın 
+          },                    // stop_log tablosunda ılgılı durdurulmus ısın unıq ıd si ile stop_end_date i dolduruyoruz.
+        }
+      );
+
+      await WorkLog.update(
+        { work_status: "1" },
+        { where: { uniq_id: work_log_uniq_id } }
+      );
+    } else {
+
+      await StoppedWorksLogs.update(
+        {
+          stop_end_date: currentDateTimeOffset,
+        },
+        {
+          where: {
+            id: stoppedWork.id,
+          },
+        }
+      );
+
+      await WorkLog.update(
+        { work_status: "4", work_end_date: currentDateTimeOffset, work_finished_op_dec: currentUser, produced_amount:0, },
+        { where: { uniq_id: work_log_uniq_id } }
+      );
+
+      // En büyük uniq_id'yi bul ve bir artır
+      const latestWorkLog = await WorkLog.findOne({
+        order: [["uniq_id", "DESC"]],
+      });
+
+      let newUniqId;
+      if (latestWorkLog) {
+        const latestId = parseInt(latestWorkLog.uniq_id, 10);
+        newUniqId = String(latestId + 1).padStart(6, "0"); // 6 haneli sıralı ID oluştur
+      } else {
+        newUniqId = "000001"; // Eğer kayıt yoksa ilk ID'yi oluştur
       }
-    );
 
-    await WorkLog.update(
-      { work_status: "1" },
-      { where: { uniq_id: work_log_uniq_id } } 
-    );
+      const result = await WorkLog.create({
+        uniq_id: newUniqId,
+        user_id_dec: currentUser,
+        order_no: selectedOrder.order_no,
+        section: selectedOrder.section,
+        area_name: selectedOrder.area_name,
+        work_status: "1",
+        process_id: selectedOrder.process_id,
+        work_start_date: currentDateTimeOffset,
+        process_name: selectedOrder.process_name,
+        production_amount: selectedOrder.production_amount,
+      });
 
+      return result;
+
+    }
     return { message: "İş başarıyla yeniden başlatıldı." };
   } catch (err) {
     throw err;

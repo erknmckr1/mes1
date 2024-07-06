@@ -79,3 +79,59 @@ body {
 .red-row:hover {
   background-color: red !important;
 }
+
+
+/*Tema css */
+.header.dark {
+  background-color: #121212;
+  color: #E0E0E0;
+}
+
+.header.light {
+  background-color: #E5E8E8;
+  color: #000000;
+}
+
+.section.dark {
+  background-color: #121212;
+  color: #E0E0E0;
+}
+.section.light{
+  background-color: #E5E8E8;
+  color: #000000;
+}
+
+.themabtn.dark{
+  background-color: #3498DB;
+  color: #E0E0E0;
+}
+.themabtn.light{
+  background-color: #E67E22;
+  color: #000000;
+}
+.tablearea.dark{
+  background-color: #2E4053;
+  color: #E0E0E0;
+}
+.tablearea.light{
+  background-color: #F2F3F4;
+  color: #000000;
+}
+.thead.dark{
+  background-color: #212F3C;
+  color: #E0E0E0;
+}
+.thead.light{
+  color: black;
+  background-color: #B2BABB;
+}
+.listeleman.dark{
+  background-color: #515A5A;
+  color: #E0E0E0;
+}
+.button.dark{
+  color:#E0E0E0;
+}
+.button.light{
+  color: black;
+}

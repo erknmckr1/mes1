@@ -5,6 +5,7 @@ const globalSlice = createSlice({
   initialState: {
     foodPopupState: false,
     isMolaPopup: false,
+    theme:"dark"
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -14,6 +15,9 @@ const globalSlice = createSlice({
     setMolaPopup: (state, action) => {
       state.isMolaPopup = action.payload;
     },
+    setTheme:(state,action) => {
+      state.theme = action.payload;
+    }
   },
 });
 
@@ -22,5 +26,6 @@ export const {
   setOrder,
   setOrderStartsBtnPop,
   setMolaPopup,
+  setTheme
 } = globalSlice.actions;
 export default globalSlice.reducer;

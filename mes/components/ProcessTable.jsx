@@ -25,6 +25,7 @@ function ProcessArea() {
   const { processList, selectedProcess, selectedMachine,machineList } = useSelector(
     (state) => state.order
   );
+  const {theme} = useSelector(theme => theme.global)
 
   //! İlgili bölüme göre proses listesini getırecek istek...
   const getProcessList = async () => {
@@ -52,6 +53,7 @@ function ProcessArea() {
     }
   };
 
+  console.log(selectedProcess)
   //! ilgili makine listesini getirecek query
   const getMachineList = async () => {
     try {
@@ -73,10 +75,10 @@ function ProcessArea() {
   }, []);
 
   return (
-    <div className="w-full h-full overflow-y-hidden bg-white text-black border-l-2">
+    <div className={`w-full h-full overflow-y-auto transition-all  tablearea ${theme} border-secondary border-2`}>
       <div className="w-full h-full flex">
         <div className={`${pageName === "kalite" ? "w-full" :"w-1/2"} h-full flex flex-col`}>
-          <div className="px-6 py-3 text-left text-xs bg-theader text-white  font-medium uppercase tracking-wider">
+          <div className={`px-6 py-3 text-left text-xs thead ${theme}   font-medium uppercase tracking-wider`}>
             {pageName === "kalite" ? "Kontrol Türleri" :"Prosesler"}
           </div>
           <ul className="overflow-y-auto text-center bg-white border-t-2">
@@ -87,10 +89,10 @@ function ProcessArea() {
                     dispatch(setSelectedProcess(item))
                   }
                   key={item.process_id}
-                  className={`p-2 hover:bg-green-600 border cursor-pointer ${
+                  className={`p-2 hover:bg-green-600 border cursor-pointer  ${
                     selectedProcess.process_name === item.process_name
                       ? "bg-green-600 text-white font-semibold transition-all"
-                      : ""
+                      : `listeleman ${theme}`
                   }`}
                 >
                   {item.process_name}
