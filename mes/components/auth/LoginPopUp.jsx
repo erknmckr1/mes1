@@ -1,12 +1,14 @@
 "use client";
-import React from "react";
+import React, { useEffect,useRef } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { setUserInfo } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 import { setOperatorid } from "@/redux/userSlice";
 import { toast } from "react-toastify";
+
 function LoginPopUp({ setIsLoggedIn }) {
+  const inputRef = useRef();
   const dispatch = useDispatch();
   //! girilen operator id yi global state'te tutuyoruz.
   const operator_id = useSelector((state) => state.user.operator_id);
@@ -36,7 +38,11 @@ function LoginPopUp({ setIsLoggedIn }) {
       }
     }
   };
-  
+
+  useEffect(()=>{
+    inputRef.current.focus();
+  },[])
+     
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
       <div className="flex items-center justify-center w-full h-full  ">
@@ -53,6 +59,7 @@ function LoginPopUp({ setIsLoggedIn }) {
                 onChange={(e) => dispatch(setOperatorid(e.target.value))}
                 onKeyPress={handleLogin}
                 value={operator_id}
+                ref={inputRef}
               />
             </div>
           </div>

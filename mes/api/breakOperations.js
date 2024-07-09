@@ -45,9 +45,10 @@ const getBreakReasonLog = async () => {
 
 //! Belirli bir kullanıcıyı molada mı dıye sorgulayacak query... Eğer yoksa yenı bır log atacak
 //! varsa mevcut logu donecek...
-const getIsUserOnBreak = async (startLog) => {
+const getIsUserOnBreak = async (startLog,currentDateTimeOffset) => {
   const { area_name, operator_id, break_reason_id, op_name,section } = startLog;
-  const start_date = new Date().toISOString();
+  const start_date = new Date();
+  console.log({break_user_date:start_date})
   try {
 
     // Kullanıcı molada mı onu kontrol edıyoruz...
@@ -63,7 +64,7 @@ const getIsUserOnBreak = async (startLog) => {
       const createBreak = await BreakLog.create({
         break_reason_id: break_reason_id,
         operator_id: operator_id,
-        start_date: start_date,
+        start_date: currentDateTimeOffset,
         section: section,
         area_name: area_name,
         op_name: op_name,
@@ -93,7 +94,7 @@ const onBreakUsers = async () => {
 };
 //! Giriş yapan kullancı moladaysa moladan donus ıcın gereklı fonksıyon. end_time doldugu zaman mola
 //! bitmiş sayılacak...
-const returnToBreak = async ({ operator_id, end_time }) => {
+const returnToBreak = async ({ operator_id, end_time, }) => {
   console.log('Updating break for operator:', operator_id, 'with end time:', end_time);
 
   try {
@@ -117,7 +118,6 @@ const returnToBreak = async ({ operator_id, end_time }) => {
         operator_id: operator_id,
       },
     });
-    console.log('Updated records:', updatedRecords);
 
     if (updatedRecords.length > 0) {
       console.log('Records successfully updated:', updatedRecords);

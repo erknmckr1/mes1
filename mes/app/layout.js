@@ -15,6 +15,7 @@ import RepairJobPopup from "@/components/popups/RepairJobPopup";
 import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
 import { usePathname } from "next/navigation";
 import MainHeader from "@/components/headers/MainHeader";
+import { useEffect } from "react";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -24,15 +25,28 @@ import MainHeader from "@/components/headers/MainHeader";
 // Layout komponenti, sayfanın genel yapısını ve pop-up bileşenlerini yönetir
 function Layout({ children }) {
   const pathName = usePathname();
-  const area_name = pathName.split("/")[1]
+  const project = pathName.split("/")[1];
+  const section = pathName.split("/")[2];
+  const area_name = pathName.split("/")[3];
   const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
   const { stopReasonPopup, cancelReasonPopup, repairJobPopup, finishedWorkPopup } = useSelector((state) => state.order)
 
+
+  useEffect(() => {
+    // 5 dakikada bir sayfayı yenile
+    const intervalId = setInterval(() => {
+      window.location.assign(`http://192.168.3.7:3000/uretim/${section}/${area_name}`);
+    }, 300000); // 5 dakika = 300000 milisaniye
+
+    // Cleanup function to clear the interval
+    return () => clearInterval(intervalId);
+  }, [section, area_name]); // section ve area_name değiştiğinde interval yeniden oluşturulacak
+
   return (
     <>
-      {area_name === "uretim" && <Header />}
-      {area_name === "home" && <MainHeader />}
+      {project === "uretim" && <Header />}
+      {project === "home" && <MainHeader />}
       <main className="relative">{children}</main>
       {isMolaPopup && <MolaPopup />}
       {foodPopupState && <FoodPopup />}

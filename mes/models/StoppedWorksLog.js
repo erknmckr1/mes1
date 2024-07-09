@@ -28,6 +28,14 @@ const StoppedWorksLogs = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    user_who_stopped:{
+      type:DataTypes.STRING,
+      allowNull:true,
+    },
+    user_who_started:{
+      type:DataTypes.STRING,
+      allowNull:true
+    }
   },
   {
     tableName: "stopped_works_log",

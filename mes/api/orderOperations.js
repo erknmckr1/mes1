@@ -17,9 +17,14 @@ const getCancelReason = async ({ area_name }) => {
   }
 };
 
-const cancelWork = async ({ uniq_id }) => {
+const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser }) => {
   try {
-    const result = await WorkLog.destroy({
+    const result = await WorkLog.update({
+      work_status: "3",
+      work_end_date: currentDateTimeOffset,
+      work_finished_op_dec: currentUser
+    }, {
+
       where: {
         uniq_id: uniq_id
       }
@@ -174,6 +179,7 @@ const stopWork = async ({
   currentDateTimeOffset,
   stop_reason_id,
   order_id,
+  user_who_stopped
 }) => {
   try {
     // İlgili uniq id ile olusturulmus bir stop işlemi var mı?
@@ -194,6 +200,7 @@ const stopWork = async ({
       stop_start_date: currentDateTimeOffset,
       work_log_uniq_id,
       stop_reason_id,
+      user_who_stopped
     });
 
     // stop kaydını olusturduktan sonra durdurulan işin work_status degerını guncelle...
@@ -223,14 +230,17 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
       order: [['stop_start_date', 'DESC']],
     });
 
+    //stoppedwork yoksa 
     if (!stoppedWork) {
       throw new Error("Durdurulmuş iş bulunamadı.");
     }
 
+    // Eğer varsa ve durduran ve baslatacak aynı ıse...
     if (startedUser === currentUser) {
       await StoppedWorksLogs.update(
         {
           stop_end_date: currentDateTimeOffset,
+          user_who_started:currentUser
         },
         {
           where: {
@@ -243,11 +253,14 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
         { work_status: "1" },
         { where: { uniq_id: work_log_uniq_id } }
       );
+
+    // durdurulmus ıs varsa ve durduran ve baslatan farklı ıse... 
     } else {
 
       await StoppedWorksLogs.update(
         {
           stop_end_date: currentDateTimeOffset,
+          user_who_started:currentUser
         },
         {
           where: {
@@ -257,7 +270,7 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
       );
 
       await WorkLog.update(
-        { work_status: "4", work_end_date: currentDateTimeOffset, work_finished_op_dec: currentUser, produced_amount:0, },
+        { work_status: "4", work_end_date: currentDateTimeOffset, work_finished_op_dec: currentUser, produced_amount: 0, },
         { where: { uniq_id: work_log_uniq_id } }
       );
 

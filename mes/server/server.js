@@ -38,6 +38,18 @@ const {
 app.use(express.json());
 app.use(cookieParser());
 
+const currentDate = new Date();
+const currentDateTimeOffset = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: 'Europe/Istanbul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+}).format(currentDate);
+
+console.log({ timeturk: currentDateTimeOffset });
 const corsOptions = {
   origin: ["http://localhost:3000", "http://192.168.3.7:3000"], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
@@ -130,7 +142,7 @@ app.get("/breakReason", async (req, res) => {
 app.post("/createBreak", async (req, res) => {
   try {
     const startLog = req.body;
-    const breakLog = await getIsUserOnBreak(startLog);
+    const breakLog = await getIsUserOnBreak(startLog,currentDateTimeOffset);
     res.status(200).json(breakLog);
   } catch (err) {
     console.error("Error creating break", err);
@@ -154,7 +166,7 @@ app.post("/returnToBreak", async (req, res) => {
   const { operator_id, end_time } = req.body;
   console.log("Received request to return from break:", operator_id, end_time);
   try {
-    const result = await returnToBreak({ operator_id, end_time });
+    const result = await returnToBreak({ operator_id, end_time, currentDateTimeOffset });
     console.log("Update result:", result); // Güncellenen kayıt sayısını kontrol etmek için
     if (result === 0) {
       res.status(404).json({ message: "Moladan donus işlemi başarisiz" });
@@ -171,7 +183,7 @@ app.post("/returnToBreak", async (req, res) => {
 app.post("/getStopReason", async (req, res) => {
   const { area_name } = req.body;
   try {
-    const result = await getStopReason({ area_name });
+    const result = await getStopReason({ area_name, });
     res.status(200).json(result);
   } catch (err) {
     console.error("Error getting stop reasons:", err);
@@ -193,9 +205,9 @@ app.get("/getCancelReason", async (req, res) => {
 
 //! Seçili işi iptal edecek fonksiyon
 app.post("/cancelWork", async (req, res) => {
-  const { uniq_id } = req.body;
+  const { uniq_id, currentUser } = req.body;
   try {
-    const result = await cancelWork({ uniq_id });
+    const result = await cancelWork({ uniq_id, currentDateTimeOffset, currentUser });
     if (result) {
       res.status(200).json({ message: "İş silme işlemi başarılı..." });
     } else {
@@ -297,7 +309,7 @@ app.get("/getWorks", async (req, res) => {
 
 //! Aktif bir işi durduracak metot
 app.post("/stopSelectedWork", async (req, res) => {
-  const { order_id, stop_reason_id, work_log_uniq_id } = req.body;
+  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped } = req.body;
   const currentDateTimeOffset = new Date().toLocaleString();
 
   try {
@@ -306,6 +318,7 @@ app.post("/stopSelectedWork", async (req, res) => {
       currentDateTimeOffset,
       order_id,
       stop_reason_id,
+      user_who_stopped
     });
     return res.status(200).json(result);
   } catch (err) {

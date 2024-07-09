@@ -2,8 +2,8 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setFinishedWorkPopup, setSelectedOrder } from "@/redux/orderSlice";
 import { useState, useEffect } from "react";
-import Button from "../../uı/Button";
-import Input from "../../uı/Input";
+import Button from "../../ui/Button";
+import Input from "../../ui/Input";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { getWorkList } from "@/api/client/cOrderOperations";
@@ -48,7 +48,7 @@ function FinishedWorkPopup() {
     }
   };
 
-  const areas = ["YALDIZ", "CİLA", "MONTAJ", "MİNE", "MERKEZ", "KESME"];
+  const areas = ["YALDIZ", "CİLA", "LAZER","TAMİR TEZGAHI","MİNE","MONTAJ"];
 
   // hata sebebını sececek fonksıyon
   // const handleSelectedRepairReason = (item) => {

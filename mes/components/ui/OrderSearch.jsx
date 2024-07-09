@@ -1,7 +1,5 @@
-import React from "react";
+import React, {useState } from "react";
 import Input from "./Input";
-import Button from "./Button";
-import { useState } from "react";
 import { setReadOrder, setSelectedProcess } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import axios from "axios";
@@ -55,7 +53,7 @@ function OrderSearch() {
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
                 { work_info }
               );
-
+              
               if (response.status === 200) {
                 toast.success("İş başarıyla başlatıldı.");
                 getWorkList({ areaName, userId: userInfo.id_dec, dispatch });

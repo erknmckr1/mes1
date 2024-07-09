@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { setUserInfo } from "@/redux/userSlice";
-import Loading from "../uı/Loading";
+import Loading from "../ui/Loading";
 import LoginPopUp from "../auth/LoginPopUp";
 
 const AuthProvider = ({ children }) => {

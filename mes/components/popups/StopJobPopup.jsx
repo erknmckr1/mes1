@@ -5,7 +5,7 @@ import { setStopReasonPopup, setSelectedOrder, } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import Button from "../uı/Button";
+import Button from "../ui/Button";
 import { toast } from "react-toastify";
 import { getWorkList } from "@/api/client/cOrderOperations";
 
@@ -42,6 +42,7 @@ function StopJobPopup() {
           order_id: selectedOrder.order_no,
           stop_reason_id: molaSebebi.stop_reason_id,
           work_log_uniq_id: selectedOrder.uniq_id,
+          user_who_stopped:userInfo?.id_dec
         }
       );
       if (response.status === 200) {

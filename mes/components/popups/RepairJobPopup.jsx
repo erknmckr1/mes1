@@ -5,7 +5,7 @@ import { setRepairJobPopup } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import Button from "../uı/Button";
+import Button from "../ui/Button";
 
 function RepairJobPopup() {
   const dispatch = useDispatch();

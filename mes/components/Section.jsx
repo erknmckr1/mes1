@@ -5,7 +5,7 @@ import RightSideBtnArea from "./RightSideBtnArea";
 import BreakTable from "./BreakTable";
 import JobTable from "./JobTable";
 import ProcessArea from "./ProcessTable";
-import Date from "./uı/Date";
+import Date from "./ui/Date";
 import { useSelector } from "react-redux";
 function Section() {
   const { theme } = useSelector(theme => theme.global)

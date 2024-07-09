@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import Button from "./uı/Button";
+import Button from "./ui/Button";
 import { useSelector } from "react-redux";
 import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";

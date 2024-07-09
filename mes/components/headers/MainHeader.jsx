@@ -1,6 +1,6 @@
 'use client'
 import React from "react";
-import Logo from "../uı/Logo";
+import Logo from "../ui/Logo";
 import { usePathname } from 'next/navigation';
 
 function MainHeader() {

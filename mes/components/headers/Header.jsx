@@ -1,10 +1,10 @@
 'use client'
 import React from "react";
-import Logo from "../uı/Logo";
-import Button from "../uı/Button";
-import OrderSearch from "../uı/OrderSearch";
+import Logo from "../ui/Logo";
+import Button from "../ui/Button";
+import OrderSearch from "../ui/OrderSearch";
 import { usePathname } from 'next/navigation';
-import ThemeButton from "../uı/ThemaButton";
+import ThemeButton from "../ui/ThemaButton";
 import { useSelector } from "react-redux";
 
 function Header() {

@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import Button from "../uı/Button";
+import Button from "../ui/Button";
 import { useSelector } from "react-redux";
 import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
