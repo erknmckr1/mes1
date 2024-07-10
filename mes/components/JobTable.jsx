@@ -77,9 +77,23 @@ function JobTable() {
   ];
 
   useEffect(() => {
-    if (userInfo?.id_dec) {
-      getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-    }
+    let interval;
+    
+    const fetchData = () => {
+      if (userInfo?.id_dec) {
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+      }
+      console.log("veri çekildi...")
+    };
+
+    // İlk veri çekme işlemi
+    fetchData();
+
+    // Her 5 dakikada bir veri çekme işlemi
+    interval = setInterval(fetchData, 5 * 60 * 1000); // 5 dakika = 5 * 60 * 1000 milisaniye
+
+    // Bileşen unmount edildiğinde interval'i temizle
+    return () => clearInterval(interval);
   }, [areaName, userInfo, dispatch]);
 
   // status degerı 4 olmayan (bitmiş bir iş olmayan) işleri listeliyoruz.

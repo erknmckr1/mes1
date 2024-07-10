@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev1":"next dev -p 3002",
     "build": "next build",
     "start": "next start",
     "server": "node server/server.js",

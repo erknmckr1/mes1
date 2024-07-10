@@ -33,15 +33,15 @@ function Layout({ children }) {
   const { stopReasonPopup, cancelReasonPopup, repairJobPopup, finishedWorkPopup } = useSelector((state) => state.order)
 
 
-  useEffect(() => {
-    // 5 dakikada bir sayfayı yenile
-    const intervalId = setInterval(() => {
-      window.location.assign(`http://192.168.3.7:3000/uretim/${section}/${area_name}`);
-    }, 300000); // 5 dakika = 300000 milisaniye
+  // useEffect(() => {
+  //   // 5 dakikada bir sayfayı yenile
+  //   const intervalId = setInterval(() => {
+  //     window.location.assign(`http://192.168.3.7:3000/uretim/${section}/${area_name}`);
+  //   }, 300000); // 5 dakika = 300000 milisaniye
 
-    // Cleanup function to clear the interval
-    return () => clearInterval(intervalId);
-  }, [section, area_name]); // section ve area_name değiştiğinde interval yeniden oluşturulacak
+  //   // Cleanup function to clear the interval
+  //   return () => clearInterval(intervalId);
+  // }, [section, area_name]); // section ve area_name değiştiğinde interval yeniden oluşturulacak
 
   return (
     <>

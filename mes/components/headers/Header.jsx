@@ -6,6 +6,7 @@ import OrderSearch from "../ui/OrderSearch";
 import { usePathname } from 'next/navigation';
 import ThemeButton from "../ui/ThemaButton";
 import { useSelector } from "react-redux";
+import ReloadButton from "../ui/ReloadButton";
 
 function Header() {
   const pathname = usePathname();
@@ -24,7 +25,10 @@ function Header() {
             <Button className="p-3" children="Mesai Bilgisi" />
           </div>
           <OrderSearch/>
+          <div className="flex gap-x-6">
           <ThemeButton/>
+          <ReloadButton theme={theme}/>
+          </div>
         </div>
       </div>
     </header>
