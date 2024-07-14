@@ -46,7 +46,7 @@ function Layout({ children }) {
   return (
     <>
       {project === "uretim" && <Header />}
-      {project === "home" && <MainHeader />}
+      {/* {project === "home" && <MainHeader />} */}
       <main className="relative">{children}</main>
       {isMolaPopup && <MolaPopup />}
       {foodPopupState && <FoodPopup />}
