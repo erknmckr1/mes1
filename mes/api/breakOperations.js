@@ -45,21 +45,18 @@ const getBreakReasonLog = async () => {
 
 //! Belirli bir kullanıcıyı molada mı dıye sorgulayacak query... Eğer yoksa yenı bır log atacak
 //! varsa mevcut logu donecek...
-const getIsUserOnBreak = async (startLog,currentDateTimeOffset) => {
-  const { area_name, operator_id, break_reason_id, op_name,section } = startLog;
-  const start_date = new Date();
-  console.log({break_user_date:start_date})
+const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
+  const { area_name, operator_id, break_reason_id, op_name, section } = startLog;
   try {
-
-    // Kullanıcı molada mı onu kontrol edıyoruz...
+    // Kullanıcı molada mı onu kontrol ediyoruz...
     const isStart = await BreakLog.findOne({
       where: {
         operator_id: operator_id,
-        end_date:null
+        end_date: null
       },
     });
 
-    // molada degılse
+    // Molada değilse yeni mola oluştur
     if (!isStart) {
       const createBreak = await BreakLog.create({
         break_reason_id: break_reason_id,

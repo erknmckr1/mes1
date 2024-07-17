@@ -5,7 +5,8 @@ const globalSlice = createSlice({
   initialState: {
     foodPopupState: false,
     isMolaPopup: false,
-    theme:"dark"
+    theme: "dark",
+    selectedFlow: "", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -15,9 +16,12 @@ const globalSlice = createSlice({
     setMolaPopup: (state, action) => {
       state.isMolaPopup = action.payload;
     },
-    setTheme:(state,action) => {
+    setTheme: (state, action) => {
       state.theme = action.payload;
-    }
+    },
+    setSelectedFlow: (state, action) => {
+      state.selectedFlow = action.payload;
+    },
   },
 });
 
@@ -26,6 +30,7 @@ export const {
   setOrder,
   setOrderStartsBtnPop,
   setMolaPopup,
-  setTheme
+  setTheme,
+  setSelectedFlow,
 } = globalSlice.actions;
 export default globalSlice.reducer;

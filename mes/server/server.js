@@ -34,24 +34,15 @@ const {
   cancelWork,
   getStoppedWorks
 } = require("../api/orderOperations");
-
+const {getLeaveReasons} = require("../api/workFlowOperations");
 app.use(express.json());
 app.use(cookieParser());
 
 const currentDate = new Date();
-const currentDateTimeOffset = new Intl.DateTimeFormat('tr-TR', {
-  timeZone: 'Europe/Istanbul',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-}).format(currentDate);
+const currentDateTimeOffset = new Date().toISOString();
 
-console.log({ timeturk: currentDateTimeOffset });
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://192.168.3.7:3000","http://localhost:3002"], // Burada uygun origin'i belirleyin
+  origin: ["http://localhost:3000", "http://192.168.3.5:3000","http://localhost:3002"], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
   methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
 };
@@ -138,11 +129,11 @@ app.get("/breakReason", async (req, res) => {
   }
 });
 
-//! Mola olusturacak motot...
 app.post("/createBreak", async (req, res) => {
   try {
     const startLog = req.body;
-    const breakLog = await getIsUserOnBreak(startLog,currentDateTimeOffset);
+    const currentDateTimeOffset = new Date().toISOString(); // Bu değeri her istekte belirliyoruz Global olarak verınce her sey degısıyor. 
+    const breakLog = await getIsUserOnBreak(startLog, currentDateTimeOffset);
     res.status(200).json(breakLog);
   } catch (err) {
     console.error("Error creating break", err);
@@ -310,8 +301,8 @@ app.get("/getWorks", async (req, res) => {
 //! Aktif bir işi durduracak metot
 app.post("/stopSelectedWork", async (req, res) => {
   const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped } = req.body;
-  const currentDateTimeOffset = new Date().toLocaleString();
-
+  const currentDateTimeOffset = new Date().toISOString();
+  console.log(currentDateTimeOffset)
   try {
     const result = await stopWork({
       work_log_uniq_id,
@@ -330,7 +321,7 @@ app.post("/stopSelectedWork", async (req, res) => {
 //! Durdurulan bir işi tekrardan baslatacak metot...
 app.post("/restartWork", async (req, res) => {
   const { work_log_uniq_id, currentUser, startedUser, selectedOrder } = req.body;
-  const currentDateTimeOffset = new Date().toLocaleString();
+  const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await rWork({ currentDateTimeOffset, work_log_uniq_id, currentUser, startedUser, selectedOrder });
     res.status(200).json(result);
@@ -381,3 +372,17 @@ app.post("/finishedWork", async (req, res) => {
     throw err;
   }
 });
+
+
+//? Süreçler ile ilgili servisler aşağıda...
+//! İzin sebeplerini dönen endpoint
+
+app.get("/getLeaveReasons", async (req,res) => {
+  try {
+    const result = await getLeaveReasons();
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({message:"Invalid req error."})
+  }
+})
