@@ -34,7 +34,8 @@ const {
   cancelWork,
   getStoppedWorks
 } = require("../api/orderOperations");
-const {getLeaveReasons} = require("../api/workFlowOperations");
+const leaveRoutes = require("../api/routers/leaveRoutes")
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -374,15 +375,5 @@ app.post("/finishedWork", async (req, res) => {
 });
 
 
-//? Süreçler ile ilgili servisler aşağıda...
-//! İzin sebeplerini dönen endpoint
-
-app.get("/getLeaveReasons", async (req,res) => {
-  try {
-    const result = await getLeaveReasons();
-    res.status(200).json(result);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({message:"Invalid req error."})
-  }
-})
+//? Süreçler ile ilgili servisler aşağıda......................................................................
+app.use('/api/leave',leaveRoutes);

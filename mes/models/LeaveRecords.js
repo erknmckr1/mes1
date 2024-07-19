@@ -5,8 +5,13 @@ const LeaveRecords = sequelize.define(
   "LeaveReacors",
   {
     leave_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    leave_uniq_id:{
+        type:DataTypes.STRING,
+        allowNull:false
     },
     op_username: {
       type: DataTypes.STRING,
@@ -16,8 +21,12 @@ const LeaveRecords = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    leave_type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
     leave_creation_date: {
-      type: DataTypes.STRING,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     leave_start_date: {

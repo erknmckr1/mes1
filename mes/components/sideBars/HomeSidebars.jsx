@@ -80,7 +80,7 @@ function HomeSidebars() {
 
   console.log(selectedFlow);
   return (
-    <div className="h-full w-[15%] bg-black text-white relative ">
+    <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
       {/* img div */}
       <div className="h-[20%] w-full flex items-center justify-center">
         <img className="h-[60%]" src="./midas_logo.png" alt="" />
@@ -148,7 +148,7 @@ function HomeSidebars() {
           </ul>
         </div>
       </div>
-      <div className="absolute bottom-0 p-2 border-t w-full">
+      <div className="absolute bottom-0 p-2 border-t border-secondary w-full">
         <div className="flex items-center">
           <span>@Logo</span>
           <span>-name</span>

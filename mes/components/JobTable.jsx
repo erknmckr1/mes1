@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedOrder, setWorkList } from "@/redux/orderSlice";
+import { setSelectedOrder } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
 
