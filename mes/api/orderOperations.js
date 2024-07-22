@@ -101,6 +101,7 @@ const getOrder = async ({ id }) => {
 const createWork = async ({ work_info, currentDateTimeOffset }) => {
   const {
     user_id_dec,
+    op_username,
     order_id,
     section,
     area_name,
@@ -127,6 +128,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     const result = await WorkLog.create({
       uniq_id: newUniqId,
       user_id_dec: user_id_dec,
+      op_username:op_username,
       order_no: order_id,
       section: section,
       area_name: area_name,

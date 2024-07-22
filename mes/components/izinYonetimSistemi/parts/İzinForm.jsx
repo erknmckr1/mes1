@@ -19,7 +19,6 @@ function IzinForm() {
     izinSebebi:""
   });
 
-  console.log(userInfo)
   //! sebepleri çek
   useEffect(() => {
     const getLeaveReasons = async () => {
@@ -46,6 +45,7 @@ function IzinForm() {
     setİsOpenReason(!isOpenReason);
   };
 
+  //todo bırden fazla elemanlı bır nesnenın oncekı verılerını degıstırmeden ılgılı elemanı guncellemek ıcın olusturdugumuz fonksıyon...
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Önceki form data verilerini korur. name ile belirtilen değeri 'value' ile günceller...
@@ -63,7 +63,7 @@ function IzinForm() {
 
   //! Yenı bir izin kaydı olusturacak fonksıyon...
   const handleCreateLeave = async () => {
-    const { id_dec, op_username } = userInfo;
+    const { id_dec, op_username,auth1,auth2 } = userInfo;
     try {
       if (
         formData.izinTuru !== "" &&
@@ -73,7 +73,7 @@ function IzinForm() {
         if (confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")) {
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
-            { formData, selectedReason, id_dec, op_username }
+            { formData, selectedReason, id_dec, op_username,auth1,auth2 }
           );
           if (response.status === 200) {
             toast.success("İzin talebi başarıyla oluşturuldu.");
@@ -90,7 +90,6 @@ function IzinForm() {
     }
   };
   
-
   return (
     <form className="text-black p-4" onSubmit={handleSubmit}>
       <div className="grid grid-cols-2 gap-2 gap-x-4">

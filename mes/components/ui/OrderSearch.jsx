@@ -38,6 +38,7 @@ function OrderSearch() {
           setOrderId("");
           const work_info = {
             user_id_dec: userInfo.id_dec,
+            op_username:userInfo.op_username,
             order_id: response.data.ORDER_ID,
             section: sectionName,
             area_name: areaName,

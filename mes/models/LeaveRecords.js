@@ -17,9 +17,17 @@ const LeaveRecords = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    auth2: {
+      type: DataTypes.TEXT, 
+      allowNull: true,
+    },
+    auth1: {
+      type: DataTypes.TEXT, 
+      allowNull: true,
+    },
     id_dec: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     leave_type: {
         type: DataTypes.STRING,
@@ -35,7 +43,19 @@ const LeaveRecords = sequelize.define(
     },
     leave_end_date: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true
+    },
+    leave_approve_date:{
+      type:DataTypes.DATE,
+      allowNull:true
+    },
+    leave_cancel_date:{
+      type:DataTypes.DATE,
+      allowNull:true
+    },
+    user_who_cancelled:{
+      type:DataTypes.STRING,
+      allowNull:true,
     },
     leave_reason: {
       type: DataTypes.STRING,

@@ -10,6 +10,10 @@ const WorkLog = sequelize.define('WorkLog', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  op_username: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   order_no: {
     type: DataTypes.STRING(20),
     allowNull: false

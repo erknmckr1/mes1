@@ -35,8 +35,8 @@ function JobTable() {
   const { selectedOrder, workList } = useSelector((state) => state.order);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
-  const {userInfo} = useSelector((state)=>state.user)
-  
+  const { userInfo } = useSelector((state) => state.user);
+
   const handleSelectedRow = (params) => {
     if (params.row.id === selectedOrder?.id) {
       dispatch(setSelectedOrder(null));
@@ -53,6 +53,7 @@ function JobTable() {
       sortable: false,
     },
     { field: "user_id_dec", headerName: "Operator ID", width: 130 },
+    { field: "op_username", headerName: "Operator Adi" , width:160 },
     { field: "order_no", headerName: "Order ID", width: 130 },
     { field: "process_id", headerName: "Process ID", width: 130 },
     {
@@ -78,12 +79,12 @@ function JobTable() {
 
   useEffect(() => {
     let interval;
-    
+
     const fetchData = () => {
       if (userInfo?.id_dec) {
         getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
       }
-      console.log("veri çekildi...")
+      console.log("veri çekildi...");
     };
 
     // İlk veri çekme işlemi
@@ -106,10 +107,11 @@ function JobTable() {
       return {
         id: index,
         user_id_dec: item.user_id_dec,
+        op_username:item.op_username,
         order_no: item.order_no,
         process_id: item.process_id,
         section: item.section,
-        area_name:item.area_name,
+        area_name: item.area_name,
         process_name: item.process_name,
         produced_amount: item.produced_amount,
         production_amount: item.production_amount,
@@ -127,7 +129,7 @@ function JobTable() {
       return "selected-row";
     } else if (row.work_status === "1") {
       return "green-row";
-    }  else if (row.work_status === "2") {
+    } else if (row.work_status === "2") {
       return "red-row";
     }
     return "";

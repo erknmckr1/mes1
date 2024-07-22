@@ -11,24 +11,32 @@ import { TbChartInfographic } from "react-icons/tb";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { setSelectedFlow } from "@/redux/globalSlice";
+import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
 function HomeSidebars() {
   const [isMesaiOpen, setIsMesaiOpen] = useState(false);
   const [isIzinOpen, setIsIzinOpen] = useState(false);
   const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);
   const { selectedFlow } = useSelector((state) => state.global);
+  const {selectedManagement} = useSelector(state => state.flowmanagement )
   const dispatch = useDispatch();
 
   const toggleSection = (flow) => {
     switch (flow) {
       case "mesai":
         setIsMesaiOpen(!isMesaiOpen);
+        setIsIzinOpen(false);
+        setIsSatinAlmaOpen(false)
         break;
       case "izin":
+        setIsMesaiOpen(false);
         setIsIzinOpen(!isIzinOpen);
+        setIsSatinAlmaOpen(false)
         break;
       case "satinAlma":
-        setIsSatinAlmaOpen(!İsSatinAlma);
+        setIsMesaiOpen(false);
+        setIsIzinOpen(false);
+        setIsSatinAlmaOpen(!İsSatinAlma)
         break;
       default:
         break;
@@ -78,7 +86,12 @@ function HomeSidebars() {
     dispatch(setSelectedFlow(item));
   };
 
-  console.log(selectedFlow);
+  const handleSelectionManagement = (item) => {
+    dispatch(setSelectedManagement(item))
+    dispatch(setSelectedFlow(""))
+  }
+
+  console.log(selectedManagement)
   return (
     <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
       {/* img div */}
@@ -111,9 +124,10 @@ function HomeSidebars() {
                 <li
                   onClick={() => {
                     item.flow && toggleSection(item.flow);
+                    handleSelectionManagement(item.label)
                   }}
                   className={`py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
-                    selectedFlow === item.label ? "bg-gray-700" : ""
+                    selectedManagement === item.label ? "bg-gray-700" : ""
                   }`}
                 >
                   <div className="flex gap-x-3 items-center">
