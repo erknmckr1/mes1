@@ -77,6 +77,7 @@ function IzinForm() {
           );
           if (response.status === 200) {
             toast.success("İzin talebi başarıyla oluşturuldu.");
+            
           } else {
             toast.error("İzin talebi oluşturulamadı...");
           }

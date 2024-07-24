@@ -8,11 +8,15 @@ import { BsCheckCircle } from "react-icons/bs";
 import { FcOvertime, FcSalesPerformance } from "react-icons/fc";
 import { PiScreencastLight } from "react-icons/pi";
 import { TbChartInfographic } from "react-icons/tb";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
+import { useSelector ,useDispatch} from "react-redux";
 import { setSelectedFlow } from "@/redux/globalSlice";
 import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import axios from "axios";
+import { toast } from "react-toastify";
+
 function HomeSidebars() {
   const [isMesaiOpen, setIsMesaiOpen] = useState(false);
   const [isIzinOpen, setIsIzinOpen] = useState(false);
@@ -20,6 +24,8 @@ function HomeSidebars() {
   const { selectedFlow } = useSelector((state) => state.global);
   const {selectedManagement} = useSelector(state => state.flowmanagement )
   const dispatch = useDispatch();
+  const {userInfo} = useSelector(state=>state.user);
+  const pathName = usePathname();
 
   const toggleSection = (flow) => {
     switch (flow) {
@@ -43,6 +49,25 @@ function HomeSidebars() {
     }
   };
 
+    //! Logout fonksıyonu...
+    const logoutUser = async () => {
+      try {
+        if (confirm("Çıkış yapılsın mı?")) {
+          const logout = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout`,
+            {}, // Boş bir obje göndermek gerekiyor
+            { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
+          );
+          if (logout.status === 200) {
+            toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`);
+            window.location.href = pathName; // çıkıs yaptıktan sonra aynı sayfaya gıt 
+          }
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
   const menuItems = [
     {
       label: "İzin Yönetimi",
@@ -50,9 +75,9 @@ function HomeSidebars() {
       flow: "izin",
       isOpen: isIzinOpen,
       items: [
-        { label: "İzin Talebi Oluştur", icon: <FaEdit /> },
-        { label: "İzin Talebi Onayla", icon: <BsCheckCircle /> },
-      ],
+        { label: "İzin Talebi Oluştur", icon: <FaEdit />, href:"http://localhost:3000/home/izinyonetimi" },
+       userInfo?.is_approver &&  { label: "İzin Talebi Onayla", icon: <BsCheckCircle />,href:"http://localhost:3000/home/izinyonetimi" },
+      ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
     {
       label: "Mesai Yönetimi",
@@ -96,25 +121,16 @@ function HomeSidebars() {
     <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
       {/* img div */}
       <div className="h-[20%] w-full flex items-center justify-center">
-        <img className="h-[60%]" src="./midas_logo.png" alt="" />
+       <img className="lg:w-60" src="/midas_logo.png" alt="logo" />
       </div>
       <div className="h-auto w-full p-2">
         {/* name & icon */}
         <div className="w-full border-b border-gray-700  pb-10 flex flex-col gap-y-3">
-          <div className="w-full flex items-center justify-evenly  ">
+          <div className="w-full flex items-center justify-between  px-3 border-b py-2 border-gray-700 ">
             <FaCircleUser className="text-[30px]" />
-            <span className="text-[20px]">Erkan Mustafa Çakir</span>
+            <span className="text-[20px]">{userInfo?.op_username}</span>
           </div>
-          <Button className="bg-red-600 py-2 hover:bg-red-500 " children={"Çıkıs Yap"}/>
-        </div>
-        {/* search area */}
-        <div className="flex items-center gap-x-1 py-5 border-b border-gray-700">
-          <Input addProps={"h-10 w-[80%]"} placeholder={"Arama"} />
-          <div className="h-10 w-[20%]  bg-white text-black">
-            <button className="w-full h-full flex items-center justify-center">
-              <FaSearch className="text-[20px]" />
-            </button>
-          </div>
+          <Button onClick={logoutUser} className="bg-red-600 py-2 hover:bg-red-500 " children={"Çıkıs Yap"}/>
         </div>
         {/* Menu list  */}
         <div className="w-full">
@@ -126,7 +142,7 @@ function HomeSidebars() {
                     item.flow && toggleSection(item.flow);
                     handleSelectionManagement(item.label)
                   }}
-                  className={`py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
+                  className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
                     selectedManagement === item.label ? "bg-gray-700" : ""
                   }`}
                 >
@@ -152,7 +168,7 @@ function HomeSidebars() {
                         }`}
                       >
                         {subItem.icon}
-                        <button>{subItem.label}</button>
+                        <Link href={`${subItem.href}`}>{subItem.label}</Link>
                       </li>
                     ))}
                   </ul>

@@ -6,13 +6,11 @@ import { setSeletedLeaveRow } from "../../../redux/workFlowManagement";
 import { GiConfirmed, GiCancel } from "react-icons/gi";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
-
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.user);
   const [records, setRecords] = useState([]);
   const { selectedLeaveRow } = useSelector((state) => state.flowmanagement);
-
   const fetchRecords = async () => {
     const { id_dec } = userInfo;
     try {
@@ -21,6 +19,7 @@ function LeaveTable({ status }) {
         approved: "/api/leave/getApprovedLeaves", // Kullaıcının onaylanan ızınlerı
         past: "/api/leave/getPastLeaves", // Kullanıcının gecmıs ızınlerı
         pendingApproval: "/api/leave/getPendingApprovalLeaves",
+        managerApproved: "/api/leave/getManagerApprovedLeaves",
       };
       const endpoint = endpointMap[status];
 
@@ -35,14 +34,13 @@ function LeaveTable({ status }) {
       }
     } catch (err) {
       console.log(err);
+      setRecords([]);
     }
   };
 
   useEffect(() => {
     fetchRecords();
   }, [userInfo, status]);
-
-  console.log(records);
 
   const columns = [
     {
@@ -76,6 +74,16 @@ function LeaveTable({ status }) {
         "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
     },
     {
+      headerName: "1. Onaylayici",
+      className:
+        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
+    },
+    {
+      headerName: "2. Onaylayici",
+      className:
+        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
+    },
+    {
       headerName: "Operasyon",
       className:
         "text-center border-r  py-3 text-left text-sm  uppercase tracking-wider",
@@ -91,27 +99,30 @@ function LeaveTable({ status }) {
       leave_end_date: item.leave_end_date,
       leave_reason: item.leave_reason,
       leave_status: item.leave_status,
+      auth1:item.auth1,
+      auth2:item.auth2,
       leave_uniq_id: item.leave_uniq_id,
+
     }));
 
-    // satırı sececek fonksıyon...
-    function handleSelectedRow(leave_uniq_id) {
-      if (selectedLeaveRow && selectedLeaveRow === leave_uniq_id) {
-        dispatch(setSeletedLeaveRow(null));
-      } else {
-        dispatch(setSeletedLeaveRow(leave_uniq_id));
-      }
+  // satırı sececek fonksıyon...
+  function handleSelectedRow(leave_uniq_id) {
+    if (selectedLeaveRow && selectedLeaveRow === leave_uniq_id) {
+      dispatch(setSeletedLeaveRow(null));
+    } else {
+      dispatch(setSeletedLeaveRow(leave_uniq_id));
     }
+  }
 
-    //! Kullanıcının onay bekleyen siparişini iptal edecek istek...
-    async function cancelPendingApprovalLeave(row) {
-     if(confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")){
+  //! Kullanıcının onay bekleyen siparişini iptal edecek istek...
+  async function cancelPendingApprovalLeave(row) {
+    if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
       try {
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave`,
           {
             leave_uniq_id: row.leave_uniq_id,
-            id_dec: userInfo.id_dec
+            id_dec: userInfo.id_dec,
           }
         );
         if (response.status === 200) {
@@ -123,14 +134,36 @@ function LeaveTable({ status }) {
       } catch (err) {
         console.log(err);
       }
-     }
     }
+  }
 
-  console.log(selectedLeaveRow);
+  //! seçili talebi onaylayacak fonskyın
+  async function approveLeave(row) {
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave`,
+        {
+          leave_uniq_id: row.leave_uniq_id,
+          id_dec: userInfo.id_dec,
+        }
+      );
+      if (response.status === 200) {
+        toast.success("İzin Talebi Onaylandı.");
+        fetchRecords();
+        dispatch(setSeletedLeaveRow(null));
+      } else {
+        toast.error("İzin talebi onaylanamadı.");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  console.log(records);
   return (
-    <div className="h-[80%] max-w-full overflow-x-scroll ">
-      <table className="bg-slate-600 w-full  shadow-xl">
-        <thead className="bg-secondary text-black">
+    <div className="h-[450px] max-w-full relative overflow-scroll ">
+      <table className="bg-slate-600 w-full  shadow-xl ">
+        <thead className="bg-secondary text-black sticky top-0">
           <tr className="px-2">
             {columns.map((column, index) => (
               <th key={index} className={`${column.className} px-5`}>
@@ -139,7 +172,7 @@ function LeaveTable({ status }) {
             ))}
           </tr>
         </thead>
-        <tbody className="max-h-[400px] overflow-y-scroll">
+        <tbody>
           {rows &&
             rows.map((row, index) => {
               const date = new Date(row.leave_start_date);
@@ -151,12 +184,10 @@ function LeaveTable({ status }) {
               const formattedEndTime = dateEnd.toLocaleTimeString();
               return (
                 <tr
-                onClick={() => handleSelectedRow(row.leave_uniq_id)}
+                  onClick={() => handleSelectedRow(row.leave_uniq_id)}
                   key={index}
                   className={`h-[50px] cursor-pointer border-b ${
-                    selectedLeaveRow === row.leave_uniq_id
-                      ? "bg-pink-700"
-                      : ""
+                    selectedLeaveRow === row.leave_uniq_id ? "bg-pink-700" : ""
                   }`}
                 >
                   <td className=" border-r text-center px-5   py-3 whitespace-nowrap">
@@ -177,17 +208,25 @@ function LeaveTable({ status }) {
                   <td className="text-center border-r px-5 py-3 whitespace-nowrap">
                     {row.leave_status}
                   </td>
+                  <td className="text-center border-r px-5  py-3 whitespace-nowrap">
+                    {row.auth1}
+                  </td>
+                  <td className="text-center border-r px-5 py-3 whitespace-nowrap">
+                    {row.auth2}
+                  </td>
                   {status !== "past" && (
-                    <td className="text-[25px] flex justify-evenly items-center   border-r  py-3 whitespace-nowrap">
+                    <td className="text-[25px] flex justify-evenly items-center border-r py-3 whitespace-nowrap">
                       {status === "pendingApproval" && (
-                        <button>
-                          <GiConfirmed className="text-green-600" />
-                        </button>
-                      )}{" "}
+                        <>
+                          <button onClick={() => approveLeave(row)}>
+                            <GiConfirmed className="text-green-600 hover:text-green-400" />
+                          </button>
+                        </>
+                      )}
                       {status !== "past" && status !== "approved" && (
                         <button onClick={() => cancelPendingApprovalLeave(row)}>
-                        <GiCancel className="text-red-600 hover:text-red-400" />
-                      </button>
+                          <GiCancel className="text-red-600 hover:text-red-400" />
+                        </button>
                       )}
                     </td>
                   )}

@@ -25,6 +25,14 @@ const LeaveRecords = sequelize.define(
       type: DataTypes.TEXT, 
       allowNull: true,
     },
+    first_approver_approval_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    second_approver_approval_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     id_dec: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -44,10 +52,6 @@ const LeaveRecords = sequelize.define(
     leave_end_date: {
       type: DataTypes.DATE,
       allowNull: true
-    },
-    leave_approve_date:{
-      type:DataTypes.DATE,
-      allowNull:true
     },
     leave_cancel_date:{
       type:DataTypes.DATE,

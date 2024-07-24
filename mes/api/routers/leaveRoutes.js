@@ -7,7 +7,9 @@ const {
   getPendingApprovalLeaves,
   getApprovedLeaves,
   getPastLeaves,
-  cancelPendingApprovalLeave
+  cancelPendingApprovalLeave,
+  approveLeave,
+  getManagerApprovedLeaves
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -95,15 +97,16 @@ router.get("/getPastLeaves", async (req, res) => {
   }
 });
 
-//! Onaycının görmesi gereken izinleri çekecek endpoint...
+//! Onay bekleyen izinleri alacak endpoint
 router.get("/getPendingApprovalLeaves", async (req, res) => {
   const { id_dec } = req.query;
   try {
     const result = await getPendingApprovalLeaves({ id_dec });
-    if (result !== false) {
+
+    if (result && result.length > 0) {
       res.status(200).json(result);
-    } else if (result === false) {
-      res.status(404).json({ message: "" });
+    } else {
+      res.status(404).json({ message: "No pending approval leaves found." });
     }
   } catch (err) {
     console.log(err);
@@ -111,12 +114,30 @@ router.get("/getPendingApprovalLeaves", async (req, res) => {
   }
 });
 
+//! ilgili talebi onayyacak endpointd...
+router.put("/approveLeave", async (req, res) => {
+  const currentDateTimeOffset = new Date().toISOString();
+  const { id_dec, leave_uniq_id, } = req.body;
+  const result = await approveLeave(id_dec, leave_uniq_id,currentDateTimeOffset);
+  res.status(result.status).json({ message: result.message });
+});
+
+router.get("/getManagerApprovedLeaves", async (req, res) => {
+  const { id_dec } = req.query;
+  const result = await getManagerApprovedLeaves({id_dec});
+  res.status(result.status).json(result.message);
+});
+
 //! Kullanıcı bır ızın talebı olusturdu ve bu ızın talebınıni kendızı iptal etmek ıstıyorsa...
 router.put("/cancelPendingApprovalLeave", async (req, res) => {
   const { id_dec, leave_uniq_id } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    const result = await cancelPendingApprovalLeave({ id_dec, leave_uniq_id, currentDateTimeOffset });
+    const result = await cancelPendingApprovalLeave({
+      id_dec,
+      leave_uniq_id,
+      currentDateTimeOffset,
+    });
     if (result) {
       res.status(200).json({ message: "Talep iptal işlemi başarılı..." });
     } else {

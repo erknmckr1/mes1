@@ -42,7 +42,7 @@ function Section() {
             </div>
             {/* 20% saat tarıh  alanı  */}
             <div className="w-[20%] h-full ">
-              <Date />
+              <Date addProps={"text-[80px]"} />
             </div>
           </div>
         </div>

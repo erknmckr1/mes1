@@ -29,7 +29,7 @@ export const leaveConfig = {
         title: "Bekleyen Onaylar",
         component: <LeaveTable status="pendingApproval" />,
       },
-      2: { title: "Onaylananlar", component: <LeaveTable status="approved" /> },
+      2: { title: "Onaylananlar", component: <LeaveTable status="managerApproved" /> },
     },
     buttons: [
       { id: "1", label: "Bekleyen Onaylar" },

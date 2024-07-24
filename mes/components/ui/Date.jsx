@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-function CurrentDate() {
+function CurrentDate({addProps}) {
   const [date, setDate] = useState(new Date());
 
   useEffect(() => {
@@ -13,8 +13,8 @@ function CurrentDate() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center w-full h-full items-center gap-y-3 text-[30px]  text-secondary font-semibold">
-      <span className="text-[80px]">{date.toLocaleTimeString()}</span>
+    <div className={`flex flex-col justify-center w-full h-full items-center gap-y-3 text-[30px]  text-secondary font-semibold `}>
+      <span className={`${addProps}`}>{date.toLocaleTimeString()}</span>
       <span>{date.toLocaleDateString()}</span>
     </div>
   );

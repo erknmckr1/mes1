@@ -14,8 +14,10 @@ import CancelJobPopup from "@/components/popups/CancelJobPopup";
 import RepairJobPopup from "@/components/popups/RepairJobPopup";
 import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
 import { usePathname } from "next/navigation";
+import HomeSidebars from "@/components/sideBars/HomeSidebars";
 import MainHeader from "@/components/headers/MainHeader";
 import { useEffect } from "react";
+import CurrentDate from "@/components/ui/Date";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -30,8 +32,12 @@ function Layout({ children }) {
   const area_name = pathName.split("/")[3];
   const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
-  const { stopReasonPopup, cancelReasonPopup, repairJobPopup, finishedWorkPopup } = useSelector((state) => state.order)
-
+  const {
+    stopReasonPopup,
+    cancelReasonPopup,
+    repairJobPopup,
+    finishedWorkPopup,
+  } = useSelector((state) => state.order);
 
   // useEffect(() => {
   //   // 5 dakikada bir sayfayı yenile
@@ -59,14 +65,46 @@ function Layout({ children }) {
   );
 }
 
+function HomeLayout({ children }) {
+  const pathName = usePathname();
+  const project = pathName.split("/")[1];
+  return (
+    <>
+      {project === "home" && (
+        <div className="w-screen h-screen flex">
+          <HomeSidebars />
+          <div className="flex-1 flex flex-col">
+            <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
+              <div></div>
+              <div className="flex items-center space-x-4">
+                <div className="text-green-500 font-semibold text-[30px]">
+                  <CurrentDate addProps={"text-[30px]"} />
+                </div>
+              </div>
+            </div>
+            <main className="flex-1 p-4 overflow-auto">{children}</main>
+          </div>
+        </div>
+      )}
+      <ToastContainer />
+    </>
+  );
+}
+
 // RootLayout, uygulamanın temel yapısını ve Redux sağlayıcısını yönetir
 export default function RootLayout({ children }) {
+  const pathName = usePathname();
+  const project = pathName.split("/")[1];
   return (
     <html lang="tr">
       <body>
         <Provider store={store}>
           <AuthProvider>
-            <Layout>{children}</Layout>
+            {project === "home" ? (
+              <HomeLayout>{children}</HomeLayout>
+            ) : (
+              <Layout>{children}</Layout>
+            )}
           </AuthProvider>
         </Provider>
       </body>

@@ -1,3 +1,4 @@
+'use client'
 import React, { useEffect } from "react";
 import { useState } from "react";
 import UserCard from "./UserCard";
@@ -37,18 +38,17 @@ function LeaveManagement() {
   const currentFlow = leaveConfig[selectedFlow];
   const currentTab = currentFlow?.tabs[tab];
 
-  console.log(authIdRecords)
   return (
     <div className="h-full w-[85%]  flex items-center  gap-x-3 px-4">
-      <div className="w-full h-2/3 flex gap-x-4 justify-center">
+      <div className="w-full h-[80%] flex gap-x-4 justify-center">
         {/* user info */}
         <UserCard />
         {/* süreç ekranlarındaki sağ taraf */}
         {currentFlow && (
-          <div className="bg-slate-400 max-h-full  rounded-md shadow-md w-2/3">
+          <div className="bg-slate-400 max-h-[600px]  rounded-md shadow-md w-2/3">
             <TabButtons tab={tab} setTab={setTab} selectedFlow={selectedFlow}/>
             {/* izin talep formu */}
-            <div className="w-full h-full mt-1">
+            <div className="w-full h-[500px] mt-1">
                 {currentTab?.component}
               </div>
           </div>

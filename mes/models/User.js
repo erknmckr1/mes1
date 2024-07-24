@@ -28,6 +28,10 @@ const User = sequelize.define('User', {
     type: DataTypes.TINYINT,
     allowNull: true
   },
+  is_approver: {
+    type: DataTypes.TINYINT,
+    allowNull: true
+  },
   op_password: {
     type: DataTypes.STRING(255),
     allowNull: true
