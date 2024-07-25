@@ -39,16 +39,16 @@ function LeaveManagement() {
   const currentTab = currentFlow?.tabs[tab];
 
   return (
-    <div className="h-full w-[85%]  flex items-center  gap-x-3 px-4">
-      <div className="w-full h-[80%] flex gap-x-4 justify-center">
+    <div className="h-full w-full  flex items-center  gap-x-3 px-4">
+      <div className="w-full h-[95%] flex gap-x-4 justify-center">
         {/* user info */}
         <UserCard />
         {/* süreç ekranlarındaki sağ taraf */}
         {currentFlow && (
-          <div className="bg-slate-400 max-h-[600px]  rounded-md shadow-md w-2/3">
+          <div className="bg-[#9CA986] h-full  rounded-md shadow-md w-4/5">
             <TabButtons tab={tab} setTab={setTab} selectedFlow={selectedFlow}/>
             {/* izin talep formu */}
-            <div className="w-full h-[500px] mt-1">
+            <div className="w-full h-[400px] mt-1">
                 {currentTab?.component}
               </div>
           </div>

@@ -49,11 +49,6 @@ function LeaveTable({ status }) {
         "text-center border-r py-5 text-left text-xs   uppercase tracking-wider",
     },
     {
-      headerName: "Kullanici İd",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
       headerName: "İzin Başlangıc Tarihi",
       className:
         "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
@@ -162,7 +157,7 @@ function LeaveTable({ status }) {
   console.log(records);
   return (
     <div className="h-[450px] max-w-full relative overflow-scroll ">
-      <table className="bg-slate-600 w-full  shadow-xl ">
+      <table className=" w-full bg-[#5F6F65]  shadow-xl ">
         <thead className="bg-secondary text-black sticky top-0">
           <tr className="px-2">
             {columns.map((column, index) => (
@@ -192,9 +187,6 @@ function LeaveTable({ status }) {
                 >
                   <td className=" border-r text-center px-5   py-3 whitespace-nowrap">
                     {row.name}
-                  </td>
-                  <td className="text-center border-r px-5  py-3 whitespace-nowrap">
-                    {row.id}
                   </td>
                   <td className="text-center border-r px-5 py-3 whitespace-nowrap">
                     {formattedDate} - {formattedTime}

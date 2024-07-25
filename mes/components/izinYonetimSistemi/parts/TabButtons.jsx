@@ -7,7 +7,7 @@ function TabButtons({ tab, setTab, selectedFlow }) {
   const buttons = currentFlow?.buttons || [];
 
   return (
-    <div className="bg-slate-400 rounded-sm h-[100]">
+    <div className="bg-[#9CA986] rounded-sm h-[100]">
       <h1 className="text-2xl rounded-md text-center uppercase text-black font-bold py-2 ps-4 w-full">
         {currentFlow?.tabs[tab]?.title}
       </h1>

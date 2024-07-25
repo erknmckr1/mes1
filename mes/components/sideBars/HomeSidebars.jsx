@@ -3,12 +3,16 @@ import { FaCircleUser } from "react-icons/fa6";
 import { FaSearch, FaEdit, FaMoneyBill, FaPaperPlane } from "react-icons/fa";
 import { useState } from "react";
 import Input from "@/components/ui/Input";
-import { MdKeyboardArrowDown, MdKeyboardArrowLeft } from "react-icons/md";
+import {
+  MdKeyboardArrowDown,
+  MdKeyboardArrowLeft,
+  MdDynamicFeed,
+} from "react-icons/md";
 import { BsCheckCircle } from "react-icons/bs";
 import { FcOvertime, FcSalesPerformance } from "react-icons/fc";
 import { PiScreencastLight } from "react-icons/pi";
 import { TbChartInfographic } from "react-icons/tb";
-import { useSelector ,useDispatch} from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { setSelectedFlow } from "@/redux/globalSlice";
 import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
@@ -22,9 +26,9 @@ function HomeSidebars() {
   const [isIzinOpen, setIsIzinOpen] = useState(false);
   const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);
   const { selectedFlow } = useSelector((state) => state.global);
-  const {selectedManagement} = useSelector(state => state.flowmanagement )
+  const { selectedManagement } = useSelector((state) => state.flowmanagement);
   const dispatch = useDispatch();
-  const {userInfo} = useSelector(state=>state.user);
+  const { userInfo } = useSelector((state) => state.user);
   const pathName = usePathname();
 
   const toggleSection = (flow) => {
@@ -32,41 +36,41 @@ function HomeSidebars() {
       case "mesai":
         setIsMesaiOpen(!isMesaiOpen);
         setIsIzinOpen(false);
-        setIsSatinAlmaOpen(false)
+        setIsSatinAlmaOpen(false);
         break;
       case "izin":
         setIsMesaiOpen(false);
         setIsIzinOpen(!isIzinOpen);
-        setIsSatinAlmaOpen(false)
+        setIsSatinAlmaOpen(false);
         break;
       case "satinAlma":
         setIsMesaiOpen(false);
         setIsIzinOpen(false);
-        setIsSatinAlmaOpen(!İsSatinAlma)
+        setIsSatinAlmaOpen(!İsSatinAlma);
         break;
       default:
         break;
     }
   };
 
-    //! Logout fonksıyonu...
-    const logoutUser = async () => {
-      try {
-        if (confirm("Çıkış yapılsın mı?")) {
-          const logout = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout`,
-            {}, // Boş bir obje göndermek gerekiyor
-            { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
-          );
-          if (logout.status === 200) {
-            toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`);
-            window.location.href = pathName; // çıkıs yaptıktan sonra aynı sayfaya gıt 
-          }
+  //! Logout fonksıyonu...
+  const logoutUser = async () => {
+    try {
+      if (confirm("Çıkış yapılsın mı?")) {
+        const logout = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout`,
+          {}, // Boş bir obje göndermek gerekiyor
+          { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
+        );
+        if (logout.status === 200) {
+          toast.success(`${userInfo.op_name} başariyla çıkış yaptınız.`);
+          window.location.href = pathName; // çıkıs yaptıktan sonra aynı sayfaya gıt
         }
-      } catch (err) {
-        console.log(err);
       }
-    };
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const menuItems = [
     {
@@ -75,8 +79,21 @@ function HomeSidebars() {
       flow: "izin",
       isOpen: isIzinOpen,
       items: [
-        { label: "İzin Talebi Oluştur", icon: <FaEdit />, href:"http://localhost:3000/home/izinyonetimi" },
-       userInfo?.is_approver &&  { label: "İzin Talebi Onayla", icon: <BsCheckCircle />,href:"http://localhost:3000/home/izinyonetimi" },
+        {
+          label: "İzin Talebi Oluştur",
+          icon: <FaEdit />,
+          href: "http://localhost:3000/home/izinyonetimi",
+        },
+        userInfo?.is_approver && {
+          label: "İzin Talebi Onayla",
+          icon: <BsCheckCircle />,
+          href: "http://localhost:3000/home/izinyonetimi",
+        },
+        {
+          label: "Tüm İzin Talepleri",
+          icon: <MdDynamicFeed />,
+          href: "http://localhost:3000/home/izinyonetimi",
+        },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
     {
@@ -112,16 +129,16 @@ function HomeSidebars() {
   };
 
   const handleSelectionManagement = (item) => {
-    dispatch(setSelectedManagement(item))
-    dispatch(setSelectedFlow(""))
-  }
+    dispatch(setSelectedManagement(item));
+    dispatch(setSelectedFlow(""));
+  };
 
-  console.log(selectedManagement)
+  console.log(selectedManagement);
   return (
     <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
       {/* img div */}
       <div className="h-[20%] w-full flex items-center justify-center">
-       <img className="lg:w-60" src="/midas_logo.png" alt="logo" />
+        <img className="lg:w-60" src="/midas_logo.png" alt="logo" />
       </div>
       <div className="h-auto w-full p-2">
         {/* name & icon */}
@@ -130,7 +147,11 @@ function HomeSidebars() {
             <FaCircleUser className="text-[30px]" />
             <span className="text-[20px]">{userInfo?.op_username}</span>
           </div>
-          <Button onClick={logoutUser} className="bg-red-600 py-2 hover:bg-red-500 " children={"Çıkıs Yap"}/>
+          <Button
+            onClick={logoutUser}
+            className="bg-red-600 py-2 hover:bg-red-500 "
+            children={"Çıkıs Yap"}
+          />
         </div>
         {/* Menu list  */}
         <div className="w-full">
@@ -140,7 +161,7 @@ function HomeSidebars() {
                 <li
                   onClick={() => {
                     item.flow && toggleSection(item.flow);
-                    handleSelectionManagement(item.label)
+                    handleSelectionManagement(item.label);
                   }}
                   className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
                     selectedManagement === item.label ? "bg-gray-700" : ""
