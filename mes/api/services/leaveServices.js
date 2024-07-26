@@ -202,14 +202,14 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
 
     const auth2Email = await User.findOne({
       where: {
-        id_dec
+        id_dec,
       },
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
 
     const guvenlik_email = await User.findOne({
       where: {
-        op_section :"Guvenlik"
+        op_section: "Guvenlik",
       },
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
@@ -217,11 +217,11 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     if (leaveRecord.auth1 === id_dec && leaveRecord.leave_status === "1") {
       leaveRecord.leave_status = "2";
       leaveRecord.first_approver_approval_time = currentDateTimeOffset;
-       // Mail gönderim işlemi
-    await sendMail(
-      auth2Email.e_mail,
-      "Yeni İzin Talebi 2. Onay",
-      `Yeni bir izin talebi oluşturuldu:\n
+      // Mail gönderim işlemi
+      await sendMail(
+        auth2Email.e_mail,
+        "Yeni İzin Talebi 2. Onay",
+        `Yeni bir izin talebi oluşturuldu:\n
       Kullanıcı İD: ${leaveRecord.id_dec}\n
       Kullanıcı Adı: ${leaveRecord.op_username}\n
       Başlangıç Tarihi: ${leaveRecord.leave_start_date}\n
@@ -230,8 +230,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       İzin Sebebi:${leaveRecord.leave_reason}\n
       Açıklama: ${leaveRecord.leave_description}
       Onay Linki:`
-      
-    );
+      );
     } else if (
       leaveRecord.auth2 === id_dec &&
       leaveRecord.leave_status === "2"
@@ -250,7 +249,6 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         İzin Türü: ${leaveRecord.leave_type}\n
         İzin Sebebi:${leaveRecord.leave_reason}\n
         Açıklama: ${leaveRecord.leave_description}`
-        
       );
     } else {
       return { status: 400, message: "Invalid approver or leave status" };
@@ -285,6 +283,51 @@ async function getManagerApprovedLeaves({ id_dec }) {
   }
 }
 
+async function getDateRangeLeave(leave_start_date, leave_end_date) {
+  try {
+    const leaveRecords = await LeaveRecords.findAll({
+      where: {
+        leave_status: 3,
+        leave_start_date: {
+          [Op.lte]: leave_end_date,
+        },
+        leave_end_date: {
+          [Op.gte]: leave_start_date,
+        }
+      },
+    });
+
+    if (leaveRecords.length > 0) {
+      return { status: 200, message: leaveRecords };
+    } else {
+      return { status: 404, message: "No authorized users were found in the range you specified" };
+    }
+  } catch (err) {
+    console.error(err);
+    return { status: 500, message: "Internal Server Error" };
+  }
+}
+
+//! Bütün izinleri cekecek servis...
+async function getAllTimeOff(){
+  try {
+    const allTimeOff = await LeaveRecords.findAll({
+      where:{
+        leave_status : 3
+      }
+    })
+
+    if(allTimeOff.length > 0){
+      return {status:200,message:allTimeOff};
+    }else{
+      return {status:404,message:"Hata ? "}
+    }
+  } catch (err) {
+    console.log(err)
+    return { status: 500, message: "Internal Server Error" };
+  }
+}
+
 module.exports = {
   getLeaveReasons,
   createNewLeave,
@@ -295,4 +338,6 @@ module.exports = {
   cancelPendingApprovalLeave,
   approveLeave,
   getManagerApprovedLeaves,
+  getDateRangeLeave,
+  getAllTimeOff
 };

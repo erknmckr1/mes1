@@ -38,15 +38,10 @@ export const leaveConfig = {
   },
   "Tüm İzin Talepleri": {
     tabs: {
-      1: {
-        title: "Gün İçinde Alınan İzinler",
-        component: <LeaveTable status="dealyLeave" />,
-      },
-      2: { title: "Son 30 Gün", component: <LeaveTable status="mountlyLeave" /> },
+      1: { title: "", component: <LeaveTable status="alltimeoff" /> },
     },
     buttons: [
-      { id: "1", label: "Gün İçinde Alınan İzinler" },
-      { id: "2", label: "Son 30 Günde Alınan İzinler" },
+      { id: "1", label: "Bütün İzin Talepleri" },
     ],
   },
   // Diğer flowları gerektiği gibi ekleyin

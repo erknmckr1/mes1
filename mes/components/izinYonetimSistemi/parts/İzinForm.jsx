@@ -63,49 +63,41 @@ function IzinForm() {
 
   //! Yenı bir izin kaydı olusturacak fonksıyon...
   const handleCreateLeave = async () => {
-    const { id_dec, op_username,auth1,auth2 } = userInfo;
+    const { id_dec, op_username, auth1, auth2 } = userInfo;
     try {
-      if (
-        formData.izinTuru !== "" &&
-        formData.donusTarihi !== "" &&
-        formData.baslangicTarihi !== ""
-      ) {
-        if (confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
-            { formData, selectedReason, id_dec, op_username,auth1,auth2 }
-          );
-          if (response.status === 200) {
-            toast.success("İzin talebi başarıyla oluşturuldu.");
-            
-          } else {
-            toast.error("İzin talebi oluşturulamadı...");
-          }
+        if (formData.donusTarihi !== "" && formData.baslangicTarihi !== "") {
+            const baslangicDate = new Date(formData.baslangicTarihi);
+            const donusDate = new Date(formData.donusTarihi);
+            if (baslangicDate >= donusDate) {
+                toast.error("Başlangıç zamanı bitiş zamanından küçük olmalı.");
+                return;
+            }
+
+            if (confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")) {
+                const response = await axios.post(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
+                    { formData, selectedReason, id_dec, op_username, auth1, auth2 }
+                );
+                if (response.status === 200) {
+                    toast.success("İzin talebi başarıyla oluşturuldu.");
+                } else {
+                    toast.error("İzin talebi oluşturulamadı...");
+                }
+            }
+        } else {
+            toast.error("İzin için ilgili yerleri doldurup tekrar deneyin");
         }
-      } else {
-        toast.error("İzin için ilgili yerleri doldurup tekrar deneyin");
-      }
     } catch (err) {
-      console.log(err);
-      toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+        console.log(err);
+        toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
     }
-  };
+};
+
   
   return (
     <form className="text-black p-4" onSubmit={handleSubmit}>
       <div className="grid grid-cols-2 gap-2 gap-x-4">
-        <div>
-          {/* <label className="block mb-2 font-semibold">İzin Tipi:</label>
-          <input
-            type="text"
-            name="izinTipi"
-            className="w-full p-2 border rounded-md"
-            value={formData.izinTipi}
-            onChange={handleInputChange}
-            required
-          /> */}
-        </div>
-        <div>
+        {/* <div>
           <label className="block mb-2 font-semibold">İzin Türü</label>
           <select
             name="izinTuru"
@@ -117,7 +109,7 @@ function IzinForm() {
             <option value="mazeret">Mazeret</option>
             <option value="yillikizin">Yıllık İzin</option>
           </select>
-        </div>
+        </div> */}
         <div>
           <label className="block mb-2 font-semibold">
             İzin Başlangıç Tarihi:

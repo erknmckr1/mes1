@@ -9,7 +9,9 @@ const {
   getPastLeaves,
   cancelPendingApprovalLeave,
   approveLeave,
-  getManagerApprovedLeaves
+  getManagerApprovedLeaves,
+  getDateRangeLeave,
+  getAllTimeOff
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -117,14 +119,18 @@ router.get("/getPendingApprovalLeaves", async (req, res) => {
 //! ilgili talebi onayyacak endpointd...
 router.put("/approveLeave", async (req, res) => {
   const currentDateTimeOffset = new Date().toISOString();
-  const { id_dec, leave_uniq_id, } = req.body;
-  const result = await approveLeave(id_dec, leave_uniq_id,currentDateTimeOffset);
+  const { id_dec, leave_uniq_id } = req.body;
+  const result = await approveLeave(
+    id_dec,
+    leave_uniq_id,
+    currentDateTimeOffset
+  );
   res.status(result.status).json({ message: result.message });
 });
 
 router.get("/getManagerApprovedLeaves", async (req, res) => {
   const { id_dec } = req.query;
-  const result = await getManagerApprovedLeaves({id_dec});
+  const result = await getManagerApprovedLeaves({ id_dec });
   res.status(result.status).json(result.message);
 });
 
@@ -148,5 +154,17 @@ router.put("/cancelPendingApprovalLeave", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error." });
   }
 });
+
+router.get("/getDateRangeLeave", async (req, res) => {
+  const { leave_start_date, leave_end_date } = req.query;
+  const result = await getDateRangeLeave(leave_start_date, leave_end_date);
+  res.status(result.status).json(result.message)
+});
+
+//! Bütün izinleri çekecek  route
+router.get("/alltimeoff",async(req,res)=>{
+  const result =await getAllTimeOff();
+  res.status(result.status).json(result.message);
+})
 
 module.exports = router;

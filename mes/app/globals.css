@@ -34,7 +34,7 @@ body {
 /* MUI DATA GRID ...  */
 .MuiDataGrid-columnHeader{
   background-color: #2C3E50;
-  color: black !important;
+  color: white !important;
   border-right: 2px solid;
   border-color: white;
 }
@@ -42,16 +42,10 @@ body {
 /* .MuiDataGrid-columnHeaderTitle{
   color:black !important;
 } */
-/* data grid bg */
-.MuiDataGrid-filler{
-  
-}
-.MuiSvgIcon-root{
-  color: white;
-}
-.MuiDataGrid-columnHeaders .MuiSvgIcon-root{
+
+/* .MuiDataGrid-columnHeaders .MuiSvgIcon-root{
   color: black;
-}
+} */
 /* t body cell border left */
 .MuiDataGrid-cell{
   border-right: 2px solid;
@@ -60,9 +54,9 @@ body {
 }
 
 
-.MuiDataGrid-footerContainer{
+/* .MuiDataGrid-footerContainer{
   display: none !important;
-} 
+}  */
 
 .selected-row {
   background-color: grey !important;

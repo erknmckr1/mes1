@@ -1,40 +1,56 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { DataGrid,GridToolbar  } from "@mui/x-data-grid";
 import axios from "axios";
-import { useSelector } from "react-redux";
-import { setSeletedLeaveRow } from "../../../redux/workFlowManagement";
-import { GiConfirmed, GiCancel } from "react-icons/gi";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import moment from "moment-timezone";
+import {
+  setSeletedLeaveRow,
+  setSelectedRecords,
+} from "../../../redux/workFlowManagement";
+import { GiConfirmed, GiCancel } from "react-icons/gi";
+
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.user);
-  const [records, setRecords] = useState([]);
-  const { selectedLeaveRow } = useSelector((state) => state.flowmanagement);
+  const { selectedLeaveRow, records, filteredText } = useSelector(
+    (state) => state.flowmanagement
+  );
+
   const fetchRecords = async () => {
     const { id_dec } = userInfo;
     try {
       const endpointMap = {
-        pending: "/api/leave/getPendingLeaves", // kullanıcının bekleyen ızınlerı ıcın gereklı route...
-        approved: "/api/leave/getApprovedLeaves", // Kullaıcının onaylanan ızınlerı
-        past: "/api/leave/getPastLeaves", // Kullanıcının gecmıs ızınlerı
+        pending: "/api/leave/getPendingLeaves",
+        approved: "/api/leave/getApprovedLeaves",
+        past: "/api/leave/getPastLeaves",
         pendingApproval: "/api/leave/getPendingApprovalLeaves",
         managerApproved: "/api/leave/getManagerApprovedLeaves",
+        alltimeoff: "/api/leave/alltimeoff"
       };
       const endpoint = endpointMap[status];
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
-        { params: { id_dec } }
-      );
-      if (response.status === 200) {
-        setRecords(response.data);
+  
+      //todo *** ** ** * *
+      let response;
+      if (endpoint === "/api/leave/alltimeof") {
+        response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`
+        );
       } else {
-        setRecords([]);
+        response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
+          { params: { id_dec } }
+        );
+      }
+  
+      if (response.status === 200) {
+        dispatch(setSelectedRecords(response.data));
+      } else {
+        dispatch(setSelectedRecords([]));
       }
     } catch (err) {
       console.log(err);
-      setRecords([]);
+      dispatch(setSelectedRecords([]));
     }
   };
 
@@ -42,74 +58,71 @@ function LeaveTable({ status }) {
     fetchRecords();
   }, [userInfo, status]);
 
-  const columns = [
-    {
-      headerName: "Kullanici İsmi",
-      className:
-        "text-center border-r py-5 text-left text-xs   uppercase tracking-wider",
-    },
-    {
-      headerName: "İzin Başlangıc Tarihi",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "İşe Dönüş Tarihi",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "İzin Nedeni",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "İzin Durumu",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "1. Onaylayici",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "2. Onaylayici",
-      className:
-        "text-center border-r  py-3 text-left text-xs  uppercase tracking-wider",
-    },
-    {
-      headerName: "Operasyon",
-      className:
-        "text-center border-r  py-3 text-left text-sm  uppercase tracking-wider",
-    },
-  ];
+  // const filterRecords = (records, filterText) => {
+  //   if (!filterText) return records;
+  //   const lowercasedFilter = filterText.toLowerCase();
+  //   return records.filter((record) => {
+  //     return Object.values(record).some((value) =>
+  //       String(value).toLowerCase().includes(lowercasedFilter)
+  //     );
+  //   });
+  // };
 
-  const rows =
-    records &&
-    records.map((item, index) => ({
-      name: item.op_username,
-      id: item.id_dec,
-      leave_start_date: item.leave_start_date,
-      leave_end_date: item.leave_end_date,
-      leave_reason: item.leave_reason,
-      leave_status: item.leave_status,
-      auth1:item.auth1,
-      auth2:item.auth2,
-      leave_uniq_id: item.leave_uniq_id,
+  // const filteredRecords = filterRecords(records, filteredText);
 
-    }));
+  const rows =records.map((item, index) => ({
+        id: item.leave_uniq_id,
+        name: item.op_username,
+        leave_start_date: moment(item.leave_start_date).tz("Europe/Istanbul").format("DD/MM/YYYY hh:mm A"),
+    leave_end_date: moment(item.leave_end_date).tz("Europe/Istanbul").format("DD/MM/YYYY hh:mm A"),
+        leave_reason: item.leave_reason,
+        leave_status: item.leave_status,
+        auth1: item.auth1,
+        auth2: item.auth2,
+        leave_uniq_id: item.leave_uniq_id,
+      }));
 
-  // satırı sececek fonksıyon...
-  function handleSelectedRow(leave_uniq_id) {
-    if (selectedLeaveRow && selectedLeaveRow === leave_uniq_id) {
+      const columns = [
+        { field: "name", headerName: "Kullanici İsmi", width: 150 },
+        { field: "leave_start_date", headerName: "İzin Başlangıc Tarihi", width: 180,  },
+        { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180,  },
+        { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
+        { field: "leave_status", headerName: "İzin Durumu", width: 150 },
+        { field: "auth1", headerName: "1. Onaylayici", width: 150 },
+        { field: "auth2", headerName: "2. Onaylayici", width: 150 },
+        {
+          field: "operation",
+          headerName: "Operasyon",
+          width: 100,
+          renderCell: (params) => {
+            const row = params.row;
+            return (
+              <>
+                {status === "pendingApproval" && (
+                  <button onClick={() => approveLeave(row)}>
+                    <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
+                  </button>
+                )}
+                {status !== "past" && status !== "approved" &&  status !== "managerApproved" && status !== "alltimeoff" &&  (
+                  <button onClick={() => cancelPendingApprovalLeave(row)}>
+                    <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
+                  </button>
+                )}
+              </>
+            );
+          },
+        },
+      ];
+
+  function handleSelectedRow(params) {
+    const { id } = params.row;
+    if (selectedLeaveRow && selectedLeaveRow === id) {
       dispatch(setSeletedLeaveRow(null));
     } else {
-      dispatch(setSeletedLeaveRow(leave_uniq_id));
+      dispatch(setSeletedLeaveRow(id));
     }
   }
 
-  //! Kullanıcının onay bekleyen siparişini iptal edecek istek...
   async function cancelPendingApprovalLeave(row) {
     if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
       try {
@@ -122,7 +135,7 @@ function LeaveTable({ status }) {
         );
         if (response.status === 200) {
           toast.success("İzin Talebi İptal Edildi.");
-          fetchRecords(); // İlgili sekmenin verilerini tekrar yüklüyoruz.
+          fetchRecords();
         } else if (response.status === 404) {
           toast.error("İlgili izine dair bilgi bulunamadı.");
         }
@@ -132,7 +145,6 @@ function LeaveTable({ status }) {
     }
   }
 
-  //! seçili talebi onaylayacak fonskyın
   async function approveLeave(row) {
     try {
       const response = await axios.put(
@@ -154,79 +166,36 @@ function LeaveTable({ status }) {
     }
   }
 
-  console.log(records);
+  console.log(selectedLeaveRow)
   return (
-    <div className="h-[450px] max-w-full relative overflow-scroll ">
-      <table className=" w-full bg-[#5F6F65]  shadow-xl ">
-        <thead className="bg-secondary text-black sticky top-0">
-          <tr className="px-2">
-            {columns.map((column, index) => (
-              <th key={index} className={`${column.className} px-5`}>
-                {column.headerName}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows &&
-            rows.map((row, index) => {
-              const date = new Date(row.leave_start_date);
-              const formattedDate = date.toLocaleDateString();
-              const formattedTime = date.toLocaleTimeString();
-
-              const dateEnd = new Date(row.leave_end_date);
-              const formattedEndDate = dateEnd.toLocaleDateString();
-              const formattedEndTime = dateEnd.toLocaleTimeString();
-              return (
-                <tr
-                  onClick={() => handleSelectedRow(row.leave_uniq_id)}
-                  key={index}
-                  className={`h-[50px] cursor-pointer border-b ${
-                    selectedLeaveRow === row.leave_uniq_id ? "bg-pink-700" : ""
-                  }`}
-                >
-                  <td className=" border-r text-center px-5   py-3 whitespace-nowrap">
-                    {row.name}
-                  </td>
-                  <td className="text-center border-r px-5 py-3 whitespace-nowrap">
-                    {formattedDate} - {formattedTime}
-                  </td>
-                  <td className="text-center border-r px-5  py-3 whitespace-nowrap">
-                    {formattedEndDate} - {formattedEndTime}
-                  </td>
-                  <td className="text-center border-r px-5  py-3 whitespace-nowrap">
-                    {row.leave_reason}
-                  </td>
-                  <td className="text-center border-r px-5 py-3 whitespace-nowrap">
-                    {row.leave_status}
-                  </td>
-                  <td className="text-center border-r px-5  py-3 whitespace-nowrap">
-                    {row.auth1}
-                  </td>
-                  <td className="text-center border-r px-5 py-3 whitespace-nowrap">
-                    {row.auth2}
-                  </td>
-                  {status !== "past" && (
-                    <td className="text-[25px] flex justify-evenly items-center border-r py-3 whitespace-nowrap">
-                      {status === "pendingApproval" && (
-                        <>
-                          <button onClick={() => approveLeave(row)}>
-                            <GiConfirmed className="text-green-600 hover:text-green-400" />
-                          </button>
-                        </>
-                      )}
-                      {status !== "past" && status !== "approved" && (
-                        <button onClick={() => cancelPendingApprovalLeave(row)}>
-                          <GiCancel className="text-red-600 hover:text-red-400" />
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
+    <div className="h-[550px] max-w-full relative  ">
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        pagination={false}
+        onRowClick={handleSelectedRow}
+        getRowClassName={(params) =>
+          selectedLeaveRow === params.row.id ? "bg-pink-700" : ""
+        }
+         initialState={{
+    pagination: {
+      paginationModel: { page: 0, pageSize: 8},
+    },
+    filter: {
+      filterModel: {
+        items: [],
+        quickFilterValues: [],
+      },
+    },
+  }}
+  slots={{ toolbar: GridToolbar }}
+  slotProps={{
+    toolbar: {
+      showQuickFilter: true,
+    },
+  }}
+  pageSizeOptions={[8,8]}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 function UserCard() {
     const {userInfo} = useSelector(state => state.user);
   return (
-    <div className="w-1/5 h-[40%]  rounded-lg bg-[#9CA986] shadow-md p-2 ">
+    <div className="w-1/5 h-[40%]  rounded-lg bg-[#F5F7F8] shadow-md p-2 ">
           <div className="w-full flex justify-between items-center  ">
             <img
               className=" rounded-full h-[100px]"

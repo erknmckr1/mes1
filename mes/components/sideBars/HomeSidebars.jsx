@@ -1,8 +1,7 @@
 import React from "react";
 import { FaCircleUser } from "react-icons/fa6";
-import { FaSearch, FaEdit, FaMoneyBill, FaPaperPlane } from "react-icons/fa";
+import { FaEdit, FaMoneyBill, FaPaperPlane } from "react-icons/fa";
 import { useState } from "react";
-import Input from "@/components/ui/Input";
 import {
   MdKeyboardArrowDown,
   MdKeyboardArrowLeft,
@@ -89,7 +88,7 @@ function HomeSidebars() {
           icon: <BsCheckCircle />,
           href: "http://localhost:3000/home/izinyonetimi",
         },
-        {
+        userInfo?.is_approver && {
           label: "Tüm İzin Talepleri",
           icon: <MdDynamicFeed />,
           href: "http://localhost:3000/home/izinyonetimi",

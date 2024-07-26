@@ -37,10 +37,6 @@ const LeaveRecords = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    leave_type: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
     leave_creation_date: {
       type: DataTypes.DATE,
       allowNull: false,
