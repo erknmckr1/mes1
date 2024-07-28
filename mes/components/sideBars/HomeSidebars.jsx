@@ -81,17 +81,17 @@ function HomeSidebars() {
         {
           label: "İzin Talebi Oluştur",
           icon: <FaEdit />,
-          href: "http://localhost:3000/home/izinyonetimi",
+          href: "http://localhost:3000/home/izinyonetimi/izintalebiolustur",
         },
         userInfo?.is_approver && {
           label: "İzin Talebi Onayla",
           icon: <BsCheckCircle />,
-          href: "http://localhost:3000/home/izinyonetimi",
+          href: "http://localhost:3000/home/izinyonetimi/izintalebionayla",
         },
         userInfo?.is_approver && {
           label: "Tüm İzin Talepleri",
           icon: <MdDynamicFeed />,
-          href: "http://localhost:3000/home/izinyonetimi",
+          href: "http://localhost:3000/home/izinyonetimi/tumizintalepleri",
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
@@ -132,7 +132,6 @@ function HomeSidebars() {
     dispatch(setSelectedFlow(""));
   };
 
-  console.log(selectedManagement);
   return (
     <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
       {/* img div */}
@@ -162,9 +161,8 @@ function HomeSidebars() {
                     item.flow && toggleSection(item.flow);
                     handleSelectionManagement(item.label);
                   }}
-                  className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
-                    selectedManagement === item.label ? "bg-gray-700" : ""
-                  }`}
+                  className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${selectedManagement === item.label ? "bg-gray-700" : ""
+                    }`}
                 >
                   <div className="flex gap-x-3 items-center">
                     {item.icon}
@@ -180,16 +178,17 @@ function HomeSidebars() {
                 {item.isOpen && item.items && (
                   <ul className="ps-4">
                     {item.items.map((subItem, subIndex) => (
-                      <li
-                        onClick={() => handleSelection(subItem.label)}
-                        key={subIndex}
-                        className={`py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
-                          selectedFlow === subItem.label ? "bg-gray-700" : ""
-                        }`}
-                      >
-                        {subItem.icon}
-                        <Link href={`${subItem.href}`}>{subItem.label}</Link>
-                      </li>
+                      <Link onClick={() => handleSelection(subItem.label)} href={`${subItem.href}`}>
+                        <li
+
+                          key={subIndex}
+                          className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${selectedFlow === subItem.label ? "bg-gray-700" : ""
+                            }`}
+                        >
+                          {subItem.icon}
+                          {subItem.label}
+                        </li>
+                      </Link>
                     ))}
                   </ul>
                 )}

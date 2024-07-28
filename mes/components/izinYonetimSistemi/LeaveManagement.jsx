@@ -3,37 +3,12 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import UserCard from "./UserCard";
 import { useSelector } from "react-redux";
-import axios from "axios";
 import TabButtons from "./parts/TabButtons";
 import { leaveConfig } from "./LeaveConfig";
 
 function LeaveManagement() {
   const [tab, setTab] = useState("1");
   const { selectedFlow } = useSelector((state) => state.global);
-  const { id_dec } = useSelector((state) => state.user.userInfo);
-  const [authIdRecords, setAuthIdRecords] = useState(null);
-
-  useEffect(() => {
-    const handleGetLeaveByAuthId = async () => {
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/getLeaveRecordsAuthId`,
-          {
-            params: { id_dec },
-          }
-        );
-        if (response.status === 200) {
-          setAuthIdRecords(response.data);
-        } else {
-          console.log("asdasd");
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    handleGetLeaveByAuthId();
-  }, []);
 
   const currentFlow = leaveConfig[selectedFlow];
   const currentTab = currentFlow?.tabs[tab];
@@ -58,7 +33,7 @@ function LeaveManagement() {
                 selectedFlow={selectedFlow}
               />
               {/* izin talep formu */}
-              <div className="w-full h-[450px] mt-1">
+              <div className="w-full h-[550px] lg:[850px] mt-1">
                 {currentTab?.component}
               </div>
               

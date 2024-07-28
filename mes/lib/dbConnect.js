@@ -2,12 +2,12 @@ require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
 const sequelize = new Sequelize(
-  'MES_TEST',
-  'sa',
-  'PWork2024!',
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
   {
-    host: "192.168.3.7",
-    dialect: "mssql", // Dialect burada belirtiliyor
+    host: process.env.DB_HOST,
+    dialect: "mssql", // Dialect burada sabit
     dialectModule: require("tedious"),
     pool: {
       max: 5,
@@ -19,7 +19,7 @@ const sequelize = new Sequelize(
       options: {
         encrypt: false,
         trustServerCertificate: true,
-        server: "192.168.3.7",
+        server: process.env.DB_SERVER,
       },
     },
   }

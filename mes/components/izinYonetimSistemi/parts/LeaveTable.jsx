@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { DataGrid,GridToolbar  } from "@mui/x-data-grid";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ function LeaveTable({ status }) {
     (state) => state.flowmanagement
   );
 
+  //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
     const { id_dec } = userInfo;
     try {
@@ -29,7 +30,7 @@ function LeaveTable({ status }) {
         alltimeoff: "/api/leave/alltimeoff"
       };
       const endpoint = endpointMap[status];
-  
+
       //todo *** ** ** * *
       let response;
       if (endpoint === "/api/leave/alltimeof") {
@@ -42,7 +43,7 @@ function LeaveTable({ status }) {
           { params: { id_dec } }
         );
       }
-  
+
       if (response.status === 200) {
         dispatch(setSelectedRecords(response.data));
       } else {
@@ -70,50 +71,51 @@ function LeaveTable({ status }) {
 
   // const filteredRecords = filterRecords(records, filteredText);
 
-  const rows =records.map((item, index) => ({
-        id: item.leave_uniq_id,
-        name: item.op_username,
-        leave_start_date: moment(item.leave_start_date).tz("Europe/Istanbul").format("DD/MM/YYYY hh:mm A"),
+  const rows = records.map((item, index) => ({
+    id: item.leave_uniq_id,
+    name: item.op_username,
+    leave_start_date: moment(item.leave_start_date).tz("Europe/Istanbul").format("DD/MM/YYYY hh:mm A"),
     leave_end_date: moment(item.leave_end_date).tz("Europe/Istanbul").format("DD/MM/YYYY hh:mm A"),
-        leave_reason: item.leave_reason,
-        leave_status: item.leave_status,
-        auth1: item.auth1,
-        auth2: item.auth2,
-        leave_uniq_id: item.leave_uniq_id,
-      }));
+    leave_reason: item.leave_reason,
+    leave_status: item.leave_status,
+    auth1: item.auth1,
+    auth2: item.auth2,
+    leave_uniq_id: item.leave_uniq_id,
+  }));
 
-      const columns = [
-        { field: "name", headerName: "Kullanici İsmi", width: 150 },
-        { field: "leave_start_date", headerName: "İzin Başlangıc Tarihi", width: 180,  },
-        { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180,  },
-        { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
-        { field: "leave_status", headerName: "İzin Durumu", width: 150 },
-        { field: "auth1", headerName: "1. Onaylayici", width: 150 },
-        { field: "auth2", headerName: "2. Onaylayici", width: 150 },
-        {
-          field: "operation",
-          headerName: "Operasyon",
-          width: 100,
-          renderCell: (params) => {
-            const row = params.row;
-            return (
-              <>
-                {status === "pendingApproval" && (
-                  <button onClick={() => approveLeave(row)}>
-                    <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
-                  </button>
-                )}
-                {status !== "past" && status !== "approved" &&  status !== "managerApproved" && status !== "alltimeoff" &&  (
-                  <button onClick={() => cancelPendingApprovalLeave(row)}>
-                    <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
-                  </button>
-                )}
-              </>
-            );
-          },
-        },
-      ];
+  const columns = [
+    { field: "name", headerName: "Kullanici İsmi", width: 150 },
+    { field: "leave_start_date", headerName: "İzin Başlangıc Tarihi", width: 180, },
+    { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180, },
+    { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
+    { field: "leave_status", headerName: "İzin Durumu", width: 150 },
+    { field: "auth1", headerName: "1. Onaylayici", width: 150 },
+    { field: "auth2", headerName: "2. Onaylayici", width: 150 },
+    {
+      field: "operation",
+      headerName: "Operasyon",
+      width: 100,
+      renderCell: (params) => {
+        const row = params.row;
+        return (
+          <>
+            {status === "pendingApproval" && (
+              <button onClick={() => approveLeave(row)}>
+                <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
+              </button>
+            )}
+            {status !== "past" && status !== "approved" && status !== "managerApproved" && status !== "alltimeoff" && (
+              <button onClick={() => cancelPendingApprovalLeave(row)}>
+                <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
+              </button>
+            )}
+          </>
+        );
+      },
+    },
+  ];
 
+  // Satır sececek fonksıyon 
   function handleSelectedRow(params) {
     const { id } = params.row;
     if (selectedLeaveRow && selectedLeaveRow === id) {
@@ -123,6 +125,7 @@ function LeaveTable({ status }) {
     }
   }
 
+  //! İptal edilmiş izinleri cekcek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
     if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
       try {
@@ -145,6 +148,7 @@ function LeaveTable({ status }) {
     }
   }
 
+  //! İzin onaylayacak fonksıyon
   async function approveLeave(row) {
     try {
       const response = await axios.put(
@@ -166,35 +170,45 @@ function LeaveTable({ status }) {
     }
   }
 
-  console.log(selectedLeaveRow)
+  const getRowClassName = (params) => {
+    const { row } = params;
+    if ( status==="past" && row.leave_status === '3') {
+      return "green-row";
+    } else if (status==="past" && row.leave_status === '4') {
+      return "red-row";
+    }
+    return "";
+  };
+
   return (
-    <div className="h-[550px] max-w-full relative  ">
+    <div className="h-[550px] lg:h-[850px] max-w-full relative  ">
       <DataGrid
         rows={rows}
         columns={columns}
         pagination={false}
         onRowClick={handleSelectedRow}
-        getRowClassName={(params) =>
-          selectedLeaveRow === params.row.id ? "bg-pink-700" : ""
+        getRowClassName={
+          getRowClassName
         }
-         initialState={{
-    pagination: {
-      paginationModel: { page: 0, pageSize: 8},
-    },
-    filter: {
-      filterModel: {
-        items: [],
-        quickFilterValues: [],
-      },
-    },
-  }}
-  slots={{ toolbar: GridToolbar }}
-  slotProps={{
-    toolbar: {
-      showQuickFilter: true,
-    },
-  }}
-  pageSizeOptions={[8,8]}
+        rowClassName={getRowClassName}
+        initialState={{
+          pagination: {
+            paginationModel: { page: 0, pageSize: 8 },
+          },
+          filter: {
+            filterModel: {
+              items: [],
+              quickFilterValues: [],
+            },
+          },
+        }}
+        slots={{ toolbar: GridToolbar }}
+        slotProps={{
+          toolbar: {
+            showQuickFilter: true,
+          },
+        }}
+        pageSizeOptions={[8, 8]}
       />
     </div>
   );

@@ -130,7 +130,9 @@ const getPastLeaves = async ({ id_dec }) => {
     const result = await LeaveRecords.findAll({
       where: {
         id_dec,
-        leave_status: "4",
+        leave_status: {
+          [Op.in]: ["3", "4"],
+        },
       },
     });
     if (Array.isArray(result) && result.length > 0) {

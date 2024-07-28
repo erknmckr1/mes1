@@ -1,0 +1,6 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/home/izinyonetimi/[action]/page": "app/home/izinyonetimi/[action]/page.js",
+  "/uretim/montaj/kalite/page": "app/uretim/montaj/kalite/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js"
+}

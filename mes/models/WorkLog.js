@@ -47,7 +47,7 @@ const WorkLog = sequelize.define('WorkLog', {
     allowNull:true
   },
   repair_reason:{
-    type:DataTypes.STRING,
+    type:DataTypes.TEXT,
     allowNull:true
   },
   repair_reason_1:{
@@ -94,24 +94,8 @@ const WorkLog = sequelize.define('WorkLog', {
     type: DataTypes.STRING,
     allowNull: true
   },
-  stop_user_id_dec: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  stop_reason_id: {
-    type: DataTypes.STRING(6),
-    allowNull: true
-  },
   repair_reason_id: {
     type: DataTypes.STRING(6),
-    allowNull: true
-  },
-  stop_start_date: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  stop_end_date: {
-    type: DataTypes.DATE,
     allowNull: true
   },
   cancel_user_id_dec: {

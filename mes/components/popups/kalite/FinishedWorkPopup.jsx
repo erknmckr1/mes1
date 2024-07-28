@@ -17,7 +17,7 @@ function FinishedWorkPopup() {
   const [repairAmount, setRepairAmount] = useState(0);
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
-  const [repairReasons, setRepairReasons] = useState(["", "", "", ""]);
+  const [repairReasons, setRepairReasons] = useState(["", "", "", "","","",""]);
   const [desc, setDesc] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
 
@@ -50,10 +50,6 @@ function FinishedWorkPopup() {
 
   const areas = ["YALDIZ", "CİLA", "LAZER","TAMİR TEZGAHI","MİNE","MONTAJ"];
 
-  // hata sebebını sececek fonksıyon
-  // const handleSelectedRepairReason = (item) => {
-  //   setSelectedRepairReason(item);
-  // };
 
   useEffect(() => {
     getRepairReason();
@@ -95,6 +91,7 @@ function FinishedWorkPopup() {
             produced_amount: finishedAmount,
             repair_amount: repairAmount,
             scrap_amount: scrapAmount,
+            repair_reason:JSON.stringify(repairReasons),
             repair_reason_1: repairReasons[0],
             repair_reason_2: repairReasons[1],
             repair_reason_3: repairReasons[2],
@@ -154,7 +151,7 @@ function FinishedWorkPopup() {
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
       <div className="flex items-center justify-center w-full h-full">
-        <div className="w-[1400px] h-[700px] bg-black border-2 border-white p-3 static z-50 rounded-md">
+        <div className="w-[1800px] h-[1000px] bg-black border-2 border-white p-3 static z-50 rounded-md">
           <div className="w-full h-full">
             {/* title */}
             <div className="h-[100px] text-[50px] font-semibold flex justify-center items-center text-white bg-secondary">
@@ -190,11 +187,11 @@ function FinishedWorkPopup() {
               {/* tamir nedenleri && hurda nedenlerı */}
               <div className="h-full w-full flex gap-x-1">
                 {repairAmount > 0 && (
-                  <div className="w-1/2 border">
+                  <div className="w-2/3 border">
                     <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
                       Tamir Nedenleri
                     </div>
-                    <div className="w-full h-[300px] mt-1 overflow-y-auto">
+                    <div className="w-full h-[500px] mt-1 overflow-y-auto">
                       {/* repair reason inputları */}
                       <div className="w-full h-1/3 flex p-1 gap-x-1">
                         {repairReasons.map((reason, index) => (
@@ -253,13 +250,13 @@ function FinishedWorkPopup() {
                 )}
                 {/* Açıklama alanı */}
                 {finishedAmount > 0 && (
-                  <div className="w-1/2">
+                  <div className="w-1/3">
                     <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
                       Açıklama Alanı
                     </div>
-                    <div className="w-full h-[300px] mt-1 overflow-y-auto text-black">
-                      <Input
-                        addProps="h-[300px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
+                    <div className="w-full h-[500px] mt-1 overflow-y-auto text-black">
+                      <textarea
+                        className="w-full h-[500px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
                         placeholder="Açıklama Giriniz"
                         onChange={(e) => { setDesc(e.target.value) }}
                         value={desc}
