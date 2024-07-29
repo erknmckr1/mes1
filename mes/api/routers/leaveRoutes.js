@@ -117,9 +117,9 @@ router.get("/getPendingApprovalLeaves", async (req, res) => {
 });
 
 //! ilgili talebi onayyacak endpointd...
-router.put("/approveLeave", async (req, res) => {
+router.get("/approveLeave", async (req, res) => {
   const currentDateTimeOffset = new Date().toISOString();
-  const { id_dec, leave_uniq_id } = req.body;
+  const { id_dec, leave_uniq_id } = req.query;
   const result = await approveLeave(
     id_dec,
     leave_uniq_id,
@@ -135,8 +135,8 @@ router.get("/getManagerApprovedLeaves", async (req, res) => {
 });
 
 //! Kullanıcı bır ızın talebı olusturdu ve bu ızın talebınıni kendızı iptal etmek ıstıyorsa...
-router.put("/cancelPendingApprovalLeave", async (req, res) => {
-  const { id_dec, leave_uniq_id } = req.body;
+router.get("/cancelPendingApprovalLeave", async (req, res) => {
+  const { id_dec, leave_uniq_id } = req.query;
   const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await cancelPendingApprovalLeave({

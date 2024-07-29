@@ -3,12 +3,12 @@ const transporter = require('./mailConfig');
 const dotenv = require('dotenv')
 dotenv.config();
 
-const sendMail = async (to, subject, text) => {
+const sendMail = async (to, subject, htmlContent) => {
   const mailOptions = {
     from : process.env.EMAIL_SENDER, 
     to: to,
     subject: subject,
-    text: text
+    html: htmlContent
   };
 
   try {

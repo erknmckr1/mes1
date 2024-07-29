@@ -3,6 +3,9 @@ const LeaveRecords = require("../../models/LeaveRecords");
 const User = require("../../models/User");
 const sendMail = require("./mailService");
 const { Op } = require("sequelize");
+const dotenv = require("dotenv");
+dotenv.config();
+
 //! İzin sebeplerini dönecek fonksiyon
 const getLeaveReasons = async () => {
   try {
@@ -60,20 +63,30 @@ const createNewLeave = async (
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
 
+    const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
+    const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
+
+    const emailContent = `
+    <p>Yeni bir izin talebi oluşturuldu:</p>
+    <ul>
+      <li>Kullanıcı ID: ${id_dec}</li>
+      <li>Kullanıcı Adı: ${op_username}</li>
+      <li>Başlangıç Tarihi: ${baslangicTarihi}</li>
+      <li>Dönüş Tarihi: ${donusTarihi}</li>
+      <li>İzin Türü: ${izinTuru}</li>
+      <li>İzin Sebebi: ${selectedReason}</li>
+      <li>Açıklama: ${aciklama}</li>
+    </ul>
+    <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
+    <div style="padding: 10px 20px; color: white; text-decoration: none; display:flex;" >
+    <a href="${approvalLink}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Onayla</a>
+    <a href="${cancelLink}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
+    </div>
+   
+  `;
+
     // Mail gönderim işlemi
-    await sendMail(
-      auth1Email.e_mail,
-      "Yeni İzin Talebi 1. Onay",
-      `Yeni bir izin talebi oluşturuldu:\n
-      Kullanıcı İD: ${id_dec}\n
-      Kullanıcı Adı: ${op_username}\n
-      Başlangıç Tarihi: ${baslangicTarihi}\n
-      Dönüş Tarihi: ${donusTarihi}\n
-      İzin Türü: ${izinTuru}\n
-      İzin Sebebi:${selectedReason}\n
-      Açıklama: ${aciklama}
-      Onay Linki:`
-    );
+    await sendMail(auth1Email.e_mail, "Yeni İzin Talebi 1. Onay", emailContent);
 
     return result;
   } catch (err) {
@@ -145,6 +158,7 @@ const getPastLeaves = async ({ id_dec }) => {
   }
 };
 
+//! izni iptal edecek servis
 async function cancelPendingApprovalLeave({
   id_dec,
   leave_uniq_id,
@@ -199,6 +213,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     });
 
     if (!leaveRecord) {
+      console.error("Leave record not found");
       return { status: 404, message: "Leave record not found" };
     }
 
@@ -209,6 +224,11 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
 
+    if (!auth2Email) {
+      console.error("Auth2 email not found");
+      return { status: 404, message: "Auth2 email not found" };
+    }
+
     const guvenlik_email = await User.findOne({
       where: {
         op_section: "Guvenlik",
@@ -216,22 +236,39 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
 
+    if (!guvenlik_email) {
+      console.error("Security email not found");
+      return { status: 404, message: "Security email not found" };
+    }
+
     if (leaveRecord.auth1 === id_dec && leaveRecord.leave_status === "1") {
       leaveRecord.leave_status = "2";
       leaveRecord.first_approver_approval_time = currentDateTimeOffset;
+
+      const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
+      const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
+      const emailContent = `
+        <p>Yeni bir izin talebi oluşturuldu:</p>
+        <ul>
+          <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
+          <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
+          <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
+          <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+          <li>İzin Türü: ${leaveRecord.leave_type}</li>
+          <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
+          <li>Açıklama: ${leaveRecord.leave_description}</li>
+        </ul>
+        <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
+       <div style="padding: 10px 20px; color: white; text-decoration: none; display:flex;" >
+    <a href="${approvalLink}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Onayla</a>
+    <a href="${cancelLink}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
+    </div>
+      `;
       // Mail gönderim işlemi
       await sendMail(
         auth2Email.e_mail,
         "Yeni İzin Talebi 2. Onay",
-        `Yeni bir izin talebi oluşturuldu:\n
-      Kullanıcı İD: ${leaveRecord.id_dec}\n
-      Kullanıcı Adı: ${leaveRecord.op_username}\n
-      Başlangıç Tarihi: ${leaveRecord.leave_start_date}\n
-      Dönüş Tarihi: ${leaveRecord.leave_end_date}\n
-      İzin Türü: ${leaveRecord.leave_type}\n
-      İzin Sebebi:${leaveRecord.leave_reason}\n
-      Açıklama: ${leaveRecord.leave_description}
-      Onay Linki:`
+        emailContent
       );
     } else if (
       leaveRecord.auth2 === id_dec &&
@@ -240,25 +277,33 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       leaveRecord.leave_status = "3";
       leaveRecord.second_approver_approval_time = currentDateTimeOffset;
 
+      const güvenlikEmailContent = `
+      <p>Yeni bir izin talebi oluşturuldu:</p>
+      <ul>
+        <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
+        <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
+        <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
+        <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+        <li>İzin Sebebi:${leaveRecord.leave_reason}</li>
+        <li>Açıklama: ${leaveRecord.leave_description}</li>
+      </ul>
+      <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
+    `;
+
       await sendMail(
         guvenlik_email.e_mail,
         "Çikis Yapacak Personel (İZİN)",
-        `Yeni bir izin talebi oluşturuldu:\n
-        Kullanıcı İD: ${leaveRecord.id_dec}\n
-        Kullanıcı Adı: ${leaveRecord.op_username}\n
-        Başlangıç Tarihi: ${leaveRecord.leave_start_date}\n
-        Dönüş Tarihi: ${leaveRecord.leave_end_date}\n
-        İzin Türü: ${leaveRecord.leave_type}\n
-        İzin Sebebi:${leaveRecord.leave_reason}\n
-        Açıklama: ${leaveRecord.leave_description}`
+        güvenlikEmailContent
       );
     } else {
+      console.error("Invalid approver or leave status");
       return { status: 400, message: "Invalid approver or leave status" };
     }
 
     await leaveRecord.save();
     return { status: 200, message: "Leave approved successfully" };
   } catch (error) {
+    console.error("Error in approveLeave function:", error);
     return { status: 500, message: "Internal Server Error" };
   }
 }
@@ -285,6 +330,7 @@ async function getManagerApprovedLeaves({ id_dec }) {
   }
 }
 
+//! Belırlı bır tarıh aralıgı ıle ızın cekecek servıs
 async function getDateRangeLeave(leave_start_date, leave_end_date) {
   try {
     const leaveRecords = await LeaveRecords.findAll({
@@ -295,14 +341,17 @@ async function getDateRangeLeave(leave_start_date, leave_end_date) {
         },
         leave_end_date: {
           [Op.gte]: leave_start_date,
-        }
+        },
       },
     });
 
     if (leaveRecords.length > 0) {
       return { status: 200, message: leaveRecords };
     } else {
-      return { status: 404, message: "No authorized users were found in the range you specified" };
+      return {
+        status: 404,
+        message: "No authorized users were found in the range you specified",
+      };
     }
   } catch (err) {
     console.error(err);
@@ -311,21 +360,21 @@ async function getDateRangeLeave(leave_start_date, leave_end_date) {
 }
 
 //! Bütün izinleri cekecek servis...
-async function getAllTimeOff(){
+async function getAllTimeOff() {
   try {
     const allTimeOff = await LeaveRecords.findAll({
-      where:{
-        leave_status : 3
-      }
-    })
+      where: {
+        leave_status: 3,
+      },
+    });
 
-    if(allTimeOff.length > 0){
-      return {status:200,message:allTimeOff};
-    }else{
-      return {status:404,message:"Hata ? "}
+    if (allTimeOff.length > 0) {
+      return { status: 200, message: allTimeOff };
+    } else {
+      return { status: 404, message: "Hata ? " };
     }
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return { status: 500, message: "Internal Server Error" };
   }
 }
@@ -341,5 +390,5 @@ module.exports = {
   approveLeave,
   getManagerApprovedLeaves,
   getDateRangeLeave,
-  getAllTimeOff
+  getAllTimeOff,
 };

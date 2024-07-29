@@ -43,7 +43,7 @@ const currentDate = new Date();
 const currentDateTimeOffset = new Date().toISOString();
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://192.168.3.5:3000","http://localhost:3002"], // Burada uygun origin'i belirleyin
+  origin: ["http://localhost:3000", "http://192.168.3.5:3000","http://localhost:3002","http://192.168.0.78:3000"], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
   methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
 };

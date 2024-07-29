@@ -81,17 +81,17 @@ function HomeSidebars() {
         {
           label: "İzin Talebi Oluştur",
           icon: <FaEdit />,
-          href: "http://localhost:3000/home/izinyonetimi/izintalebiolustur",
+          href: `http://192.168.0.78:3000/home/izinyonetimi/izintalebiolustur`,
         },
         userInfo?.is_approver && {
           label: "İzin Talebi Onayla",
           icon: <BsCheckCircle />,
-          href: "http://localhost:3000/home/izinyonetimi/izintalebionayla",
+          href: "http://192.168.0.78:3000/home/izinyonetimi/izintalebionayla",
         },
         userInfo?.is_approver && {
           label: "Tüm İzin Talepleri",
           icon: <MdDynamicFeed />,
-          href: "http://localhost:3000/home/izinyonetimi/tumizintalepleri",
+          href: "http://192.168.0.78:3000/home/izinyonetimi/tumizintalepleri",
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },

@@ -33,7 +33,7 @@ function LeaveManagement() {
                 selectedFlow={selectedFlow}
               />
               {/* izin talep formu */}
-              <div className="w-full h-[550px] lg:[850px] mt-1">
+              <div className="w-full h-[550px]  mt-1">
                 {currentTab?.component}
               </div>
               
