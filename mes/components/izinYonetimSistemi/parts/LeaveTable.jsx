@@ -16,6 +16,7 @@ function LeaveTable({ status }) {
   const { selectedLeaveRow, records, filteredText } = useSelector(
     (state) => state.flowmanagement
   );
+  const [selectionModel, setSelectionModel] = useState([]);
 
   //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
@@ -112,30 +113,32 @@ function LeaveTable({ status }) {
                 <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
               </button>
             )}
-            {status !== "past" &&
-              status !== "approved" &&
-              status !== "managerApproved" &&
-              status !== "alltimeoff" && (
-                <button onClick={() => cancelPendingApprovalLeave(row)}>
-                  <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
-                </button>
-              )}
+            {status === "pendingApproval" && (
+              <button onClick={() => cancelPendingApprovalLeave(row)}>
+                <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
+              </button>
+            )}
           </>
         );
       },
     },
   ];
 
-  // Satır sececek fonksıyon
+  // Seçili
   function handleSelectedRow(params) {
-    const { id } = params.row;
-    if (selectedLeaveRow && selectedLeaveRow === id) {
-      dispatch(setSeletedLeaveRow(null));
-    } else {
-      dispatch(setSeletedLeaveRow(id));
+    const { id, leave_status } = params.row;
+    if (leave_status !== "3" && leave_status !== "4") {
+      setSelectionModel((prevSelectionModel) => {
+        if (prevSelectionModel.includes(id)) {
+          return prevSelectionModel.filter((item) => item !== id);
+        } else {
+          return [...prevSelectionModel, id];
+        }
+      });
     }
   }
 
+  console.log(selectionModel.join(","));
   //! İptal edilmiş izinleri cekcek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
     if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
@@ -185,25 +188,113 @@ function LeaveTable({ status }) {
     }
   }
 
+  // status e gore satır renklendir...
   const getRowClassName = (params) => {
     const { row } = params;
     if (status === "past" && row.leave_status === "3") {
       return "green-row";
     } else if (status === "past" && row.leave_status === "4") {
       return "red-row";
+    } else if (
+      selectionModel.includes(row.id) &&
+      row.leave_status !== "4" &&
+      row.leave_status !== "3"
+    ) {
+      return "selected-row";
     }
     return "";
   };
 
+  //! Seçili izin taleplerini toplu onay isteği atacak fonksıyon
+  async function handleConfirmSelections() {
+    if (confirm("Seçili izin talepleri onaylansın mı ?")) {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/confirmSelections`,
+          {
+            params: {
+              leaveIds: selectionModel.join(","),
+              id_dec: userInfo.id_dec,
+            },
+          }
+        );
+        if (response.status === 200) {
+          toast.success("Seçili İzin Talepleri Onaylandı.");
+          await fetchRecords();
+          setSelectionModel([]);
+        } else {
+          toast.error("Seçili İzin Talepleri Onaylanmadı.");
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }
+
+  //! Toplu iptal isteği
+  async function handleCancelSelectionsLeave() {
+   if(confirm("Seçili talepler iptal edilsin mi? ")){
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelSelectionsLeave`,
+        {
+          params: {
+            leaveIds: selectionModel.join(","),
+            id_dec: userInfo.id_dec,
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("İzin talepleri başarıyla iptal edildi...");
+        fetchRecords();
+        setSelectionModel([]);
+      } else {
+        toast.error("İzin talepleri iptal edilemedi...");
+      }
+    } catch (err) {
+      console.error("Error in handleCancelSelectionsLeave function:", err);
+      toast.error("İzin talepleri iptal edilemedi... ");
+    }
+   }
+  }
+
+  function clearSelections(){
+    setSelectionModel([])
+  }
   return (
     <div className="h-[550px] max-w-full relative  ">
+      {/* onay butonları */}
+      <div className="flex gap-x-3 ms-2">
+        <button
+          className="mb-2 p-2 bg-green-500 text-white rounded"
+          disabled={selectionModel.length < 2}
+          onClick={handleConfirmSelections}
+        >
+          Seçilenleri Onayla
+        </button>
+        <button
+          className="mb-2 p-2 bg-red-500 text-white rounded"
+          disabled={selectionModel.length < 2}
+          onClick={handleCancelSelectionsLeave}
+        >
+          Seçilenleri İptal Et
+        </button>
+        <button
+          className="mb-2 p-2 bg-gray-500 text-white rounded"
+          onClick={clearSelections}
+        >
+         Seçili Talepleri Kaldır
+        </button>
+      </div>
       <DataGrid
         rows={rows}
         columns={columns}
-        pagination={false}
+        pagination={true}
         onRowClick={handleSelectedRow}
         getRowClassName={getRowClassName}
         rowClassName={getRowClassName}
+        disableSelectionOnClick={true}
+        checkboxSelection={false}
         initialState={{
           pagination: {
             paginationModel: { page: 0, pageSize: 8 },

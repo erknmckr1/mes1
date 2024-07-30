@@ -11,7 +11,9 @@ const {
   approveLeave,
   getManagerApprovedLeaves,
   getDateRangeLeave,
-  getAllTimeOff
+  getAllTimeOff,
+  confirmSelections,
+  cancelSelectionsLeave
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -166,5 +168,24 @@ router.get("/alltimeoff",async(req,res)=>{
   const result =await getAllTimeOff();
   res.status(result.status).json(result.message);
 })
+
+//! Seçili izin taleplerini toplu onaylayacak query...
+router.get("/confirmSelections", async (req, res) => {
+  const { leaveIds,id_dec } = req.query;
+  // Stringi diziye çeviriyoruz
+  const selectionModel = leaveIds.split(',');
+
+  const result = await confirmSelections(selectionModel,id_dec);
+  res.status(result.status).json(result.message);
+});
+
+//! Toplu talep iptal route
+router.get("/cancelSelectionsLeave", async (req, res) => {
+  const { leaveIds, id_dec } = req.query;
+  const selections = leaveIds.split(",");
+  const result = await cancelSelectionsLeave(selections, id_dec);
+  res.status(result.status).json(result.message);
+});
+
 
 module.exports = router;

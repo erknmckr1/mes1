@@ -175,7 +175,9 @@ async function cancelPendingApprovalLeave({
       {
         where: {
           leave_uniq_id: leave_uniq_id,
-          leave_status: "1",
+          leave_status: {
+            [Op.in]: ["1", "2"],
+          },
         },
       }
     );
@@ -379,6 +381,165 @@ async function getAllTimeOff() {
   }
 }
 
+/**
+ * confirmSelections - Seçili izin taleplerini toplu olarak onaylayan bir fonksiyon.
+ *
+ * Bu servis, verilen seçim modeline göre izin taleplerini bulur ve onaylar.
+ * İzin talepleri 1. onaylayıcı tarafından onaylanırsa 2. onaylayıcıya bir e-posta gönderir,
+ * 2. onaylayıcı tarafından onaylanırsa güvenlik departmanına toplu bir e-posta gönderir.
+ */
+//! Toplu talep onaylayacak servis.
+async function confirmSelections(selectionModel, id_dec) {
+  try {
+    // Seçili izin taleplerini veritabanından alır
+    const leaveRecords = await LeaveRecords.findAll({
+      where: {
+        leave_uniq_id: selectionModel,
+      },
+    });
+
+    // Güvenlik departmanının e-posta adresini alır
+    const guvenlik_email = await User.findOne({
+      where: {
+        op_section: "Guvenlik",
+      },
+      attributes: ["e_mail"],
+    });
+
+    if (leaveRecords.length === 0) {
+      console.log("Leave records not found");
+      return { status: 404, message: "Leave records not found" };
+    }
+
+    const currentDateTimeOffset = new Date().toISOString();
+    let emailContent = `<p>Yeni bir izin talebi oluşturuldu:</p>`;
+    let guvenlikEmailContent = `<p>Yeni bir izin talebi oluşturuldu:</p>`;
+    let who = 1; // Varsayılan olarak auth2'ye e-posta gönderilecek
+    const approvalLink = `${
+      process.env.NEXT_PUBLIC_API_BASE_URL
+    }/api/leave/confirmSelections?leaveIds=${selectionModel.join(",")}&id_dec=${
+      leaveRecords[0].auth2
+    }`;
+
+    // Her bir izin kaydını dön
+    for (const leaveRecord of leaveRecords) {
+      if (leaveRecord.auth1 === id_dec && leaveRecord.leave_status === "1") {
+        // 1. onaylayıcı tarafından onaylanmış izinler
+        leaveRecord.leave_status = "2";
+        leaveRecord.first_approver_approval_time = currentDateTimeOffset;
+        emailContent += `
+          <ul>
+            <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
+            <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
+            <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
+            <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+            <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
+            <li>Açıklama: ${leaveRecord.leave_description}</li>
+          </ul>
+        `;
+
+        await leaveRecord.save();
+      } else if (
+        leaveRecord.auth2 === id_dec &&
+        leaveRecord.leave_status === "2"
+      ) {
+        // 2. onaylayıcı tarafından onaylanmış izinler
+        leaveRecord.leave_status = "3";
+        leaveRecord.second_approver_approval_time = currentDateTimeOffset;
+        who = 2; // Eğer 2. onaylayıcı tarafından onaylanmışsa, guvenlik'e e-posta gönderilecek
+
+        guvenlikEmailContent += `
+          <ul>
+            <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
+            <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
+            <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
+            <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+            <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
+            <li>Açıklama: ${leaveRecord.leave_description}</li>
+          </ul>
+        `;
+
+        await leaveRecord.save(); // Değişiklikleri kaydet
+      } else {
+        console.error("Invalid approver or leave status");
+        continue; // Geçerli olmayan onaylayıcı veya izin durumu, döngüye devam et
+      }
+    }
+
+    // Eğer onaylar auth1 tarafından yapılmışsa, auth2'ye e-posta gönderir
+    if (who === 1) {
+      const auth2Email = await User.findOne({
+        where: {
+          id_dec: leaveRecords[0].auth2,
+        },
+        attributes: ["e_mail"],
+      });
+
+      if (!auth2Email) {
+        console.error("Auth2 email not found");
+        return { status: 404, message: "Auth2 email not found" };
+      }
+
+      emailContent += `
+        <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
+        <div style="padding: 10px 20px; color: white; text-decoration: none; display:flex;">
+          <a href="${approvalLink}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Onayla</a>
+          <a href="${"asddsa"}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
+        </div>
+      `;
+
+      await sendMail(
+        auth2Email.e_mail,
+        "Yeni İzin Talebi 2. Onay",
+        emailContent
+      );
+    } else if (who === 2) {
+      // Eğer onaylar 2. onaylayıcı tarafından yapılmışsa, guvenlik'e e-posta gönderir
+      await sendMail(
+        guvenlik_email.e_mail,
+        "Çikis Yapacak Personel (İZİN)",
+        guvenlikEmailContent
+      );
+    }
+
+    return { status: 200, message: "Seçili izin talepleri onaylandı." };
+  } catch (error) {
+    console.error("Error in confirmSelections function:", error);
+    return { status: 500, message: "Internal Server Error" };
+  }
+}
+
+//! Toplu izin iptal
+async function cancelSelectionsLeave(selections, id_dec) {
+  try {
+    const currentDateTimeOffset = new Date().toISOString();
+    const leaveRecords = await LeaveRecords.findAll({
+      where: {
+        leave_status: {
+          [Op.in]: [1, 2],
+        },
+        leave_uniq_id: selections,
+      },
+    });
+
+    if (leaveRecords.length === 0) {
+      return { status: 404, message: "İzin talepleri bulunamadı." };
+    }
+
+    for (const leaveRecord of leaveRecords) {
+      leaveRecord.leave_status = "4";
+      leaveRecord.user_who_cancelled = id_dec;
+      leaveRecord.leave_cancel_date = currentDateTimeOffset;
+      await leaveRecord.save();
+    }
+
+    return { status: 200, message: "İzin talepleri başarıyla iptal edildi." };
+  } catch (error) {
+    console.error("Error in cancelSelectionsLeave function:", error);
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
 module.exports = {
   getLeaveReasons,
   createNewLeave,
@@ -391,4 +552,6 @@ module.exports = {
   getManagerApprovedLeaves,
   getDateRangeLeave,
   getAllTimeOff,
+  confirmSelections,
+  cancelSelectionsLeave,
 };
