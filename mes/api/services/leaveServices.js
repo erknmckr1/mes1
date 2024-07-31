@@ -64,7 +64,7 @@ const createNewLeave = async (
     });
 
     const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
-    const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
+    const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
 
     const emailContent = `
     <p>Yeni bir izin talebi oluşturuldu:</p>
@@ -248,7 +248,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       leaveRecord.first_approver_approval_time = currentDateTimeOffset;
 
       const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
-      const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
+      const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
       const emailContent = `
         <p>Yeni bir izin talebi oluşturuldu:</p>
         <ul>
@@ -420,6 +420,11 @@ async function confirmSelections(selectionModel, id_dec) {
     }/api/leave/confirmSelections?leaveIds=${selectionModel.join(",")}&id_dec=${
       leaveRecords[0].auth2
     }`;
+    const cancelLink = `${
+      process.env.NEXT_PUBLIC_API_BASE_URL
+    }/api/leave/cancelSelectionsLeave?leaveIds=${selectionModel.join(",")}&id_dec=${
+      leaveRecords[0].auth2
+    }`;
 
     // Her bir izin kaydını dön
     for (const leaveRecord of leaveRecords) {
@@ -484,7 +489,7 @@ async function confirmSelections(selectionModel, id_dec) {
         <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
         <div style="padding: 10px 20px; color: white; text-decoration: none; display:flex;">
           <a href="${approvalLink}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none;">Onayla</a>
-          <a href="${"asddsa"}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
+          <a href="${cancelLink}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
         </div>
       `;
 

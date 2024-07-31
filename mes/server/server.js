@@ -34,8 +34,8 @@ const {
   cancelWork,
   getStoppedWorks
 } = require("../api/orderOperations");
-const leaveRoutes = require("../api/routers/leaveRoutes")
-
+const leaveRoutes = require("../api/routers/leaveRoutes");
+const userRoutes = require("../api/routers/userRoutes");
 app.use(express.json());
 app.use(cookieParser());
 
@@ -377,3 +377,6 @@ app.post("/finishedWork", async (req, res) => {
 
 //? Süreçler ile ilgili servisler aşağıda......................................................................
 app.use('/api/leave',leaveRoutes);
+
+//? Kullanıcılar ile ilgili servisler
+app.use('/api/user',userRoutes)

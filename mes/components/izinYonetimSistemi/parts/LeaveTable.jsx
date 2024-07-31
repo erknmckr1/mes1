@@ -9,7 +9,7 @@ import {
   setSelectedRecords,
 } from "../../../redux/workFlowManagement";
 import { GiConfirmed, GiCancel } from "react-icons/gi";
-
+import LeaveRangePicker from "./LeaveRangePicker";
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.user);
@@ -17,6 +17,7 @@ function LeaveTable({ status }) {
     (state) => state.flowmanagement
   );
   const [selectionModel, setSelectionModel] = useState([]);
+  const { allUser } = useSelector((state) => state.user);
 
   //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
@@ -72,21 +73,39 @@ function LeaveTable({ status }) {
 
   // const filteredRecords = filterRecords(records, filteredText);
 
-  const rows = records.map((item, index) => ({
-    id: item.leave_uniq_id,
-    name: item.op_username,
-    leave_start_date: moment(item.leave_start_date)
-      .tz("Europe/Istanbul")
-      .format("DD/MM/YYYY hh:mm A"),
-    leave_end_date: moment(item.leave_end_date)
-      .tz("Europe/Istanbul")
-      .format("DD/MM/YYYY hh:mm A"),
-    leave_reason: item.leave_reason,
-    leave_status: item.leave_status,
-    auth1: item.auth1,
-    auth2: item.auth2,
-    leave_uniq_id: item.leave_uniq_id,
-  }));
+  const rows = records.map((item) => {
+    const onayci1User = allUser.find((user) => user.id_dec === item.auth1);
+    const onayci2User = allUser.find((user) => user.id_dec === item.auth2)
+    function leaveStatus(){
+      if(item.leave_status === "1"){
+        return "1. Onaycı bekleniyor"
+      }else if (item.leave_status === "2"){
+        return "2. Onaycı bekleniyor"
+      }else if(item.leave_status === "3"){
+        return "İzin Onaylandı"
+      }else{
+        return "İzin iptal edildi."
+      }
+    }
+    return {
+      id: item.leave_uniq_id,
+      name: item.op_username,
+      leave_start_date: moment(item.leave_start_date)
+        .tz("Europe/Istanbul")
+        .format("DD/MM/YYYY hh:mm A"),
+      leave_end_date: moment(item.leave_end_date)
+        .tz("Europe/Istanbul")
+        .format("DD/MM/YYYY hh:mm A"),
+      leave_reason: item.leave_reason,
+      leave_status:leaveStatus(),
+      auth1: item.auth1,
+      auth2: item.auth2,
+      onayci1: onayci1User ? onayci1User.op_username : "",
+      onayci2: onayci2User ? onayci2User.op_username : "",
+      leave_uniq_id: item.leave_uniq_id,
+    };
+  });
+  
 
   const columns = [
     { field: "name", headerName: "Kullanici İsmi", width: 150 },
@@ -98,8 +117,8 @@ function LeaveTable({ status }) {
     { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180 },
     { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
     { field: "leave_status", headerName: "İzin Durumu", width: 150 },
-    { field: "auth1", headerName: "1. Onaylayici", width: 150 },
-    { field: "auth2", headerName: "2. Onaylayici", width: 150 },
+    { field: "onayci1", headerName: "1. Onaylayici", width: 150 },
+    { field: "onayci2", headerName: "2. Onaylayici", width: 150 },
     {
       field: "operation",
       headerName: "Operasyon",
@@ -233,71 +252,91 @@ function LeaveTable({ status }) {
 
   //! Toplu iptal isteği
   async function handleCancelSelectionsLeave() {
-   if(confirm("Seçili talepler iptal edilsin mi? ")){
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelSelectionsLeave`,
-        {
-          params: {
-            leaveIds: selectionModel.join(","),
-            id_dec: userInfo.id_dec,
-          },
+    if (confirm("Seçili talepler iptal edilsin mi? ")) {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelSelectionsLeave`,
+          {
+            params: {
+              leaveIds: selectionModel.join(","),
+              id_dec: userInfo.id_dec,
+            },
+          }
+        );
+        if (response.status === 200) {
+          toast.success("İzin talepleri başarıyla iptal edildi...");
+          fetchRecords();
+          setSelectionModel([]);
+        } else {
+          toast.error("İzin talepleri iptal edilemedi...");
         }
-      );
-      if (response.status === 200) {
-        toast.success("İzin talepleri başarıyla iptal edildi...");
-        fetchRecords();
-        setSelectionModel([]);
-      } else {
-        toast.error("İzin talepleri iptal edilemedi...");
+      } catch (err) {
+        console.error("Error in handleCancelSelectionsLeave function:", err);
+        toast.error("İzin talepleri iptal edilemedi... ");
       }
-    } catch (err) {
-      console.error("Error in handleCancelSelectionsLeave function:", err);
-      toast.error("İzin talepleri iptal edilemedi... ");
     }
-   }
   }
 
-  function clearSelections(){
-    setSelectionModel([])
+  // seçili satırları temızleyecek fonksıyon...
+  function clearSelections() {
+    setSelectionModel([]);
+  }
+
+  // Tüm satırları seç 
+  function handleSelectedAllRow() {
+    const allSelection = rows.map((item) => item.id);
+    setSelectionModel(allSelection);
   }
   return (
     <div className="h-[550px] max-w-full relative  ">
-      {/* onay butonları */}
-      <div className="flex gap-x-3 ms-2">
-        <button
-          className="mb-2 p-2 bg-green-500 text-white rounded"
-          disabled={selectionModel.length < 2}
-          onClick={handleConfirmSelections}
-        >
-          Seçilenleri Onayla
-        </button>
-        <button
-          className="mb-2 p-2 bg-red-500 text-white rounded"
-          disabled={selectionModel.length < 2}
-          onClick={handleCancelSelectionsLeave}
-        >
-          Seçilenleri İptal Et
-        </button>
-        <button
-          className="mb-2 p-2 bg-gray-500 text-white rounded"
-          onClick={clearSelections}
-        >
-         Seçili Talepleri Kaldır
-        </button>
-      </div>
+      {status !== "pending" &&
+        status !== "approved" &&
+        status !== "past" &&
+        status !== "managerApproved" && (
+          <div className="flex justify-between items-center px-6 bg-[#C9DABF]">
+            {status === "alltimeoff" && <LeaveRangePicker />}
+            {/* onay butonları */}
+            {status!=="alltimeoff"&&<div className="flex gap-x-3 ms-2">
+              <button
+                className="mb-2 p-2 bg-green-500 text-white rounded"
+                disabled={selectionModel.length < 2}
+                onClick={handleConfirmSelections}
+              >
+                Seçilenleri Onayla
+              </button>
+              <button
+                className="mb-2 p-2 bg-red-500 text-white rounded"
+                disabled={selectionModel.length < 2}
+                onClick={handleCancelSelectionsLeave}
+              >
+                Seçilenleri İptal Et
+              </button>
+              <button
+                className="mb-2 p-2 bg-red-500 text-white rounded"
+                onClick={handleSelectedAllRow}
+              >
+                Tümünü Seç
+              </button>
+              <button
+                className="mb-2 p-2 bg-gray-500 text-white rounded"
+                onClick={clearSelections}
+              >
+                Seçili Talepleri Kaldır
+              </button>
+            </div>}
+          </div>
+        )}
+
       <DataGrid
         rows={rows}
         columns={columns}
         pagination={true}
         onRowClick={handleSelectedRow}
         getRowClassName={getRowClassName}
-        rowClassName={getRowClassName}
-        disableSelectionOnClick={true}
-        checkboxSelection={false}
+        disableRowSelectionOnClick // Seçimi devre dışı bırakır
         initialState={{
           pagination: {
-            paginationModel: { page: 0, pageSize: 8 },
+            paginationModel: { page: 0, pageSize: 10 },
           },
           filter: {
             filterModel: {
@@ -312,7 +351,7 @@ function LeaveTable({ status }) {
             showQuickFilter: true,
           },
         }}
-        pageSizeOptions={[8, 8]}
+        pageSizeOptions={[10, 30, 50, 100]}
       />
     </div>
   );

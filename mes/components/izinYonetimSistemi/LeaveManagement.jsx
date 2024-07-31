@@ -2,16 +2,37 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
 import UserCard from "./UserCard";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
+import { setAllUser } from "@/redux/userSlice";
 import TabButtons from "./parts/TabButtons";
 import { leaveConfig } from "./LeaveConfig";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 function LeaveManagement() {
   const [tab, setTab] = useState("1");
   const { selectedFlow } = useSelector((state) => state.global);
-
   const currentFlow = leaveConfig[selectedFlow];
   const currentTab = currentFlow?.tabs[tab];
+  const dispatch = useDispatch();
+  useEffect(() => {
+    async function getAllUser() {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/getAllUsers`
+        );
+        if (response.status === 200) {
+          dispatch(setAllUser(response.data));
+        } else {
+          toast.error("Kullanıcı verileri çekilemedi LeaveManagement");
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    getAllUser();
+  }, []);
 
   return (
     <div className="h-full w-full   flex items-center  gap-x-3 px-4">
@@ -36,7 +57,6 @@ function LeaveManagement() {
               <div className="w-full h-[550px]  mt-1">
                 {currentTab?.component}
               </div>
-              
             </div>
           )}
 

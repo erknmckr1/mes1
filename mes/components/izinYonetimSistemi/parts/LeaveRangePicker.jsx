@@ -62,31 +62,31 @@ function LeaveRangePicker() {
       <div className="w-full h-full flex justify-between items-center">
         <div className="flex gap-x-10 ">
           {/* izin baslangıc */}
-          <div className="flex flex-col gap-y-2">
+          <div className="flex flex-col gap-y-2 py-1">
             <label htmlFor="">İzin Başlangıç</label>
             <input
               onChange={handleDateChange}
               name="start_date"
               value={dateRange.start_date}
-              className="p-4"
+              className="p-2 outline-none"
               type="datetime-local"
             />
           </div>
           {/* izin bitis */}
-          <div className="flex flex-col gap-y-2">
+          <div className="flex flex-col gap-y-2 py-1">
             <label htmlFor="startdate">İzin Bitiş</label>
             <input
               onChange={handleDateChange}
               name="end_date"
               value={dateRange.end_date}
-              className="p-4"
+              className="p-2 outline-none"
               type="datetime-local"
             />
           </div>
           {/* search btn */}
-          <div className="flex flex-col h-full  gap-y-2">
+          <div className="flex flex-col h-full  gap-y-2 py-1">
             <span>-</span>
-            <button onClick={handleSearchRangeLeave} className="p-5 bg-white">
+            <button onClick={handleSearchRangeLeave} className="p-3 bg-white">
               <FaSearch className="text-20px" />
             </button>
           </div>

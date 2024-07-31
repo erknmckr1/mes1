@@ -5,7 +5,8 @@ export const userSlice = createSlice({
   initialState: {
     userInfo: null,
     operator_id:"207927465", // login popup ta kullanıcı ıd sını tuttugumuz state...
-    onBreak_users:[]  // moladaki kullanıcıları tutacak state
+    onBreak_users:[], // moladaki kullanıcıları tutacak state
+    allUser:[]
   },
   reducers: {
     setUserInfo: (state, action) => {
@@ -16,9 +17,12 @@ export const userSlice = createSlice({
     },
     setOnBreakUsers:(state,action)=>{
       state.onBreak_users = action.payload;
+    },
+    setAllUser:(state,action) => {
+      state.allUser = action.payload;
     }
   },
 });
 
-export const { setUserInfo,setOperatorid,setOnBreakUsers } = userSlice.actions;
+export const { setUserInfo,setOperatorid,setOnBreakUsers,setAllUser } = userSlice.actions;
 export default userSlice.reducer;
