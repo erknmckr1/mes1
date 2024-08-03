@@ -4,6 +4,8 @@ const User = require("../../models/User");
 const sendMail = require("./mailService");
 const { Op } = require("sequelize");
 const dotenv = require("dotenv");
+const Permission = require("../../models/Permissions");
+const Role = require("../../models/Roles");
 dotenv.config();
 
 //! İzin sebeplerini dönecek fonksiyon
@@ -95,6 +97,49 @@ const createNewLeave = async (
   }
 };
 
+
+//! Ik kullanıcı için yeni bir izin oluşturursa... 
+async function createNewLeaveByIK(formData, id_dec, op_username, auth1, auth2) {
+  const { baslangicTarihi, donusTarihi, aciklama,izinSebebi } = formData;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const latestLeaveRecord = await LeaveRecords.findOne({
+      order: [["leave_uniq_id", "DESC"]]
+    });
+
+    let newUniqId;
+    if (latestLeaveRecord) {
+      const latestId = parseInt(latestLeaveRecord.leave_uniq_id, 10);
+      newUniqId = String(latestId + 1).padStart(6, "0"); // 6 haneli sıralı ID oluştur
+    } else {
+      newUniqId = "000001"; // Eğer kayıt yoksa ilk ID'yi oluştur
+    };
+
+    const result = await LeaveRecords.create({
+      op_username,
+      id_dec,
+      leave_uniq_id: newUniqId,
+      leave_creation_date: currentDateTimeOffset,
+      leave_start_date: baslangicTarihi,
+      leave_end_date: donusTarihi,
+      leave_reason: izinSebebi,
+      leave_description: aciklama,
+      leave_status: "3",
+      auth1,
+      auth2,
+    });
+
+    if (result) {
+      return { status: 200, message: "İzin talebi başarıyla oluşturuldu." };
+    } else {
+      return { status: 400, message: "İzin talebi oluşturulamadı." };
+    }
+  } catch (err) {
+    console.log(err);
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
 //!İlgili kullanıcının bekleyen izin kayıtlarını donecek servis
 const getPendingLeaves = async ({ id_dec }) => {
   try {
@@ -165,24 +210,63 @@ async function cancelPendingApprovalLeave({
   currentDateTimeOffset,
 }) {
   try {
-    const updatedRowsCount = await LeaveRecords.update(
-      {
-        // burada donen deger 1 yada 0 mıs
-        leave_status: "4",
-        user_who_cancelled: id_dec,
-        leave_cancel_date: currentDateTimeOffset,
+    const user = await User.findOne({
+      where:{
+        id_dec
       },
-      {
-        where: {
-          leave_uniq_id: leave_uniq_id,
-          leave_status: {
-            [Op.in]: ["1", "2"],
-          },
-        },
+      include:{
+        model:Role,
+        include:{
+          model:Permission,
+        }
       }
-    );
+    });
 
-    return updatedRowsCount > 0;
+    if (!user) {
+      console.error("User not found");
+      return { status: 404, message: "User not found" };
+    };
+    
+    const permissions = user.Role.Permissions.map(permission => permission.name);
+    const isIK = permissions.includes("Görme") && permissions.includes("1. Onay") && permissions.includes("2. Onay") && permissions.includes("İptal");
+
+    if(isIK){
+      const updatedRowsCount = await LeaveRecords.update(
+        {
+          // burada donen deger 1 yada 0 mıs
+          leave_status: "4",
+          user_who_cancelled: id_dec,
+          leave_cancel_date: currentDateTimeOffset,
+        },
+        {
+          where: {
+            leave_uniq_id: leave_uniq_id,
+            leave_status: {
+              [Op.in]: ["1", "2","3"],
+            },
+          },
+        }
+      );
+      return updatedRowsCount > 0;
+    }else{
+      const updatedRowsCount = await LeaveRecords.update(
+        {
+          // burada donen deger 1 yada 0 mıs
+          leave_status: "4",
+          user_who_cancelled: id_dec,
+          leave_cancel_date: currentDateTimeOffset,
+        },
+        {
+          where: {
+            leave_uniq_id: leave_uniq_id,
+            leave_status: {
+              [Op.in]: ["1", "2"],
+            },
+          },
+        }
+      );
+      return updatedRowsCount > 0;
+    }
   } catch (err) {
     console.error("Error fetching records:", err);
   }
@@ -205,19 +289,42 @@ async function getPendingApprovalLeaves({ id_dec }) {
   }
 }
 
-//! İlgili talepi onaylayacak servis...
+//! İlgili talebi onaylayacak servis...
 async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
   try {
+    // gonderılen ıd ıle ılgılı kaydı bul...
     const leaveRecord = await LeaveRecords.findOne({
       where: {
         leave_uniq_id,
       },
     });
 
+    // kayıt bulunamadıysa
     if (!leaveRecord) {
       console.error("Leave record not found");
       return { status: 404, message: "Leave record not found" };
     }
+
+
+    const user = await User.findOne({
+      where:{
+        id_dec
+      },
+      include:{
+        model:Role,
+        include:{
+          model:Permission,
+        },
+      },
+    });
+
+    if (!user) {
+      console.error("User not found");
+      return { status: 404, message: "User not found" };
+    };
+
+    const permissions = user.Role.Permissions.map(permission => permission.name);
+    const isIK = permissions.includes("Görme") && permissions.includes("1. Onay") && permissions.includes("2. Onay");
 
     const auth2Email = await User.findOne({
       where: {
@@ -243,7 +350,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       return { status: 404, message: "Security email not found" };
     }
 
-    if (leaveRecord.auth1 === id_dec && leaveRecord.leave_status === "1") {
+    if ((leaveRecord.auth1 === id_dec || isIK) && leaveRecord.leave_status === "1") {
       leaveRecord.leave_status = "2";
       leaveRecord.first_approver_approval_time = currentDateTimeOffset;
 
@@ -273,7 +380,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         emailContent
       );
     } else if (
-      leaveRecord.auth2 === id_dec &&
+      (leaveRecord.auth1 === id_dec || isIK) &&
       leaveRecord.leave_status === "2"
     ) {
       leaveRecord.leave_status = "3";
@@ -366,7 +473,9 @@ async function getAllTimeOff() {
   try {
     const allTimeOff = await LeaveRecords.findAll({
       where: {
-        leave_status: 3,
+        leave_status: {
+          [Op.in]: [1,2,3,4],
+        },
       },
     });
 
@@ -559,4 +668,5 @@ module.exports = {
   getAllTimeOff,
   confirmSelections,
   cancelSelectionsLeave,
+  createNewLeaveByIK
 };

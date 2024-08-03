@@ -13,6 +13,9 @@ const StoppedWorksLogs = require("./StoppedWorksLog");
 const KaliteWorkTable = require("./kalite/KaliteWorkTable");
 const LeaveReasons = require("./LeaveReasons");
 const LeaveRecords = require("./LeaveRecords");
+const RolePermission = require("./RolePermissions");
+const Permission = require("./Permissions");
+const Role = require("./Roles");
 const models = {
   User,
   BreakLog,
@@ -28,7 +31,18 @@ const models = {
   KaliteWorkTable,
   LeaveReasons,
   LeaveRecords,
+  Role,
+  Permission,
+  RolePermission
 };
+
+// İlişkileri tanımlama
+Role.belongsToMany(Permission, { through: RolePermission, foreignKey: 'roleId' });
+Permission.belongsToMany(Role, { through: RolePermission, foreignKey: 'permissionId' });
+// User ve Role arasında ilişki tanımlaması 
+// Her kullanıcının bir rolü olabilir ve her rol birden fazla kullanıcıya atanabılır.
+User.belongsTo(Role, { foreignKey: 'roleId' });
+Role.hasMany(User, { foreignKey: 'roleId' });
 
 // Tüm modelleri senkronize edin
 const syncModels = async () => {

@@ -17,8 +17,9 @@ function LeaveTable({ status }) {
     (state) => state.flowmanagement
   );
   const [selectionModel, setSelectionModel] = useState([]);
-  const { allUser } = useSelector((state) => state.user);
+  const { allUser, permissions } = useSelector((state) => state.user);
 
+  console.log(permissions);
   //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
     const { id_dec } = userInfo;
@@ -75,16 +76,16 @@ function LeaveTable({ status }) {
 
   const rows = records.map((item) => {
     const onayci1User = allUser.find((user) => user.id_dec === item.auth1);
-    const onayci2User = allUser.find((user) => user.id_dec === item.auth2)
-    function leaveStatus(){
-      if(item.leave_status === "1"){
-        return "1. Onaycı bekleniyor"
-      }else if (item.leave_status === "2"){
-        return "2. Onaycı bekleniyor"
-      }else if(item.leave_status === "3"){
-        return "İzin Onaylandı"
-      }else{
-        return "İzin iptal edildi."
+    const onayci2User = allUser.find((user) => user.id_dec === item.auth2);
+    function leaveStatus() {
+      if (item.leave_status === "1") {
+        return "1. Onaycı bekleniyor";
+      } else if (item.leave_status === "2") {
+        return "2. Onaycı bekleniyor";
+      } else if (item.leave_status === "3") {
+        return "İzin Onaylandı";
+      } else {
+        return "İzin iptal edildi.";
       }
     }
     return {
@@ -97,7 +98,7 @@ function LeaveTable({ status }) {
         .tz("Europe/Istanbul")
         .format("DD/MM/YYYY hh:mm A"),
       leave_reason: item.leave_reason,
-      leave_status:leaveStatus(),
+      leave_status: leaveStatus(),
       auth1: item.auth1,
       auth2: item.auth2,
       onayci1: onayci1User ? onayci1User.op_username : "",
@@ -105,7 +106,6 @@ function LeaveTable({ status }) {
       leave_uniq_id: item.leave_uniq_id,
     };
   });
-  
 
   const columns = [
     { field: "name", headerName: "Kullanici İsmi", width: 150 },
@@ -125,25 +125,36 @@ function LeaveTable({ status }) {
       width: 100,
       renderCell: (params) => {
         const row = params.row;
+
+        const hasFirstApprovalPermission = permissions.includes("1. Onay");
+        const hasSecondApprovalPermission = permissions.includes("2. Onay");
+        const hasCancelPermission = permissions.includes("İptal");
         return (
           <>
-            {status === "pendingApproval" && (
-              <button onClick={() => approveLeave(row)}>
-                <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
-              </button>
-            )}
-            {status === "pendingApproval" && (
-              <button onClick={() => cancelPendingApprovalLeave(row)}>
-                <GiCancel className=" text-center text-red-600 hover:text-red-400 text-[25px]" />
-              </button>
-            )}
+            {(status === "pendingApproval" ||
+              (status === "alltimeoff" &&
+                (row.leave_status === "1. Onaycı bekleniyor" ||
+                  row.leave_status === "2. Onaycı bekleniyor"))) &&
+              (hasFirstApprovalPermission || hasSecondApprovalPermission) && (
+                <button onClick={() => approveLeave(row)}>
+                  <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
+                </button>
+              )}
+            {((status === "alltimeoff" && (row.leave_status === "İzin Onaylandı" || row.leave_status ==="1. Onaycı bekleniyor" || row.leave_status ==="2. Onaycı bekleniyor"))  ||
+              status === "pendingApproval" ||
+              status === "pending") &&
+              hasCancelPermission && (
+                <button onClick={() => cancelPendingApprovalLeave(row)}>
+                  <GiCancel className="text-center text-red-600 hover:text-red-400 text-[25px]" />
+                </button>
+              )}
           </>
         );
       },
     },
   ];
 
-  // Seçili
+  // Tıklanan satırın bıglılerını tutacak fonksıyon...
   function handleSelectedRow(params) {
     const { id, leave_status } = params.row;
     if (leave_status !== "3" && leave_status !== "4") {
@@ -158,7 +169,7 @@ function LeaveTable({ status }) {
   }
 
   console.log(selectionModel.join(","));
-  //! İptal edilmiş izinleri cekcek fonksıyon...
+  //! İzni İptal Edecek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
     if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
       try {
@@ -174,11 +185,13 @@ function LeaveTable({ status }) {
         if (response.status === 200) {
           toast.success("İzin Talebi İptal Edildi.");
           fetchRecords();
+          setSelectionModel([]);
         } else if (response.status === 404) {
           toast.error("İlgili izine dair bilgi bulunamadı.");
         }
       } catch (err) {
         console.log(err);
+        setSelectionModel([]);
       }
     }
   }
@@ -199,20 +212,26 @@ function LeaveTable({ status }) {
         toast.success("İzin Talebi Onaylandı.");
         fetchRecords();
         dispatch(setSeletedLeaveRow(null));
+        setSelectionModel([]);
       } else {
         toast.error("İzin talebi onaylanamadı.");
+        setSelectionModel([]);
       }
     } catch (err) {
       console.log(err);
+      toast.error(
+        "Seçitiğiniz izin talebi onaylanmıs ya da böyle bir izin yok."
+      );
+      setSelectionModel([]);
     }
   }
 
   // status e gore satır renklendir...
   const getRowClassName = (params) => {
     const { row } = params;
-    if (status === "past" && row.leave_status === "3") {
+    if ((status === "past" || status === "alltimeoff" ) && row.leave_status === "İzin Onaylandı") {
       return "green-row";
-    } else if (status === "past" && row.leave_status === "4") {
+    } else if ((status === "past" || status === "alltimeoff") && row.leave_status === "İzin iptal edildi.") {
       return "red-row";
     } else if (
       selectionModel.includes(row.id) &&
@@ -249,7 +268,6 @@ function LeaveTable({ status }) {
       }
     }
   }
-
   //! Toplu iptal isteği
   async function handleCancelSelectionsLeave() {
     if (confirm("Seçili talepler iptal edilsin mi? ")) {
@@ -282,7 +300,7 @@ function LeaveTable({ status }) {
     setSelectionModel([]);
   }
 
-  // Tüm satırları seç 
+  // Tüm satırları seç
   function handleSelectedAllRow() {
     const allSelection = rows.map((item) => item.id);
     setSelectionModel(allSelection);
@@ -292,38 +310,41 @@ function LeaveTable({ status }) {
       {status !== "pending" &&
         status !== "approved" &&
         status !== "past" &&
-        status !== "managerApproved" && (
+        status !== "managerApproved" &&
+        status !== "personnelcreateleave" && (
           <div className="flex justify-between items-center px-6 bg-[#C9DABF]">
             {status === "alltimeoff" && <LeaveRangePicker />}
             {/* onay butonları */}
-            {status!=="alltimeoff"&&<div className="flex gap-x-3 ms-2">
-              <button
-                className="mb-2 p-2 bg-green-500 text-white rounded"
-                disabled={selectionModel.length < 2}
-                onClick={handleConfirmSelections}
-              >
-                Seçilenleri Onayla
-              </button>
-              <button
-                className="mb-2 p-2 bg-red-500 text-white rounded"
-                disabled={selectionModel.length < 2}
-                onClick={handleCancelSelectionsLeave}
-              >
-                Seçilenleri İptal Et
-              </button>
-              <button
-                className="mb-2 p-2 bg-red-500 text-white rounded"
-                onClick={handleSelectedAllRow}
-              >
-                Tümünü Seç
-              </button>
-              <button
-                className="mb-2 p-2 bg-gray-500 text-white rounded"
-                onClick={clearSelections}
-              >
-                Seçili Talepleri Kaldır
-              </button>
-            </div>}
+            {status !== "alltimeoff" && (
+              <div className="flex gap-x-3 ms-2">
+                <button
+                  className="mb-2 p-2 bg-green-500 text-white rounded"
+                  disabled={selectionModel.length < 2}
+                  onClick={handleConfirmSelections}
+                >
+                  Seçilenleri Onayla
+                </button>
+                <button
+                  className="mb-2 p-2 bg-red-500 text-white rounded"
+                  disabled={selectionModel.length < 2}
+                  onClick={handleCancelSelectionsLeave}
+                >
+                  Seçilenleri İptal Et
+                </button>
+                <button
+                  className="mb-2 p-2 bg-red-500 text-white rounded"
+                  onClick={handleSelectedAllRow}
+                >
+                  Tümünü Seç
+                </button>
+                <button
+                  className="mb-2 p-2 bg-gray-500 text-white rounded"
+                  onClick={clearSelections}
+                >
+                  Seçili Talepleri Kaldır
+                </button>
+              </div>
+            )}
           </div>
         )}
 

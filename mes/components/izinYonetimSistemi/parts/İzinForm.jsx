@@ -6,9 +6,9 @@ import { toast } from "react-toastify";
 function IzinForm() {
   const { userInfo } = useSelector((state) => state.user);
   const [leaveResons, setLeaveReasons] = useState();
-  const [isOpenReason, setİsOpenReason] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [formData, setFormData] = useState({
+    kullanici:"",
     izinTipi: "",
     izinTuru: "",
     baslangicTarihi: "",
@@ -80,6 +80,17 @@ function IzinForm() {
           );
           if (response.status === 200) {
             toast.success("İzin talebi başarıyla oluşturuldu.");
+            setFormData({
+              kullanici:"",
+              izinTipi: "",
+              izinTuru: "",
+              baslangicTarihi: "",
+              donusTarihi: "",
+              tel: "",
+              adres: "",
+              aciklama: "",
+              izinSebebi: "",
+            })
           } else {
             toast.error("İzin talebi oluşturulamadı...");
           }
@@ -92,6 +103,21 @@ function IzinForm() {
       toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
     }
   };
+
+  // Formu sıfırlayacak fonksıyon
+  function handleResetForm (){
+    setFormData({
+      kullanici:"",
+      izinTipi: "",
+      izinTuru: "",
+      baslangicTarihi: "",
+      donusTarihi: "",
+      tel: "",
+      adres: "",
+      aciklama: "",
+      izinSebebi: "",
+    })
+  }
 
   console.log(selectedReason);
 
@@ -191,8 +217,9 @@ function IzinForm() {
         <button
           type="button"
           className="px-4 py-2 bg-red-500 text-white rounded-md"
+          onClick={handleResetForm}
         >
-          Kapat
+          Bilgileri Sıfırla
         </button>
       </div>
     </form>

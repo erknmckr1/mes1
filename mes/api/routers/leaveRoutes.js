@@ -13,7 +13,8 @@ const {
   getDateRangeLeave,
   getAllTimeOff,
   confirmSelections,
-  cancelSelectionsLeave
+  cancelSelectionsLeave,
+  createNewLeaveByIK,
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -50,6 +51,21 @@ router.post("/createNewLeave", async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Invalid request error." });
   }
+});
+
+//! İK tarafından ızın olusturacak endpoint
+router.post("/createNewLeaveByIK", async (req, res) => {
+  const { formData, selectedReason, id_dec, op_username, auth1, auth2 } =
+    req.body;
+  const result = await createNewLeaveByIK(
+    formData,
+    selectedReason,
+    id_dec,
+    op_username,
+    auth1,
+    auth2
+  );
+  res.status(result.status).json(result.message);
 });
 
 //! kullanıcının bekleyen izinlerini çekecek query
@@ -160,22 +176,22 @@ router.get("/cancelPendingApprovalLeave", async (req, res) => {
 router.get("/getDateRangeLeave", async (req, res) => {
   const { leave_start_date, leave_end_date } = req.query;
   const result = await getDateRangeLeave(leave_start_date, leave_end_date);
-  res.status(result.status).json(result.message)
+  res.status(result.status).json(result.message);
 });
 
 //! Bütün izinleri çekecek  route
-router.get("/alltimeoff",async(req,res)=>{
-  const result =await getAllTimeOff();
+router.get("/alltimeoff", async (req, res) => {
+  const result = await getAllTimeOff();
   res.status(result.status).json(result.message);
-})
+});
 
 //! Seçili izin taleplerini toplu onaylayacak query...
 router.get("/confirmSelections", async (req, res) => {
-  const { leaveIds,id_dec } = req.query;
+  const { leaveIds, id_dec } = req.query;
   // Stringi diziye çeviriyoruz
-  const selectionModel = leaveIds.split(',');
+  const selectionModel = leaveIds.split(",");
 
-  const result = await confirmSelections(selectionModel,id_dec);
+  const result = await confirmSelections(selectionModel, id_dec);
   res.status(result.status).json(result.message);
 });
 
@@ -186,6 +202,5 @@ router.get("/cancelSelectionsLeave", async (req, res) => {
   const result = await cancelSelectionsLeave(selections, id_dec);
   res.status(result.status).json(result.message);
 });
-
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../lib/dbConnect'); // db connection
+const Role = require('./Roles');
 
 const User = sequelize.define('User', {
   id_dec: {
@@ -19,6 +20,13 @@ const User = sequelize.define('User', {
   op_username: {
     type: DataTypes.STRING(255),
     allowNull: true
+  },
+  roleId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Role,
+      key: 'id'
+    }
   },
   is_active: {
     type: DataTypes.TINYINT,

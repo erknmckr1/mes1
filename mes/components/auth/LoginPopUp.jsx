@@ -2,7 +2,7 @@
 import React, { useEffect,useRef } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import { setUserInfo } from "@/redux/userSlice";
+import { setUserInfo,fetchUserPermissions  } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 import { setOperatorid } from "@/redux/userSlice";
 import { toast } from "react-toastify";
@@ -16,7 +16,6 @@ function LoginPopUp({ setIsLoggedIn }) {
   // oldugu surece kullanıcı ıslemlerıne devam edebılecek...
   const handleLogin = async (event) => {
     if (event.key === "Enter") {
-      console.log("Login fonksiyonu baslatıldı.");
       try {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/login`,  
@@ -30,7 +29,8 @@ function LoginPopUp({ setIsLoggedIn }) {
         if (response.status === 200) {
           console.log("Login isteği başarılı");
           setIsLoggedIn(true);
-          dispatch(setUserInfo(response.data)); 
+          dispatch(setUserInfo(response.data));
+          dispatch(fetchUserPermissions(response.data.id_dec)); // İzinleri al ve store'a ekle
         }
       } catch (err) {
         console.error("Login hatası:", err);

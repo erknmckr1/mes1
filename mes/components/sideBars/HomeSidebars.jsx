@@ -27,7 +27,7 @@ function HomeSidebars() {
   const { selectedFlow } = useSelector((state) => state.global);
   const { selectedManagement } = useSelector((state) => state.flowmanagement);
   const dispatch = useDispatch();
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo,permissions } = useSelector((state) => state.user);
   const pathName = usePathname();
 
   const toggleSection = (flow) => {
@@ -70,7 +70,10 @@ function HomeSidebars() {
       console.log(err);
     }
   };
-
+  
+  const seeAll =permissions.includes("Görme")
+  const onay1 = permissions.includes("1. Onay");
+  const onay2 = permissions.includes("2. Onay");
   const menuItems = [
     {
       label: "İzin Yönetimi",
@@ -81,17 +84,17 @@ function HomeSidebars() {
         {
           label: "İzin Talebi Oluştur",
           icon: <FaEdit />,
-          href: `http://192.168.0.78:3000/home/izinyonetimi/izintalebiolustur`,
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur`,
         },
-        userInfo?.is_approver && {
+        (onay1 || onay2) && {
           label: "İzin Talebi Onayla",
           icon: <BsCheckCircle />,
-          href: "http://192.168.0.78:3000/home/izinyonetimi/izintalebionayla",
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebionayla`,
         },
-        userInfo?.is_approver && {
-          label: "Tüm İzin Talepleri",
+        seeAll && {
+          label: "Tüm İzin Talepleri (İK)",
           icon: <MdDynamicFeed />,
-          href: "http://192.168.0.78:3000/home/izinyonetimi/tumizintalepleri",
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/tumizintalepleri`,
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
@@ -142,8 +145,6 @@ function HomeSidebars() {
         {/* name & icon */}
         <div className="w-full border-b border-gray-700  pb-10 flex flex-col gap-y-3">
           <div className="w-full flex items-center justify-between  px-3 border-b py-2 border-gray-700 ">
-            <FaCircleUser className="text-[30px]" />
-            <span className="text-[20px]">{userInfo?.op_username}</span>
           </div>
           <Button
             onClick={logoutUser}

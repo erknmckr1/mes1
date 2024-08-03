@@ -1,4 +1,5 @@
 // leaveConfig.js
+import HrLeaveForm from "./parts/HrLeaveForm";
 import IzinForm from "./parts/İzinForm";
 import LeaveTable from "./parts/LeaveTable";
 
@@ -19,7 +20,7 @@ export const leaveConfig = {
     buttons: [
       { id: "1", label: "Yeni İzin" },
       { id: "2", label: "Bekleyen" },
-      { id: "3", label: "Onaylanan" },
+      // { id: "3", label: "Onaylanan" },
       { id: "4", label: "Geçmiş İzinlerim" },
     ],
   },
@@ -36,12 +37,14 @@ export const leaveConfig = {
       { id: "2", label: "Onaylananlar" },
     ],
   },
-  "Tüm İzin Talepleri": {
+  "Tüm İzin Talepleri (İK)": {
     tabs: {
       1: { title: "", component: <LeaveTable status="alltimeoff" /> },
+      2: { title: "", component: <HrLeaveForm status="personnelcreateleave" /> },
     },
     buttons: [
       { id: "1", label: "Bütün İzin Talepleri" },
+      {id:"2",label:"Personel İzin Talebi Olustur"}
     ],
   },
   // Diğer flowları gerektiği gibi ekleyin

@@ -15,8 +15,6 @@ import RepairJobPopup from "@/components/popups/RepairJobPopup";
 import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
 import { usePathname } from "next/navigation";
 import HomeSidebars from "@/components/sideBars/HomeSidebars";
-import MainHeader from "@/components/headers/MainHeader";
-import { useEffect } from "react";
 import CurrentDate from "@/components/ui/Date";
 
 // export const metadata = {
