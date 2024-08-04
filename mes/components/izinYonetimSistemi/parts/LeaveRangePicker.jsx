@@ -60,7 +60,7 @@ function LeaveRangePicker() {
   return (
     <div className="w-full h-full text-black flex items-center font-semibold">
       <div className="w-full h-full flex justify-between items-center">
-        <div className="flex gap-x-10 ">
+        <div className="flex sm:gap-x-10  gap-x-5 ">
           {/* izin baslangıc */}
           <div className="flex flex-col gap-y-2 py-1">
             <label htmlFor="">İzin Başlangıç</label>
@@ -68,7 +68,7 @@ function LeaveRangePicker() {
               onChange={handleDateChange}
               name="start_date"
               value={dateRange.start_date}
-              className="p-2 outline-none"
+              className="w-28 sm:w-[200px] p-2 outline-none"
               type="datetime-local"
             />
           </div>
@@ -79,7 +79,7 @@ function LeaveRangePicker() {
               onChange={handleDateChange}
               name="end_date"
               value={dateRange.end_date}
-              className="p-2 outline-none"
+              className=" w-28 sm:w-[200px] p-2 outline-none"
               type="datetime-local"
             />
           </div>

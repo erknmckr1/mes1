@@ -128,7 +128,7 @@ function LeftSideBtnArea() {
   ];
 
   return (
-    <div className="flex flex-col items-center h-full ">
+    <div className="flex w-full flex-col items-center h-full ">
       <Image alt="" height={200} width={200} src={`${"/avatar2.jpg"}`} />
       <div className="flex flex-col font-bold items-center pt-1  ">
         <span>User Id: {userInfo && userInfo.id_dec}</span>

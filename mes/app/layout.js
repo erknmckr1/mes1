@@ -71,7 +71,7 @@ function HomeLayout({ children }) {
       {project === "home" && (
         <div className="w-screen h-screen flex">
           <HomeSidebars />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 w-full flex flex-col">
             <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
               <div></div>
               <div className="flex items-center space-x-4">

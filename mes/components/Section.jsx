@@ -17,7 +17,7 @@ function Section() {
           <LeftSideBtnArea />
         </div>
         {/* w-%80 */}
-        <div className="w-[80%]] w-full h-full">
+        <div className="w-[80%] h-full">
           {/* 60% h*/}
           <div className="w-full h-[60%] flex ">
             {/* Job table */}

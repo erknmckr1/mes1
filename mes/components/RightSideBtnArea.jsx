@@ -135,7 +135,7 @@ function RightSideBtnArea() {
     },
   ];
   return (
-    <div className="flex flex-col gap-y-5 ">
+    <div className="w-full flex flex-col gap-y-5 justify-center items-center ">
       {buttons_r.map((button, index) => (
         <Button
           key={index}

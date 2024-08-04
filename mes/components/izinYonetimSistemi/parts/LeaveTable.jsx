@@ -306,7 +306,7 @@ function LeaveTable({ status }) {
     setSelectionModel(allSelection);
   }
   return (
-    <div className="h-[550px] max-w-full relative  ">
+    <div className="h-[550px] sm:max-w-full relative  ">
       {status !== "pending" &&
         status !== "approved" &&
         status !== "past" &&
@@ -316,29 +316,29 @@ function LeaveTable({ status }) {
             {status === "alltimeoff" && <LeaveRangePicker />}
             {/* onay butonları */}
             {status !== "alltimeoff" && (
-              <div className="flex gap-x-3 ms-2">
+              <div className="flex gap-x-3 sm:ms-2 py-1 sm:py-0">
                 <button
-                  className="mb-2 p-2 bg-green-500 text-white rounded"
+                  className="sm:mb-2 sm:p-2 text-xs h-12 bg-green-500 text-white rounded"
                   disabled={selectionModel.length < 2}
                   onClick={handleConfirmSelections}
                 >
                   Seçilenleri Onayla
                 </button>
                 <button
-                  className="mb-2 p-2 bg-red-500 text-white rounded"
+                  className="sm:mb-2 sm:p-2 py-1 text-xs h-12 bg-red-500 text-white rounded"
                   disabled={selectionModel.length < 2}
                   onClick={handleCancelSelectionsLeave}
                 >
                   Seçilenleri İptal Et
                 </button>
                 <button
-                  className="mb-2 p-2 bg-red-500 text-white rounded"
+                  className="sm:mb-2 sm:p-2 text-xs h-12 bg-red-500 text-white rounded"
                   onClick={handleSelectedAllRow}
                 >
                   Tümünü Seç
                 </button>
                 <button
-                  className="mb-2 p-2 bg-gray-500 text-white rounded"
+                  className="sm:mb-2 sm:p-2 text-xs h-12 bg-gray-500 text-white rounded"
                   onClick={clearSelections}
                 >
                   Seçili Talepleri Kaldır

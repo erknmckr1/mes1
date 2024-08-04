@@ -1,5 +1,5 @@
 import React from "react";
-import { FaCircleUser } from "react-icons/fa6";
+import { CgMenuRight } from "react-icons/cg";
 import { FaEdit, FaMoneyBill, FaPaperPlane } from "react-icons/fa";
 import { useState } from "react";
 import {
@@ -12,6 +12,7 @@ import { FcOvertime, FcSalesPerformance } from "react-icons/fc";
 import { PiScreencastLight } from "react-icons/pi";
 import { TbChartInfographic } from "react-icons/tb";
 import { useSelector, useDispatch } from "react-redux";
+import { FaRegUser } from "react-icons/fa";
 import { setSelectedFlow } from "@/redux/globalSlice";
 import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
@@ -21,13 +22,14 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 function HomeSidebars() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
   const [isMesaiOpen, setIsMesaiOpen] = useState(false);
   const [isIzinOpen, setIsIzinOpen] = useState(false);
   const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);
   const { selectedFlow } = useSelector((state) => state.global);
   const { selectedManagement } = useSelector((state) => state.flowmanagement);
   const dispatch = useDispatch();
-  const { userInfo,permissions } = useSelector((state) => state.user);
+  const { userInfo, permissions } = useSelector((state) => state.user);
   const pathName = usePathname();
 
   const toggleSection = (flow) => {
@@ -70,8 +72,8 @@ function HomeSidebars() {
       console.log(err);
     }
   };
-  
-  const seeAll =permissions.includes("Görme")
+
+  const seeAll = permissions.includes("Görme");
   const onay1 = permissions.includes("1. Onay");
   const onay2 = permissions.includes("2. Onay");
   const menuItems = [
@@ -136,72 +138,90 @@ function HomeSidebars() {
   };
 
   return (
-    <div className="h-full w-[15%] bg-black text-white relative border-r border-secondary ">
-      {/* img div */}
-      <div className="h-[20%] w-full flex items-center justify-center">
-        <img className="lg:w-60" src="/midas_logo.png" alt="logo" />
-      </div>
-      <div className="h-auto w-full p-2">
-        {/* name & icon */}
-        <div className="w-full border-b border-gray-700  pb-10 flex flex-col gap-y-3">
-          <div className="w-full flex items-center justify-between  px-3 border-b py-2 border-gray-700 ">
+    <div className="relative h-full">
+      <button
+        className="sm:hidden fixed top-4 left-4 z-50 bg-black text-white p-2 rounded-md"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        <CgMenuRight size={24} />
+      </button>
+      <div  className={`absolute sm:static top-0 left-0 h-full z-40 transition-transform transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } sm:translate-x-0 w-64 bg-black text-white border-r border-secondary`}>
+        {/* img div */}
+        <div className="h-[20%] w-full flex items-center justify-center">
+          <img className="lg:w-60 w-40" src="/midas_logo.png" alt="logo" />
+        </div>
+        <div className="h-auto w-full p-2">
+          {/* name & icon */}
+          <div className="w-full border-b border-gray-700  pb-10 flex flex-col gap-y-3">
+            <div className="w-full flex items-center justify-between  px-3 border-b py-2 border-gray-700 ">
+              <span className="sm:hidden"><FaRegUser/></span>
+              <span className="sm:hidden">{userInfo?.op_username}</span>
+            </div>
+            <Button
+              onClick={logoutUser}
+              className="bg-red-600 py-2 hover:bg-red-500 "
+              children={"Çıkıs Yap"}
+            />
           </div>
-          <Button
-            onClick={logoutUser}
-            className="bg-red-600 py-2 hover:bg-red-500 "
-            children={"Çıkıs Yap"}
-          />
-        </div>
-        {/* Menu list  */}
-        <div className="w-full">
-          <ul className="w-full">
-            {menuItems.map((item, index) => (
-              <React.Fragment key={index}>
-                <li
-                  onClick={() => {
-                    item.flow && toggleSection(item.flow);
-                    handleSelectionManagement(item.label);
-                  }}
-                  className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${selectedManagement === item.label ? "bg-gray-700" : ""
+          {/* Menu list  */}
+          <div className="w-full">
+            <ul className="w-full">
+              {menuItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  <li
+                    onClick={() => {
+                      item.flow && toggleSection(item.flow);
+                      handleSelectionManagement(item.label);
+                    }}
+                    className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
+                      selectedManagement === item.label ? "bg-gray-700" : ""
                     }`}
-                >
-                  <div className="flex gap-x-3 items-center">
-                    {item.icon}
-                    <button>{item.label}</button>
-                  </div>
-                  {item.items &&
-                    (item.isOpen ? (
-                      <MdKeyboardArrowLeft className="text-[20px]" />
-                    ) : (
-                      <MdKeyboardArrowDown className="text-[20px]" />
-                    ))}
-                </li>
-                {item.isOpen && item.items && (
-                  <ul className="ps-4">
-                    {item.items.map((subItem, subIndex) => (
-                      <Link onClick={() => handleSelection(subItem.label)} href={`${subItem.href}`}>
-                        <li
-
-                          key={subIndex}
-                          className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${selectedFlow === subItem.label ? "bg-gray-700" : ""
-                            }`}
+                  >
+                    <div className="flex gap-x-3 items-center">
+                      {item.icon}
+                      <button>{item.label}</button>
+                    </div>
+                    {item.items &&
+                      (item.isOpen ? (
+                        <MdKeyboardArrowLeft className="text-[20px]" />
+                      ) : (
+                        <MdKeyboardArrowDown className="text-[20px]" />
+                      ))}
+                  </li>
+                  {item.isOpen && item.items && (
+                    <ul className="ps-4">
+                      {item.items.map((subItem, subIndex) => (
+                        <Link
+                          onClick={() => handleSelection(subItem.label)}
+                          href={`${subItem.href}`}
                         >
-                          {subItem.icon}
-                          {subItem.label}
-                        </li>
-                      </Link>
-                    ))}
-                  </ul>
-                )}
-              </React.Fragment>
-            ))}
-          </ul>
+                          <li
+                            key={subIndex}
+                            className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
+                              selectedFlow === subItem.label
+                                ? "bg-gray-700"
+                                : ""
+                            }`}
+                          >
+                            {subItem.icon}
+                            {subItem.label}
+                          </li>
+                        </Link>
+                      ))}
+                    </ul>
+                  )}
+                </React.Fragment>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
-      <div className="absolute bottom-0 p-2 border-t border-secondary w-full">
-        <div className="flex items-center">
-          <span>@Logo</span>
-          <span>-name</span>
+        <div className="absolute bottom-0 p-2 border-t border-secondary w-full">
+          <div className="flex items-center">
+            <span>@Logo</span>
+            <span>-name</span>
+          </div>
         </div>
       </div>
     </div>

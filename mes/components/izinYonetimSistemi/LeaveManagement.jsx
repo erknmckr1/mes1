@@ -35,19 +35,14 @@ function LeaveManagement() {
   }, []);
 
   return (
-    <div className="h-full w-full   flex items-center  gap-x-3 px-4">
+    <div className="h-full w-full   flex items-center  sm:gap-x-3 sm:px-4">
       <div className="w-full h-full flex flex-col">
         <div className="w-full h-[95%] flex gap-x-4 justify-center ">
           {/* user info */}
           <UserCard />
           {/* süreç ekranlarındaki sağ taraf */}
           {currentFlow && (
-            <div className="bg-[#F5F7F8] h-full  rounded-md shadow-md w-4/5">
-              {/* {selectedFlow && selectedFlow === "Tüm İzin Talepleri" && (
-                <div className="h-28 bg-[#9CA986]  rounded-md px-5 ">
-                  <LeaveRangePicker />
-                </div>
-              )} */}
+            <div className="bg-[#F5F7F8] h-full  rounded-md shadow-md w-full sm:w-4/5">
               <TabButtons
                 tab={tab}
                 setTab={setTab}
