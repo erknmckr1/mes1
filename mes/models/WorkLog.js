@@ -117,6 +117,10 @@ const WorkLog = sequelize.define('WorkLog', {
   end_desc:{
     type:DataTypes.STRING,
     allowNull:true
+  },
+  group_no:{
+    type:DataTypes.STRING,
+    allowNull:true
   }
 }, {
   tableName: 'work_log',

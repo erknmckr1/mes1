@@ -36,11 +36,11 @@ const GroupRecords = sequelize.define(
     },
     process_name:{
         type:DataTypes.STRING,
-        allowNull:false
+        allowNull:true
     },
     machine_name:{
         type:DataTypes.STRING,
-        allowNull:false
+        allowNull:true
     },
     section: {
         type: DataTypes.STRING,

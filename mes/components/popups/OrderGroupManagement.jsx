@@ -103,7 +103,7 @@ function OrderGroupManagement() {
   }, [groupList]);
   console.log(selectedGroupNo);
   console.log(selectedOrderId);
-  
+
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
   };
@@ -178,6 +178,35 @@ function OrderGroupManagement() {
     }
   };
 
+  const handleMergeGroups = async () => {
+    const groupIds = JSON.stringify(selectedGroupNo);
+    try {
+      if (groupIds) {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/mergeGroups`,
+          {
+            groupIds,
+            operatorId,
+            section,
+            areaName,
+          }
+        );
+
+        if (response.status === 200) {
+          toast.success("Grup birleştirme işlemi başarılı...");
+          handleGetGroupList();
+          setSelectedGroupNo([]);
+          setSelectedOrderId([]);
+        }
+      } else {
+        toast.error("Birleştirmek istediğiniz grup ID lerını seçiniz...");
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Gruplar birleştirilemedi...");
+    }
+  };
+
   // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak...
   const handleSelectOrderId = (order_id) => {
     if (selectedOrderId?.includes(order_id)) {
@@ -193,14 +222,13 @@ function OrderGroupManagement() {
   const handleRemoveOrderFromList = (item, index) => {
     // orderList'ten seçilen öğeyi kaldırmak için yeni bir dizi oluşturuyoruz
     const updatedOrderList = orderList.filter((_, i) => i !== index);
-  
+
     // orderList'i güncelliyoruz
     setOrderList(updatedOrderList);
-  
+
     // Kullanıcıya bilgilendirme mesajı gösteriyoruz
     toast.success(`${item.ORDER_ID} nolu sipariş listeden çıkarıldı.`);
   };
-  
 
   return (
     <div className="w-screen h-screen top-0 left-0 absolute  text-black font-semibold">
@@ -303,6 +331,7 @@ function OrderGroupManagement() {
                     <Button
                       children={"Grubu Birleştir"}
                       className={"w-[150px] sm:py-2 text-sm"}
+                      onClick={handleMergeGroups}
                     />
                   </div>
                 </div>

@@ -4,6 +4,7 @@ const {
   getOrderById,
   createOrderGroup,
   getGroupList,
+  mergeGroups
 } = require("../services/orderServices");
 
 //! İd ile sipariş cekecek route...
@@ -44,6 +45,12 @@ router.post("/createOrderGroup", async (req, res) => {
 //! Grup listesini çekecek route...
 router.get("/getGroupList", async (req, res) => {
   const result = await getGroupList();
+  return res.status(result.status).json(result.message);
+});
+
+router.post("/mergeGroups", async (req, res) => {
+  const { groupIds, operatorId, section, areaName } = req.body;
+  const result = await mergeGroups({ groupIds, operatorId, section, areaName });
   return res.status(result.status).json(result.message);
 });
 

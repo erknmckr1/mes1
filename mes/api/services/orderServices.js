@@ -44,8 +44,6 @@ async function createOrderGroup(params) {
     areaName,
   } = params;
 
-  console.log(params)
-
   if (!orderList || !selectedMachine || !selectedProcess || !operatorId) {
     return { status: 400, message: "Missing required parameters." };
   }
@@ -102,8 +100,8 @@ async function createOrderGroup(params) {
       for (const order of orders) {
         const sorder = await OrderTable.findOne({
           where: {
-            ORDER_ID: order.ORDER_ID
-          }
+            ORDER_ID: order.ORDER_ID,
+          },
         });
 
         console.log(sorder);
@@ -134,11 +132,10 @@ async function createOrderGroup(params) {
 }
 
 //! Grupları çekecek servis...
-
 const getGroupList = async () => {
   try {
     const result = await GroupRecords.findAll();
-    console.log(result)
+
     if (result.length === 0) {
       return { status: 404, message: "Grup bulunamadı" };
     }
@@ -149,6 +146,80 @@ const getGroupList = async () => {
   }
 };
 
+//! Grupları birleştirecek servis...
+const mergeGroups = async (params) => {
+  const { groupIds, operatorId, section, areaName } = params;
 
+  try {
+    // Gönderilen grup ID'lerini parse et (dizi olarak aldık)
+    const parsedGroupIds = JSON.parse(groupIds);
 
-module.exports = { getOrderById, createOrderGroup,getGroupList };
+    // Son kaydın grup_no sunu al
+    const latestGroupNo = await GroupRecords.findOne({
+      order: [["group_no", "DESC"]],
+    });
+
+    // Unıq bır grup ıd sı olustur..
+    let newGroupNo;
+    if (latestGroupNo) {
+      const latestId = parseInt(latestGroupNo.group_no, 10);
+      newGroupNo = String(latestId + 1).padStart(5, "0");
+    } else {
+      newGroupNo = "00001";
+    }
+
+    // Grup ID'lerine ait starting_order_numbers'u birleştir
+    let allOrderIds = [];
+    for (const groupId of parsedGroupIds) {
+      const groupRecord = await GroupRecords.findOne({
+        where: { group_no: groupId },
+      });
+
+      // Alınan sipariş numaraları, split(",") metodu ile diziye dönüştürülür 
+      // ve concat metodu kullanılarak allOrderIds dizisine eklenir.
+      if (groupRecord) {
+        const orderIds = groupRecord.starting_order_numbers.split(",");
+        allOrderIds = allOrderIds.concat(orderIds);
+      } else {
+        throw new Error(`Grup bulunamadı: ${groupId}`);
+      }
+    }
+
+    // Tüm sipariş numaralarını birleştir
+    const combinedOrderIds = allOrderIds.join(",");
+
+    // Yeni grup kaydını oluştur
+    const newGroupRecord = await GroupRecords.create({
+      group_record_id: newGroupNo,
+      group_no: newGroupNo,
+      who_started_group: operatorId,
+      group_start_date: new Date().toISOString(),
+      group_status: "1",
+      starting_order_numbers: combinedOrderIds,
+      section,
+      area_name: areaName,
+    });
+
+    // WorkLog tablosundaki her siparişin group_no sütununu güncelle
+    for (const orderId of allOrderIds) {
+      await WorkLog.update(
+        { group_no: newGroupNo },
+        { where: { order_no: orderId } }
+      );
+    }
+
+    // Eski grupları sil
+    await GroupRecords.destroy({
+      where: {
+        group_no: parsedGroupIds,
+      },
+    });
+
+    return { status: 200, message: "Gruplar başarıyla birleştirildi." };
+  } catch (err) {
+    console.error("Internal server error", err);
+    return { status: 500, message: "Internal server error" };
+  }
+};
+
+module.exports = { getOrderById, createOrderGroup, getGroupList, mergeGroups };
