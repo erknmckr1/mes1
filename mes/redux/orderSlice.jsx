@@ -10,13 +10,14 @@ const orderSlice = createSlice({
     cancelReasonPopup: null, // sipariş iptal popupının durumunu tutan state
     repairJobPopup: null, // sipariş tamir popupının durumunu tutan state
     read_order: null, // okutulan sıparısında tasını tutacak state
-    selectedProcess: "", // sipariş baslatmadan once secılecek process ı tutan state
+    selectedProcess: "default", // sipariş baslatmadan once secılecek process ı tutan state
     selectedMachine: "default", // sipariş baslatmadan once secılecek makıneyı tutan state
     processList: null,
     machineList: null,
     finishedAmount:"", // Siparişin sağlıklı bitirilecek kısmını tutacak state gr ...
     finishedKalitePopup:null, // Kalitenin bitirme popup ının durumunu tutan state 
     finishedWorkPopup:null, // Bitirme popupının durumunu tutan state...
+    groupManagementPopup:true
 
 
   },
@@ -59,7 +60,10 @@ const orderSlice = createSlice({
     },
     setFinishedPopupKalite:(state,action)=>{
       state.finishedKalitePopup = action.payload;
-    }
+    },
+    setOrderGroupManagement: (state, action) => {
+      state.groupManagementPopup = action.payload;
+    },
   },
 
 });
@@ -76,6 +80,7 @@ export const {
   setMachineList,
   setFinishedAmount,
   setWorkList,
-  setFinishedWorkPopup
+  setFinishedWorkPopup,
+  setOrderGroupManagement
 } = orderSlice.actions;
 export default orderSlice.reducer;

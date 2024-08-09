@@ -1,4 +1,5 @@
 const CancelReason = require("../models/CancelReason");
+const {Op} = require('sequelize')
 const RepairReason = require("../models/RepairReason");
 const OrderTable = require("../models/OrderTable");
 const Processes = require("../models/Processes");
@@ -108,6 +109,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     work_status,
     process_id,
     process_name,
+    machine_name,
     production_amount,
   } = work_info;
 
@@ -125,6 +127,21 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
   }
 
   try {
+   if(work_status === "0"){
+    const result = await WorkLog.create({
+      uniq_id: newUniqId,
+      user_id_dec: user_id_dec,
+      op_username:op_username,
+      order_no: order_id,
+      section: section,
+      area_name: area_name,
+      work_status: work_status,
+      process_id: process_id,
+      process_name: process_name,
+      production_amount: production_amount,
+      machine_name
+    });
+   }else{
     const result = await WorkLog.create({
       uniq_id: newUniqId,
       user_id_dec: user_id_dec,
@@ -137,9 +154,11 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       work_start_date: currentDateTimeOffset,
       process_name: process_name,
       production_amount: production_amount,
+      machine_name
     });
 
     return result;
+   }
   } catch (err) {
     throw err;
   }
@@ -152,7 +171,10 @@ const getWorks = async ({ area_name, user_id_dec }) => {
       where: {
         area_name: area_name,
         user_id_dec: user_id_dec,
-        work_status: "1"
+        work_status : "1"
+        // work_status: {
+        //   [Op.in]: ["0", "1"] // work_status '0' veya '1' olanları çek
+        // }
       },
     });
     return result;
@@ -160,6 +182,7 @@ const getWorks = async ({ area_name, user_id_dec }) => {
     throw err;
   }
 };
+
 //! Bir birimin durdurulmus işlerini çekecek query... 
 const getStoppedWorks = async ({ area_name, }) => {
   try {
@@ -171,7 +194,7 @@ const getStoppedWorks = async ({ area_name, }) => {
     });
     return result;
   } catch (err) {
-    consıole.log()
+    console.log(err);
   }
 }
 

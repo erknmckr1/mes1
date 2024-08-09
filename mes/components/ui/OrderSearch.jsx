@@ -10,6 +10,7 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 
 function OrderSearch() {
   const dispatch = useDispatch();
+  const [orderList, setOrderList] = useState([]); 
   const [order_id, setOrderId] = useState("");
   const { selectedProcess } = useSelector((state) => state.order);
   const { isCurrentBreak } = useSelector((state) => state.break)
@@ -79,9 +80,74 @@ function OrderSearch() {
     }
   };
 
+  //! Çekilen siparişleri bir dizide topluyoruz gruplama olan ekranlarda kullanmak ıcın... aşağıda ekrana göre arama şartı kostuk...
+  const handleAddOrderToList = async () => {
+    if (order_id) {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
+          { params: { id: order_id } }
+        );
+        console.log(response.data);
+
+        if (response.status === 200) {
+          setOrderList([...orderList, response.data]);
+          setOrderId("");
+          toast.success("Sipariş listeye eklendi.");
+        }
+      } catch (err) {
+        console.error("Siparişi çekerken hata:", err);
+        toast.error("Siparişi çekerken bir hata oluştu.");
+      }
+    } else if (order_id === "") {
+      toast.error("Sipariş no giriniz...");
+    } else {
+      toast.error("Girdiğiniz sipariş numarası hatalı...");
+    }
+  };
+
+  // const handleStartBatchOrders = async () => {
+  //   if (orderList.length === 0) {
+  //     toast.error("Toplu işleme başlatmak için sipariş ekleyiniz.");
+  //     return;
+  //   }
+
+  //   const work_info_list = orderList.map(order => ({
+  //     user_id_dec: userInfo.id_dec,
+  //     op_username: userInfo.op_username,
+  //     order_id: order.ORDER_ID,
+  //     section: sectionName,
+  //     area_name: areaName,
+  //     work_status: "1",
+  //     process_id: selectedProcess?.process_id,
+  //     process_name: selectedProcess?.process_name,
+  //     production_amount: order.PRODUCTION_AMOUNT,
+  //   }));
+
+  //   try {
+  //     const response = await axios.post(
+  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBatchWorkLogs`,
+  //       { work_info_list }
+  //     );
+
+  //     if (response.status === 200) {
+  //       toast.success("Toplu iş başarıyla başlatıldı.");
+  //       getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+  //       setOrderList([]);
+  //     }
+  //   } catch (err) {
+  //     console.error("Toplu iş başlatma sırasında hata:", err);
+  //     toast.error("Toplu iş başlatma sırasında bir hata oluştu.");
+  //   }
+  // };
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      handleGetOrder();
+      if (areaName === "kalite") {
+        handleGetOrder();
+      } else if (areaName === "buzlama") {
+        handleAddOrderToList();
+      }
     }
   };
 

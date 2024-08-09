@@ -37,7 +37,7 @@ function LeaveManagement() {
   return (
     <div className="h-full w-full   flex items-center  sm:gap-x-3 sm:px-4">
       <div className="w-full h-full flex flex-col">
-        <div className="w-full h-[95%] flex gap-x-4 justify-center ">
+        <div className="w-full h-[100%] sm:h-[95%] flex gap-x-4 justify-center ">
           {/* user info */}
           <UserCard />
           {/* süreç ekranlarındaki sağ taraf */}

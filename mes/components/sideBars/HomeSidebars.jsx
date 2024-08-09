@@ -149,7 +149,7 @@ function HomeSidebars() {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } sm:translate-x-0 w-64 bg-black text-white border-r border-secondary`}>
         {/* img div */}
-        <div className="h-[20%] w-full flex items-center justify-center">
+        <div className="h-[15%] sm:h-[20%] w-full flex items-center justify-center">
           <img className="lg:w-60 w-40" src="/midas_logo.png" alt="logo" />
         </div>
         <div className="h-auto w-full p-2">

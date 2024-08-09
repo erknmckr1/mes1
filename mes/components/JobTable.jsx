@@ -97,6 +97,8 @@ function JobTable() {
     return () => clearInterval(interval);
   }, [areaName, userInfo, dispatch]);
 
+
+  console.log(workList)
   // status degerı 4 olmayan (bitmiş bir iş olmayan) işleri listeliyoruz.
   const rows = workList
     .filter((item) => item.work_status !== "4")

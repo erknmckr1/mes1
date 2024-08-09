@@ -45,16 +45,16 @@ function LoginPopUp({ setIsLoggedIn }) {
      
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
-      <div className="flex items-center justify-center w-full h-full  ">
-        <div className="w-[700px] h-[500px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
+      <div className="flex items-center justify-center w-full h-full px-2 sm:px-0 ">
+        <div className="sm:w-[700px] sm:h-[500px] h-[300px] w-full bg-black border-2 border-white p-3 static z-50 rounded-md ">
           <div className="flex flex-col gap-y-10">
-            <span className=" text-center uppercase text-[40px] py-5 font-semibold bg-secondary">
+            <span className=" text-center uppercase sm:text-[40px] text-[30px] py-5 font-semibold bg-secondary">
               Operator ID
             </span>
             <div className="flex justify-center">
               <input
                 placeholder="Operator ID"
-                className="p-6 text-[30px] text-black font-semibold placeholder:text-center"
+                className="sm:p-6 p-3 w-full text-[30px] text-black font-semibold placeholder:text-center"
                 type="text"
                 onChange={(e) => dispatch(setOperatorid(e.target.value))}
                 onKeyPress={handleLogin}

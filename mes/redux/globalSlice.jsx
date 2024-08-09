@@ -7,7 +7,6 @@ const globalSlice = createSlice({
     isMolaPopup: false,
     theme: "dark",
     selectedFlow: "İzin Talebi Oluştur", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
-  
   },
   reducers: {
     setFoodPopupState: (state, action) => {

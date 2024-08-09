@@ -76,7 +76,7 @@ const WorkLog = sequelize.define('WorkLog', {
   },
   work_start_date: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: true
   },
   work_end_date: {
     type: DataTypes.DATE,
@@ -91,6 +91,10 @@ const WorkLog = sequelize.define('WorkLog', {
     allowNull: false
   },
   process_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  machine_name: {
     type: DataTypes.STRING,
     allowNull: true
   },

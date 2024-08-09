@@ -36,6 +36,7 @@ const {
 } = require("../api/orderOperations");
 const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
+const orderRoutes = require("../api/routers/orderRoutes");
 app.use(express.json());
 app.use(cookieParser());
 
@@ -379,4 +380,7 @@ app.post("/finishedWork", async (req, res) => {
 app.use('/api/leave',leaveRoutes);
 
 //? Kullanıcılar ile ilgili servisler
-app.use('/api/user',userRoutes)
+app.use('/api/user',userRoutes);
+
+//? Order ıslemlerı ıle ılgılı rotalar (sipariş olustur iptal güncelle vs. bütün iş birimlerinin servislerini içerebilir.)
+app.use("/api/order",orderRoutes);

@@ -26,7 +26,6 @@ function ProcessArea() {
     (state) => state.order
   );
   const {theme} = useSelector(theme => theme.global)
-
   //! İlgili bölüme göre proses listesini getırecek istek...
   const getProcessList = async () => {
     try {

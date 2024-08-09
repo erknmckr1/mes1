@@ -16,6 +16,7 @@ const LeaveRecords = require("./LeaveRecords");
 const RolePermission = require("./RolePermissions");
 const Permission = require("./Permissions");
 const Role = require("./Roles");
+const GroupRecords = require("./GroupRecords");
 const models = {
   User,
   BreakLog,
@@ -33,7 +34,8 @@ const models = {
   LeaveRecords,
   Role,
   Permission,
-  RolePermission
+  RolePermission,
+  GroupRecords
 };
 
 // İlişkileri tanımlama

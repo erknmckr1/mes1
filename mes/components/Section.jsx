@@ -13,11 +13,11 @@ function Section() {
     <div className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}>
       <div className="flex w-full h-full p-3">
         {/* left side Image vs. %20 */}
-        <div className="w-[20%] h-full ">
+        <div className="w-[15%] h-full ">
           <LeftSideBtnArea />
         </div>
         {/* w-%80 */}
-        <div className="w-[80%] h-full">
+        <div className="w-[85%] h-full">
           {/* 60% h*/}
           <div className="w-full h-[60%] flex ">
             {/* Job table */}
