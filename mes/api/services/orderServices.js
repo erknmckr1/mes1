@@ -175,7 +175,7 @@ const mergeGroups = async (params) => {
         where: { group_no: groupId },
       });
 
-      // Alınan sipariş numaraları, split(",") metodu ile diziye dönüştürülür 
+      // Alınan sipariş numaraları, split(",") metodu ile diziye dönüştürülür
       // ve concat metodu kullanılarak allOrderIds dizisine eklenir.
       if (groupRecord) {
         const orderIds = groupRecord.starting_order_numbers.split(",");
@@ -222,4 +222,74 @@ const mergeGroups = async (params) => {
   }
 };
 
-module.exports = { getOrderById, createOrderGroup, getGroupList, mergeGroups };
+//! Gruptan sipariş cıkaracak servis...
+const removeOrdersFromGroup = async (params) => {
+  const { orderIds } = params;
+  try {
+    const parsedOrderIds = JSON.parse(orderIds);
+    let ordersToDelete = [];
+    let groupsToUpdate = {};
+
+    // 1. Order'ları bul ve silinmesi gerekenleri belirle
+    for (const orderId of parsedOrderIds) {
+      const order = await WorkLog.findOne({
+        where: {
+          order_no: orderId,
+        },
+      });
+
+      if (order && order.work_status === "0") {
+        ordersToDelete.push(orderId);
+
+        // Grup numarasını ve order'ı ekle
+        if (order.group_no) {
+          if (!groupsToUpdate[order.group_no]) {
+            groupsToUpdate[order.group_no] = [];
+          }
+          groupsToUpdate[order.group_no].push(orderId);
+        }
+      }
+    }
+
+    // 2. Order'ları sil
+    if (ordersToDelete.length > 0) {
+      await WorkLog.destroy({
+        where: {
+          order_no: ordersToDelete,
+        },
+      });
+    }
+
+    // 3. Grup kayıtlarını güncelle
+    for (const [groupNo, orderIdsToRemove] of Object.entries(groupsToUpdate)) {
+      const groupRecord = await GroupRecords.findOne({
+        where: { group_no: groupNo },
+      });
+
+      if (groupRecord) {
+        const startingOrderNumbers = groupRecord.starting_order_numbers.split(",");
+        const updatedOrderNumbers = startingOrderNumbers.filter(
+          (orderNo) => !orderIdsToRemove.includes(orderNo)
+        ).join(","); // virgülle ayrılmıs strınge donustur.
+
+        await GroupRecords.update(
+          { starting_order_numbers: updatedOrderNumbers },
+          { where: { group_no: groupNo } }
+        );
+      }
+    }
+
+    return { status: 200, message: "Orders removed from groups successfully" };
+  } catch (err) {
+    console.error("Internal server error", err);
+    return { status: 500, message: "Internal server error" };
+  }
+};
+
+module.exports = {
+  getOrderById,
+  createOrderGroup,
+  getGroupList,
+  mergeGroups,
+  removeOrdersFromGroup,
+};

@@ -25,29 +25,6 @@ function OrderGroupManagement() {
   const [selectedGroupNo, setSelectedGroupNo] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState([]);
 
-  const buttons = [
-    {
-      children: "Gruba Ekle",
-      type: "button",
-      className: "w-[150px] sm:py-2 text-sm",
-    },
-    {
-      children: "Gruptan Çıkar",
-      type: "button",
-      className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
-    },
-    {
-      children: "Grubu Kaldır",
-      type: "button",
-      className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
-    },
-    {
-      children: "Siparişi Teslim Et",
-      type: "button",
-      className: "w-[150px] sm:py-2 text-sm",
-    },
-  ];
-
   //! id ye gore siparişi getırecek servıse ıstek atacak fonsıyon...
   const handleGetOrder = async () => {
     try {
@@ -98,9 +75,6 @@ function OrderGroupManagement() {
     handleGetGroupList();
   }, []);
 
-  useEffect(() => {
-    console.log(groupList);
-  }, [groupList]);
   console.log(selectedGroupNo);
   console.log(selectedOrderId);
 
@@ -178,6 +152,7 @@ function OrderGroupManagement() {
     }
   };
 
+  //! Seçili grupları bırlestırecek queryy grupları sıl sıparıslerı yenı grupta topla
   const handleMergeGroups = async () => {
     const groupIds = JSON.stringify(selectedGroupNo);
     try {
@@ -230,6 +205,50 @@ function OrderGroupManagement() {
     toast.success(`${item.ORDER_ID} nolu sipariş listeden çıkarıldı.`);
   };
 
+  //! Seçili order ı gruptan cıkarak query gruptan cıkar ve worklog tablosundan ılgılı order ı sıl (status 0 ise);
+  const handleRemoveOrderFromGroup = async () => {
+    const orderIds = JSON.stringify(selectedOrderId);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/removeOrdersFromGroup`,{
+          orderIds,
+        }
+      );
+
+      if(response.status === 200){
+        toast.success("Gruptan siparişleri silme işlemi başarıyla gerçekleştirildi.");
+        handleGetGroupList();
+        setSelectedOrderId([]);
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Siparişler gruptan cıkarılamadı.");
+    }
+  };
+
+  const buttons = [
+    {
+      children: "Gruba Ekle",
+      type: "button",
+      className: "w-[150px] sm:py-2 text-sm",
+    },
+    {
+      children: "Gruptan Çıkar",
+      type: "button",
+      className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
+      onClick:handleRemoveOrderFromGroup
+    },
+    {
+      children: "Grubu Kaldır",
+      type: "button",
+      className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
+    },
+    {
+      children: "Siparişi Teslim Et",
+      type: "button",
+      className: "w-[150px] sm:py-2 text-sm",
+    },
+  ];
   return (
     <div className="w-screen h-screen top-0 left-0 absolute  text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full">
@@ -380,6 +399,7 @@ function OrderGroupManagement() {
                           children={button.children}
                           className={button.className}
                           type={button.type}
+                          onClick={button.onClick}
                         />
                       ))}
                     </div>
