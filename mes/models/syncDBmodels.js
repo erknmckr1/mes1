@@ -49,7 +49,7 @@ Role.hasMany(User, { foreignKey: 'roleId' });
 // Tüm modelleri senkronize edin
 const syncModels = async () => {
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log("All models were synchronized successfully.");
   } catch (error) {
     console.error("Unable to synchronize the models:", error);

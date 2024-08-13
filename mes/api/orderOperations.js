@@ -111,6 +111,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     process_name,
     machine_name,
     production_amount,
+    group_no
   } = work_info;
 
   // En büyük uniq_id'yi bul ve bir artır
@@ -139,7 +140,8 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       process_id: process_id,
       process_name: process_name,
       production_amount: production_amount,
-      machine_name
+      machine_name,
+      group_no
     });
    }else{
     const result = await WorkLog.create({

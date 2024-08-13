@@ -5,8 +5,13 @@ const {
   createOrderGroup,
   getGroupList,
   mergeGroups,
-  removeOrdersFromGroup
+  removeOrdersFromGroup,
+  closeSelectedGroup,
+  addToGroup,
+  getWorksToBuzlama
 } = require("../services/orderServices");
+
+//!
 
 //! İd ile sipariş cekecek route...
 router.get("/getOrderById", async (req, res) => {
@@ -49,16 +54,38 @@ router.get("/getGroupList", async (req, res) => {
   return res.status(result.status).json(result.message);
 });
 
+//! Grup birlestirmek için istek atılacak route
 router.post("/mergeGroups", async (req, res) => {
   const { groupIds, operatorId, section, areaName } = req.body;
   const result = await mergeGroups({ groupIds, operatorId, section, areaName });
   return res.status(result.status).json(result.message);
 });
 
+//! Gruptan order cıkarak route...
 router.post("/removeOrdersFromGroup",async(req,res)=>{
   const {orderIds} = req.body;
   const result = await removeOrdersFromGroup({orderIds});
   return res.status(result.status).json(result.message);
+});
+
+//! Grubu kapatacak route
+router.post("/closeSelectedGroup",async(req,res)=>{
+  const {groupNos} = req.body;
+  const result = await closeSelectedGroup({groupNos});
+  return res.status(result.status).json(result.message);
+});
+
+//! Bir siparişi farklı bır gruba ekleyecek route... 
+router.post("/addToGroup",async(req,res)=>{
+  const {group_no,selectedOrderId} = req.body;
+  const result = await addToGroup({group_no,selectedOrderId});
+  return res.status(result.status).json(result.message);
 })
+
+//! Route - getWorkToBuzlama
+router.get("/getWorkToBuzlama", async (req, res) => {
+  const result = await getWorksToBuzlama();
+  return res.status(result.status).json(result.message);
+});
 
 module.exports = router;
