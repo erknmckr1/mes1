@@ -8,7 +8,8 @@ const {
   removeOrdersFromGroup,
   closeSelectedGroup,
   addToGroup,
-  getWorksToBuzlama
+  getWorksToBuzlama,
+  sendToMachine
 } = require("../services/orderServices");
 
 //!
@@ -82,9 +83,17 @@ router.post("/addToGroup",async(req,res)=>{
   return res.status(result.status).json(result.message);
 })
 
-//! Route - getWorkToBuzlama
 router.get("/getWorkToBuzlama", async (req, res) => {
-  const result = await getWorksToBuzlama();
+  const { areaName } = req.query;
+  const result = await getWorksToBuzlama(areaName);
+  return res.status(result.status).json(result.message);
+});
+
+
+//! Grubu makineye yollayacak route
+router.post("/sendToMachine", async (req, res) => {
+  const { id_dec, selectedMachine, selectedProcess, group_no } = req.body;
+  const result = await sendToMachine({ id_dec, selectedMachine, selectedProcess, group_no });
   return res.status(result.status).json(result.message);
 });
 

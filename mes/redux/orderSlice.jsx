@@ -1,5 +1,35 @@
   // Sipariş operasyonlarının statelerını tutacak slice..
-  import { createSlice } from "@reduxjs/toolkit";
+  import { createSlice,createAsyncThunk } from "@reduxjs/toolkit";
+  import axios from "axios";
+
+  export const handleGetGroupList = createAsyncThunk(
+    "order/fetchGroupList",  // Unik bir isim olmasına dikkat edin
+    async (_, thunkAPI) => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getGroupList`);
+        return response.data;
+      } catch (err) {
+        return thunkAPI.rejectWithValue(err.response.data);
+      }
+    }
+  );
+
+  export const fetchBuzlamaWorks = createAsyncThunk(
+    "order/fetchWorksList",
+    async (params, thunkAPI) => {
+      const {areaName} = params;
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkToBuzlama`,{
+          params:{
+            areaName
+          }
+        });
+        return response.data;
+      } catch (err) {
+        return thunkAPI.rejectWithValue(err.response.data);
+      }
+    }
+  );
 
   const orderSlice = createSlice({
     name: "order",
@@ -18,13 +48,14 @@
       finishedKalitePopup:null, // Kalitenin bitirme popup ının durumunu tutan state 
       finishedWorkPopup:null, // Bitirme popupının durumunu tutan state...
       // buzlamaaaaa...
-      groupManagementPopup:true,
+      groupManagementPopup:false,
       groupListPopup:false,
       groupList:[],
       selectedOrderId:[],
       selectedGroupNo:[],
       filteredGroup:[],
-      buzlamaWork:[]
+      buzlamaWork:[],
+      sendToMachinePopup:false, // makineye göndermek ıcın ılgılı popup ın durumunu tutan state...
     },
     reducers: {
       setSelectedOrder: (state, action) => {
@@ -86,9 +117,35 @@
       },
       setBuzlamaWorks:(state,action) => {
         state.buzlamaWork = action.payload;
+      },
+      setSendToMachinePopup:(state,action) => {
+        state.sendToMachinePopup = action.payload;
       }
     },
-
+    extraReducers: (builder) => {
+      builder
+        // handleGetGroupList işlemleri
+        .addCase(handleGetGroupList.pending, (state) => {
+          state.groupList = [];
+        })
+        .addCase(handleGetGroupList.fulfilled, (state, action) => {
+          state.groupList = action.payload;
+        })
+        .addCase(handleGetGroupList.rejected, (state, action) => {
+          console.error('Failed to fetch group list:', action.payload);
+        })
+  
+        // fetchBuzlamaWorks işlemleri
+        .addCase(fetchBuzlamaWorks.pending, (state) => {
+          state.buzlamaWork = [];
+        })
+        .addCase(fetchBuzlamaWorks.fulfilled, (state, action) => {
+          state.buzlamaWork = action.payload;
+        })
+        .addCase(fetchBuzlamaWorks.rejected, (state, action) => {
+          console.error('Failed to fetch buzlama works:', action.payload);
+        });
+    },
   });
 
   export const {
@@ -111,6 +168,7 @@
     setSelectedOrderIds,
     setSelectedGroupNos,
     setFilteredGroup,
-    setBuzlamaWorks
+    setBuzlamaWorks,
+    setSendToMachinePopup
   } = orderSlice.actions;
   export default orderSlice.reducer;

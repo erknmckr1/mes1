@@ -5,11 +5,14 @@ import Button from "../ui/Button";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { usePathname } from "next/navigation";
 
 function GroupNos({fetchBuzlamaWorks}) {
   const [selectedSendGroup,setSelectedSendGroup] = useState("");
   const { groupListPopup,groupList,selectedOrderId } = useSelector((state) => state.order);
   const dispatch = useDispatch();
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[3];
 
   const handleClosePopup = () => {
     dispatch(setGroupListPopup(false));
@@ -32,7 +35,7 @@ function GroupNos({fetchBuzlamaWorks}) {
         dispatch(setSelectedGroupNos([]));
         dispatch(setFilteredGroup([]));
         dispatch(setGroupListPopup(false));
-        fetchBuzlamaWorks();
+        dispatch(fetchBuzlamaWorks({areaName}));
       }
     } catch (err) {
       console.log(err);

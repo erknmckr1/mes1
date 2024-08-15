@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { MdCancel } from "react-icons/md";
 import { usePathname } from "next/navigation";
-import { setOrderGroupManagement } from "@/redux/orderSlice";
+import { setOrderGroupManagement,fetchBuzlamaWorks } from "@/redux/orderSlice";
 import GroupNos from "./GroupNos";
 import {
   setGroupListPopup,
@@ -14,7 +14,6 @@ import {
   setSelectedGroupNos,
   setSelectedOrderIds,
   setFilteredGroup,
-  setBuzlamaWorks,
 } from "@/redux/orderSlice";
 
 function OrderGroupManagement() {
@@ -78,34 +77,16 @@ function OrderGroupManagement() {
       dispatch(setGetGroupList(response.data));
     } catch (err) {
       console.log(err);
-      if(err.response.status===404){
+      if (err.response.status === 404) {
         dispatch(setGetGroupList([]));
       }
     }
   };
 
-  const fetchBuzlamaWorks = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkToBuzlama`
-      );
-
-      if (response.status === 200) {
-        dispatch(setBuzlamaWorks(response.data)); // Buzlama işlerini Redux'a kaydediyoruz
-      } else {
-        console.error(response.data);
-      }
-    } catch (err) {
-      console.error("Veriler çekilirken bir hata oluştu.", err);
-    }
-  };
-
-  //! Buzlama iş verilerini çekecek fonsıyon...
   useEffect(() => {
-    fetchBuzlamaWorks();
-  }, [dispatch]);
+    dispatch(fetchBuzlamaWorks({areaName}))
+  }, [dispatch,areaName]);
 
-  console.log(buzlamaWork);
   useEffect(() => {
     handleGetGroupList();
   }, []);
@@ -187,7 +168,7 @@ function OrderGroupManagement() {
       if (response && response.status === 200) {
         toast.success("Sipariş grubu başarıyla oluşturuldu.");
         handleGetGroupList();
-        fetchBuzlamaWorks();
+        dispatch(fetchBuzlamaWorks({areaName}))
         setOrderId("");
         setOrderList([]);
         dispatch(setSelectedOrderIds([]));
@@ -227,9 +208,10 @@ function OrderGroupManagement() {
         if (response.status === 200) {
           toast.success("Grup birleştirme işlemi başarılı...");
           handleGetGroupList();
+          dispatch(fetchBuzlamaWorks({areaName}))
           dispatch(setSelectedGroupNos([]));
           dispatch(setSelectedOrderIds([]));
-          dispatch(setFilteredGroup([]))
+          dispatch(setFilteredGroup([]));
         }
       } else {
         toast.error("Birleştirmek istediğiniz grup ID lerını seçiniz...");
@@ -269,32 +251,33 @@ function OrderGroupManagement() {
   //! Seçili order ı gruptan cıkarak query gruptan cıkar ve worklog tablosundan ılgılı order ı sıl (status 0 ise);
   const handleRemoveOrderFromGroup = async () => {
     const orderIds = JSON.stringify(selectedOrderId);
+    console.log(orderIds)
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/removeOrdersFromGroup`,
-        {
-          orderIds,
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success(
-          "Gruptan siparişleri silme işlemi başarıyla gerçekleştirildi."
+      if(selectedOrderId.length > 0){
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/removeOrdersFromGroup`,
+          {
+            orderIds,
+          }
         );
-        handleGetGroupList();
-        fetchBuzlamaWorks();
   
-        // OrderList'i ve diğer state'leri güncelleyin
-        const updatedOrderList = orderList.filter(
-          (order) => !selectedOrderId.includes(order.ORDER_ID)
-        );
-        dispatch(setFilteredGroup(updatedOrderList))
-        dispatch(setSelectedOrderIds([]));
-        dispatch(setFilteredGroup([]));
+        if (response.status === 200) {
+          toast.success(
+            "Gruptan siparişleri silme işlemi başarıyla gerçekleştirildi."
+          );
+          dispatch(fetchBuzlamaWorks({areaName}))
+          // OrderList'i ve diğer state'leri güncelleyin
+          const updatedOrderList = filteredGroup.filter(
+            (order) => !selectedOrderId.includes(order)
+          );
+          dispatch(setFilteredGroup(updatedOrderList));
+          dispatch(setSelectedOrderIds([]));
+        }
+      }else{
+        toast.error("Gruptan Çıkarmak istediğiniz siparişi seçiniz.")
       }
     } catch (err) {
       console.log(err);
-      toast.error("Siparişleri gruptan cıkarma işlemi başarılı.");
     }
   };
 
@@ -321,12 +304,14 @@ function OrderGroupManagement() {
         handleGetGroupList();
         dispatch(setSelectedOrderIds([]));
         dispatch(setSelectedGroupNos([]));
-        dispatch(setFilteredGroup([]))
+        dispatch(setFilteredGroup([]));
         setOrderList([]);
       }
     } catch (err) {
       console.log(err);
-      toast.error("catch bloguna dustu");
+      if(err.response.status === 400){
+        toast.error(err.response.data)
+      }
     }
   };
 

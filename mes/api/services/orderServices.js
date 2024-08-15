@@ -35,6 +35,9 @@ const getWorksToBuzlama = async () => {
     const result = await WorkLog.findAll({
       where: {
         area_name: "buzlama",
+        work_status: {
+          [Op.in]: ["0", "1", "2"],
+        },
       },
     });
 
@@ -94,8 +97,8 @@ async function createOrderGroup(params) {
         },
       });
 
-      if (existingOrder) {
-        // Eğer herhangi bir order_id için WorkLog tablosunda kayıt varsa, direkt return yapıyoruz
+      if (existingOrder && existingOrder.work_status !== "3") {
+        // Eğer mevcut bir kayıt varsa ve work_status 3 değilse, direkt return yapıyoruz.
         return {
           status: 400,
           message: `Sipariş ID ${order.ORDER_ID} için zaten mevcut bir kayıt var. Grup oluşturulmadı.`,
@@ -193,7 +196,7 @@ const mergeGroups = async (params) => {
   try {
     // Gönderilen grup ID'lerini parse et (dizi olarak aldık)
     const parsedGroupIds = JSON.parse(groupIds);
-    console.log(parsedGroupIds)
+    console.log(parsedGroupIds);
     // Son kaydın grup_no sunu al
     const latestGroupNo = await GroupRecords.findOne({
       order: [["group_no", "DESC"]],
@@ -209,20 +212,20 @@ const mergeGroups = async (params) => {
     }
 
     console.log(newGroupNo);
-      // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
-      let allOrderIds = [];
-      for (const groupId of parsedGroupIds) {
-        const orders = await WorkLog.findAll({
-          where: { group_no: groupId },
-        });
-  
-        // Eğer group_no'ya bağlı order'lar varsa, bunları allOrderIds dizisine ekle
-        if (orders && orders.length > 0) {
-          allOrderIds = allOrderIds.concat(orders.map(order => order.order_no));
-        } else {
-          throw new Error(`Grup bulunamadı veya içinde sipariş yok: ${groupId}`);
-        }
+    // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
+    let allOrderIds = [];
+    for (const groupId of parsedGroupIds) {
+      const orders = await WorkLog.findAll({
+        where: { group_no: groupId },
+      });
+
+      // Eğer group_no'ya bağlı order'lar varsa, bunları allOrderIds dizisine ekle
+      if (orders && orders.length > 0) {
+        allOrderIds = allOrderIds.concat(orders.map((order) => order.order_no));
+      } else {
+        throw new Error(`Grup bulunamadı veya içinde sipariş yok: ${groupId}`);
       }
+    }
 
     // Yeni grup kaydını oluştur
     const newGroupRecord = await GroupRecords.create({
@@ -235,13 +238,13 @@ const mergeGroups = async (params) => {
       area_name: areaName,
     });
 
-      // WorkLog tablosundaki her siparişin group_no sütununu güncelle
-      for (const orderId of allOrderIds) {
-        await WorkLog.update(
-          { group_no: newGroupNo },
-          { where: { order_no: orderId } }
-        );
-      }
+    // WorkLog tablosundaki her siparişin group_no sütununu güncelle
+    for (const orderId of allOrderIds) {
+      await WorkLog.update(
+        { group_no: newGroupNo },
+        { where: { order_no: orderId } }
+      );
+    }
 
     // Eski grupları sil
     await GroupRecords.destroy({
@@ -262,41 +265,32 @@ const removeOrdersFromGroup = async (params) => {
   const { orderIds } = params;
   try {
     const parsedOrderIds = JSON.parse(orderIds);
+    console.log(parsedOrderIds);
     let ordersToDelete = [];
-    let groupsToUpdate = {};
 
     // 1. Order'ları bul ve silinmesi gerekenleri belirle
     for (const orderId of parsedOrderIds) {
       const order = await WorkLog.findOne({
         where: {
           order_no: orderId,
+          work_status:"0"
         },
       });
 
       console.log({ order }); // order nesnesini kontrol edelim
 
       if (order && order.work_status === "0") {
-        ordersToDelete.push(orderId);
-
-        // Grup numarasını ve order'ı ekle
-        if (order.group_no) {
-          if (!groupsToUpdate[order.group_no]) {
-            groupsToUpdate[order.group_no] = [];
-          }
-          groupsToUpdate[order.group_no].push(orderId);
-        } else {
-          console.log(`Order ${orderId} has no group_no`);
-        }
+        ordersToDelete.push(order.order_no);
       }
     }
 
-    console.log({ groupsToUpdate: groupsToUpdate });
+    console.log(ordersToDelete);
 
     // 2. Order'ları sil
     if (ordersToDelete.length > 0) {
       await WorkLog.destroy({
         where: {
-          order_no: ordersToDelete,
+          order_no: ordersToDelete, // ordersToDelete dizisi doğru bir şekilde olmalı
         },
       });
     }
@@ -312,7 +306,6 @@ const removeOrdersFromGroup = async (params) => {
     return { status: 500, message: "Internal server error" };
   }
 };
-
 
 //!
 const closeSelectedGroup = async (params) => {
@@ -333,38 +326,37 @@ const closeSelectedGroup = async (params) => {
       },
     });
 
-      // Tüm order'ların work_status ve area_name kontrolü
-      const canCloseGroup = orders.every(
-        (order) => order.work_status === "0" && order.area_name === "buzlama"
-      );
+    // Eğer herhangi bir siparişin work_status'ü 1 veya 2 ise, grup kapatılamaz
+    const hasActiveOrders = orders.some(
+      (order) => order.work_status === "1" || order.work_status === "2"
+    );
 
-      if (canCloseGroup) {
-        // Tüm uygun order'ları sil
-        await WorkLog.destroy({
-          where: {
-            group_no: parsedGroupNos[0],
-            work_status: "0",
-          },
-        });
+    if (hasActiveOrders) {
+      return {
+        status: 400,
+        message: "Grup içerisindeki işler başlatılmış veya yanlış alanda.",
+      };
+    }
 
-        // Grubu kapatma işlemi, örneğin group_status alanını güncelleyerek veya grubu silerek
-        await GroupRecords.destroy({ where: { group_no: parsedGroupNos[0] } });
+    // Eğer bütün siparişlerin work_status'ü 1 veya 2 değilse, grubu kapatabiliriz
+    await WorkLog.destroy({
+      where: {
+        group_no: parsedGroupNos[0],
+        work_status: "0", // Sadece work_status "0" olan siparişleri sil
+      },
+    });
 
-        return { status: 200, message: "Grup başarıyla kapatıldı." };
-      } else {
-        return {
-          status: 400,
-          message: "Grup içerisindeki işler başlatılmış veya yanlış alanda.",
-        };
-      }
-    
+    // Grubu kapatma işlemi, örneğin group_status alanını güncelleyerek veya grubu silerek
+    await GroupRecords.destroy({ where: { group_no: parsedGroupNos[0] } });
+    return { status: 200, message: "Grup başarıyla kapatıldı." };
+
   } catch (err) {
     console.error("Internal server error", err);
     return { status: 500, message: "Internal server error" };
   }
 };
 
-
+//! Gruba sipariş ekleyecek servis
 const addToGroup = async (params) => {
   const { group_no, selectedOrderId } = params;
   let parsedOrdersId = JSON.parse(selectedOrderId);
@@ -386,6 +378,7 @@ const addToGroup = async (params) => {
         where: {
           order_no: parsedOrdersId,
           area_name: "buzlama",
+          work_status : "0"
         },
       });
       console.log(orders);
@@ -415,6 +408,57 @@ const addToGroup = async (params) => {
   }
 };
 
+//! Gönderilen grubu makineye yollayacak servis... work status 0'dan 1'e
+const sendToMachine = async (params) => {
+  const { id_dec, selectedMachine, selectedProcess, group_no } = params;
+  const currentDateTimeOffset = new Date().toISOString();
+
+  try {
+    const group = await GroupRecords.findOne({
+      where: { group_no },
+    });
+
+    if (!group) {
+      return {
+        status: 404,
+        message: "Makineye gönderilecek grup numarası bulunamadı...",
+      };
+    }
+
+    const orders = await WorkLog.findAll({
+      where: { group_no, work_status: "0" },
+    });
+
+    // statusu 0 sipariş yoksa başlamıştır...
+    if (orders.length === 0) {
+      return {
+        status: 404,
+        message: "Grupta sipariş yok ya da bütün siparişler başlamış.",
+      };
+    }
+
+    for (const order of orders) {
+      await WorkLog.update(
+        {
+          work_status: "1",
+          process_name: selectedProcess,
+          machine_name: selectedMachine,
+          work_start_date: currentDateTimeOffset,
+          user_id_dec: id_dec,
+        },
+        {
+          where: { order_no: order.order_no, work_status: "0" },
+        }
+      );
+    }
+
+    return { status: 200, message: "Grup başarıyla makineye gönderildi." };
+  } catch (err) {
+    console.error("Internal server error", err);
+    return { status: 500, message: "Sunucu hatası oluştu. Lütfen tekrar deneyiniz." };
+  }
+};
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -424,4 +468,5 @@ module.exports = {
   closeSelectedGroup,
   addToGroup,
   getWorksToBuzlama,
+  sendToMachine,
 };

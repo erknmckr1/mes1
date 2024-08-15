@@ -283,6 +283,7 @@ app.post("/createWorkLog", async (req, res) => {
 //! Mevcut işleri getirecek metot...
 app.get("/getWorks", async (req, res) => {
   const { area_name, user_id_dec } = req.query;
+  console.log(area_name)
   try {
     // Kullanıcının kendi işleri (aktif)
     const userWorks = await getWorks({ area_name, user_id_dec });

@@ -3,12 +3,10 @@ import Button from "./ui/Button";
 import { useSelector } from "react-redux";
 import {
   setStopReasonPopup,
-  cancelReasonPopup,
-  setCancelReasonPopup,
-  setRepairJobPopup,
   setFinishedWorkPopup,
   setSelectedOrder,
-  setOrderGroupManagement
+  setOrderGroupManagement,
+  setSendToMachinePopup
 } from "@/redux/orderSlice";
 
 import { useDispatch } from "react-redux";
@@ -21,7 +19,7 @@ function RightSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-  const { stopReasonPopup, selectedOrder,groupManagementPopup } = useSelector(
+  const { stopReasonPopup, selectedOrder,groupManagementPopup,sendToMachinePopup,selectedProcess,selectedMachine } = useSelector(
     (state) => state.order
   );
   const { userInfo } = useSelector((state) => state.user);
@@ -41,8 +39,6 @@ function RightSideBtnArea() {
   const handleOpenGroupManagementPopup = () => {
     dispatch(setOrderGroupManagement(true));
   }
-
-  console.log(groupManagementPopup)
 
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
@@ -85,6 +81,7 @@ function RightSideBtnArea() {
     }
   };
 
+  //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
       if (selectedOrder) {
@@ -110,6 +107,13 @@ function RightSideBtnArea() {
       toast.error("Sipariş iptal edilemedi. Lütfen tekrar deneyin.");
     }
   };
+
+  // makineye gönder popup ını acacak fonksıyon... 
+  const handleOpenSendMachinePopup = () => {
+    if(selectedProcess && selectedMachine){
+      dispatch(setSendToMachinePopup(true));
+    };
+  }
 
   // Kalite buttons
   const buttons_r = [
@@ -152,7 +156,7 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleOpenStopPopup,
+      onClick: handleOpenSendMachinePopup,
       children: "Makineye Gönder",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",

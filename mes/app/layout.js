@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 import HomeSidebars from "@/components/sideBars/HomeSidebars";
 import CurrentDate from "@/components/ui/Date";
 import OrderGroupManagement from "@/components/popups/OrderGroupManagement";
+import SendToMachinePopup from "@/components/popups/SendToMachinePopup";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -36,7 +37,8 @@ function Layout({ children }) {
     cancelReasonPopup,
     repairJobPopup,
     finishedWorkPopup,
-    groupManagementPopup
+    groupManagementPopup,
+    sendToMachinePopup
   } = useSelector((state) => state.order);
 
   // useEffect(() => {
@@ -61,6 +63,7 @@ function Layout({ children }) {
       {repairJobPopup && <RepairJobPopup />}
       {finishedWorkPopup && <FinishedWorkPopup />}
       {groupManagementPopup && <OrderGroupManagement/>}
+      {sendToMachinePopup && <SendToMachinePopup/>}
       <ToastContainer />
     </>
   );
