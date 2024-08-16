@@ -1,11 +1,10 @@
 const OrderTable = require("../../models/OrderTable");
 const WorkLog = require("../../models/WorkLog");
-const StoppedWorksLogs = require("../../models/StoppedWorksLog");
 const GroupRecords = require("../../models/GroupRecords");
 const User = require("../../models/User");
 const { Op, json } = require("sequelize");
 const { createWork } = require("../orderOperations");
-
+const MeasureData = require("../../models/MeasureData");
 //! id ye gore sıparısı getırecek servis...
 async function getOrderById(orderId) {
   try {
@@ -459,6 +458,66 @@ const sendToMachine = async (params) => {
   }
 };
 
+async function createMeasurementData(measurementsInfo) {
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    // Yeni ölçüm verisini oluştur
+    const newMeasurement = await MeasureData.create({
+      order_no: measurementsInfo.order_no,
+      material_no: measurementsInfo.material_no,
+      operator: measurementsInfo.operator,
+      area_name: measurementsInfo.area_name,
+      entry_measurement: measurementsInfo.entry_measurement,
+      exit_measurement: measurementsInfo.exit_measurement,
+      entry_weight_50cm: measurementsInfo.entry_weight_50cm,
+      exit_weight_50cm: measurementsInfo.exit_weight_50cm,
+      data_entry_date: currentDateTimeOffset,
+      description: measurementsInfo.description,
+      measurement_package: measurementsInfo.measurement_package
+    });
+
+    // Başarılı yanıt döndür
+    return {
+      status: 200,
+      message: { success: true, message: newMeasurement }
+    };
+
+  } catch (err) {
+    console.error("Error creating measurement data:", err);
+
+    // Hata durumunda yanıt döndür
+    return {
+      status: 500,
+      message: { success: false, error: "Ölçüm verisi kaydedilirken bir hata oluştu." }
+    };
+  }
+}
+
+//! Ölçüm verilerini çekecek servis... 
+async function getAllMeasurements(areaName) {
+  try {
+    // Tüm ölçüm verilerini veritabanından çek
+    const measurements = await MeasureData.findAll({
+      where:{
+        area_name:areaName
+      }
+    });
+
+    // Başarılı yanıt döndür
+    return {
+      status: 200,
+      message: measurements
+    };
+  } catch (error) {
+    console.error("Error fetching measurements:", error);
+
+    // Hata durumunda yanıt döndür
+    return {
+      status: 500,
+      message: { success: false, message: "Ölçüm verileri çekilirken bir hata oluştu." }
+    };
+  }
+}
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -469,4 +528,6 @@ module.exports = {
   addToGroup,
   getWorksToBuzlama,
   sendToMachine,
+  createMeasurementData,
+  getAllMeasurements
 };

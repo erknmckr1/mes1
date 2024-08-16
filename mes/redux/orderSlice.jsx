@@ -56,6 +56,8 @@
       filteredGroup:[],
       buzlamaWork:[],
       sendToMachinePopup:false, // makineye göndermek ıcın ılgılı popup ın durumunu tutan state...
+      // Ölçüm veri girişi 
+      measurementEntryPopup:true,
     },
     reducers: {
       setSelectedOrder: (state, action) => {
@@ -120,6 +122,9 @@
       },
       setSendToMachinePopup:(state,action) => {
         state.sendToMachinePopup = action.payload;
+      },
+      setMeasurementPopup:(state,action) => {
+        state.measurementEntryPopup = action.payload;
       }
     },
     extraReducers: (builder) => {
@@ -169,6 +174,8 @@
     setSelectedGroupNos,
     setFilteredGroup,
     setBuzlamaWorks,
-    setSendToMachinePopup
+    setSendToMachinePopup,
+    // ölçüm veri girişi
+    setMeasurementPopup
   } = orderSlice.actions;
   export default orderSlice.reducer;

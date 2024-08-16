@@ -17,6 +17,7 @@ const RolePermission = require("./RolePermissions");
 const Permission = require("./Permissions");
 const Role = require("./Roles");
 const GroupRecords = require("./GroupRecords");
+const MeasureData = require("./MeasureData");
 const models = {
   User,
   BreakLog,
@@ -35,7 +36,8 @@ const models = {
   Role,
   Permission,
   RolePermission,
-  GroupRecords
+  GroupRecords,
+  MeasureData
 };
 
 // İlişkileri tanımlama
@@ -49,7 +51,7 @@ Role.hasMany(User, { foreignKey: 'roleId' });
 // Tüm modelleri senkronize edin
 const syncModels = async () => {
   try {
-    await sequelize.sync({ alter: false });
+    await sequelize.sync({ alter: true });
     console.log("All models were synchronized successfully.");
   } catch (error) {
     console.error("Unable to synchronize the models:", error);

@@ -9,7 +9,9 @@ const {
   closeSelectedGroup,
   addToGroup,
   getWorksToBuzlama,
-  sendToMachine
+  sendToMachine,
+  createMeasurementData,
+  getAllMeasurements
 } = require("../services/orderServices");
 
 //!
@@ -95,6 +97,21 @@ router.post("/sendToMachine", async (req, res) => {
   const { id_dec, selectedMachine, selectedProcess, group_no } = req.body;
   const result = await sendToMachine({ id_dec, selectedMachine, selectedProcess, group_no });
   return res.status(result.status).json(result.message);
+});
+
+//! Ölçüm verilerini yollayacagımız route
+router.post("/measurements",async(req,res)=>{
+  const measurementsInfo = req.body;
+  console.log("x")
+  const result = await createMeasurementData(measurementsInfo);
+  return res.status(result.status).json(result.message);
+})
+
+//! Ölçüm verilerini cekecek route
+router.get("/getMeasurements", async (req, res) => {
+    const {areaName} = req.query
+    const result = await getAllMeasurements(areaName);
+    return res.status(result.status).json(result.message);
 });
 
 module.exports = router;

@@ -6,7 +6,8 @@ import {
   setFinishedWorkPopup,
   setSelectedOrder,
   setOrderGroupManagement,
-  setSendToMachinePopup
+  setSendToMachinePopup,
+  setMeasurementPopup
 } from "@/redux/orderSlice";
 
 import { useDispatch } from "react-redux";
@@ -115,6 +116,11 @@ function RightSideBtnArea() {
     };
   }
 
+  // ölçüm veri girişi popup ını açacak fonksıyon...
+  const handleOpenMeasurementPopup = () => {
+    dispatch(setMeasurementPopup(true));
+  }
+
   // Kalite buttons
   const buttons_r = [
     {
@@ -217,6 +223,7 @@ function RightSideBtnArea() {
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
       disabled: isCurrentBreak,
+      onClick:handleOpenMeasurementPopup
     },
   ];
 

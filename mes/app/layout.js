@@ -18,6 +18,7 @@ import HomeSidebars from "@/components/sideBars/HomeSidebars";
 import CurrentDate from "@/components/ui/Date";
 import OrderGroupManagement from "@/components/popups/OrderGroupManagement";
 import SendToMachinePopup from "@/components/popups/SendToMachinePopup";
+import MeasurementDataEntry from "@/components/popups/MeasurementDataEntry";
 
 // export const metadata = {
 //   title: "Create Next App",
@@ -38,7 +39,8 @@ function Layout({ children }) {
     repairJobPopup,
     finishedWorkPopup,
     groupManagementPopup,
-    sendToMachinePopup
+    sendToMachinePopup,
+    measurementEntryPopup
   } = useSelector((state) => state.order);
 
   // useEffect(() => {
@@ -64,6 +66,7 @@ function Layout({ children }) {
       {finishedWorkPopup && <FinishedWorkPopup />}
       {groupManagementPopup && <OrderGroupManagement/>}
       {sendToMachinePopup && <SendToMachinePopup/>}
+      {measurementEntryPopup && <MeasurementDataEntry/>}
       <ToastContainer />
     </>
   );
