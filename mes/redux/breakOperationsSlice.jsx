@@ -4,9 +4,14 @@ import axios from "axios";
 
 export const fetchOnBreakUsers = createAsyncThunk(
   "fetchBreak",
-  async (_, thunkAPI) => {
+  async (params, thunkAPI) => {
+    const {areaName} = params;
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/getBreakOnUsers`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/getBreakOnUsers`,{
+        params:{
+          areaName
+        }
+      });
       return response.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data);

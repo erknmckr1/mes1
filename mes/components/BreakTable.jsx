@@ -2,14 +2,17 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; // Burada useSelector'u import ettiğinizden emin olun
 import { fetchOnBreakUsers } from '@/redux/breakOperationsSlice';
+import { usePathname } from 'next/navigation';
 
 function BreakTable() {
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[3];
   const dispatch = useDispatch();
   const {theme} = useSelector(theme => theme.global)
   const { onBreak_users, loading, error } = useSelector((state) => state.break);
 
   useEffect(() => {
-    dispatch(fetchOnBreakUsers());
+    dispatch(fetchOnBreakUsers({areaName}));
   }, [dispatch]);
 
   if (loading) {

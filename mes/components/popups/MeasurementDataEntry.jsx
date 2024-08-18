@@ -61,7 +61,6 @@ function MeasurementDataEntry() {
     getAllMeasurement();
   },[])
 
-  console.log(allMeasurement)
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
     console.log(formState.orderId);
@@ -123,12 +122,32 @@ function MeasurementDataEntry() {
           description: "",
           measurement_package: 0.0,
         });
+        getAllMeasurement();
       }
       
     } catch (err) {
       console.log(err);
     }
   };
+
+  // formu temızleyecek state... 
+  const handleDeleteForm = () => {
+    setFormState({
+      order_no: "",
+      material_no: "",
+      operator: "",
+      area_name: "",
+      entry_measurement: "",
+      exit_measurement: "",
+      entry_weight_50cm: 0.0,
+      exit_weight_50cm: 0.0,
+      data_entry_date: "",
+      description: "",
+      measurement_package: 0.0,
+    });
+
+    console.log(formState)
+  }
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -205,50 +224,51 @@ function MeasurementDataEntry() {
   })
 
   const inputFields = [
-    {
-      name: "orderId",
-      placeholder: "Sipariş Barkodunu Okutunuz",
-      type: "text",
-      value: formState.orderId,
-      onkeydown: handleKeyDown,
-    },
-    {
-      name: "entryMeasurement",
-      placeholder: "Giriş Ölçüsünü Giriniz",
-      type: "number",
-      value: formState.entryMeasurement,
-    },
-    {
-      name: "exitMeasurement",
-      placeholder: "Çıkış Ölçüsünü Giriniz",
-      type: "number",
-      value: formState.exitMeasurement,
-    },
-    {
-      name: "entryGramage",
-      placeholder: "50 cm İçin Giriş Gramajı",
-      type: "number",
-      value: formState.entryGramage,
-    },
-    {
-      name: "exitGramage",
-      placeholder: "50 cm İçin Çıkış Gramajı",
-      type: "number",
-      value: formState.exitGramage,
-    },
-    {
-      name: "gramage",
-      placeholder: "Gramaj",
-      type: "number",
-      value: formState.gramage,
-    },
-    {
-      name: "quantity",
-      placeholder: "Adet",
-      type: "number",
-      value: formState.quantity,
-    },
-  ];
+  {
+    name: "orderId",
+    placeholder: "Sipariş Barkodunu Okutunuz",
+    type: "text",
+    value: formState.orderId || "",  // Eğer undefined ise "" kullan
+    onkeydown: handleKeyDown,
+  },
+  {
+    name: "entryMeasurement",
+    placeholder: "Giriş Ölçüsünü Giriniz",
+    type: "number",
+    value: formState.entryMeasurement || "",  
+  },
+  {
+    name: "exitMeasurement",
+    placeholder: "Çıkış Ölçüsünü Giriniz",
+    type: "number",
+    value: formState.exitMeasurement || "",  
+  },
+  {
+    name: "entryGramage",
+    placeholder: "50 cm İçin Giriş Gramajı",
+    type: "number",
+    value: formState.entryGramage || "",  
+  },
+  {
+    name: "exitGramage",
+    placeholder: "50 cm İçin Çıkış Gramajı",
+    type: "number",
+    value: formState.exitGramage || "",  
+  },
+  {
+    name: "gramage",
+    placeholder: "Gramaj",
+    type: "number",
+    value: formState.gramage || "", 
+  }, 
+  {
+    name: "quantity",
+    placeholder: "Adet",
+    type: "number",
+    value: formState.quantity || "",  
+  },
+];
+
   const buttons = [
     {
       children: "Kaydet",
@@ -265,6 +285,7 @@ function MeasurementDataEntry() {
       children: "Temizle",
       type: "button",
       className: "w-[150px] sm:py-2 text-sm",
+      onClick:handleDeleteForm
     },
     {
       children: "Kapat",

@@ -25,6 +25,10 @@ const Machines = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    machine_barcode:{
+      type: DataTypes.STRING,
+      allowNull: true,
+    }
   },
   {
     tableName: "machines_table",

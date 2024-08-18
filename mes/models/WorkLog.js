@@ -88,7 +88,7 @@ const WorkLog = sequelize.define('WorkLog', {
   },
   process_id: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   process_name: {
     type: DataTypes.STRING,

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import Button from "../ui/Button";
-import { handleGetGroupList, fetchBuzlamaWorks } from "@/redux/orderSlice";
+import { handleGetGroupList, fetchBuzlamaWorks, setSelectedProcess, setSelectedMachine } from "@/redux/orderSlice";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setSelectedGroupNos,
@@ -68,8 +68,9 @@ function SendToMachinePopup() {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/sendToMachine`,
           {
             group_no: groupNo, // Artık JSON değil direkt string
-            selectedMachine,
-            selectedProcess,
+            machine_name:selectedMachine.machine_name,
+            process_name:selectedProcess?.process_name,
+            process_id: selectedProcess?.process_id,
             id_dec,
           }
         );
@@ -81,6 +82,12 @@ function SendToMachinePopup() {
             userId: userInfo.id_dec,
             dispatch,
           });
+          dispatch(setSelectedGroupNos([]));
+          dispatch(setFilteredGroup([]));
+          dispatch(setSendToMachinePopup(false));
+          dispatch(setSelectedProcess(""));
+          dispatch(setSelectedMachine(""));
+
         } else {
           toast.error(
             response.data.message || "İşlem sırasında bir hata oluştu."

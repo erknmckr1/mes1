@@ -40,8 +40,8 @@
       cancelReasonPopup: null, // sipariş iptal popupının durumunu tutan state
       repairJobPopup: null, // sipariş tamir popupının durumunu tutan state
       read_order: null, // okutulan sıparısında tasını tutacak state
-      selectedProcess: "default", // sipariş baslatmadan once secılecek process ı tutan state
-      selectedMachine: "default", // sipariş baslatmadan once secılecek makıneyı tutan state
+      selectedProcess: "", // sipariş baslatmadan once secılecek process ı tutan state
+      selectedMachine: "", // sipariş baslatmadan once secılecek makıneyı tutan state
       processList: null,
       machineList: null,
       finishedAmount:"", // Siparişin sağlıklı bitirilecek kısmını tutacak state gr ...
@@ -57,7 +57,7 @@
       buzlamaWork:[],
       sendToMachinePopup:false, // makineye göndermek ıcın ılgılı popup ın durumunu tutan state...
       // Ölçüm veri girişi 
-      measurementEntryPopup:true,
+      measurementEntryPopup:false,
     },
     reducers: {
       setSelectedOrder: (state, action) => {

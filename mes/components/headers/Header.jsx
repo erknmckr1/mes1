@@ -24,7 +24,7 @@ function Header() {
             <Button className="p-3" children="Bölüm Dosyaları" />
             <Button className="p-3" children="Mesai Bilgisi" />
           </div>
-          <OrderSearch/>
+          { area_name !== "buzlama" &&  <OrderSearch/>}
           <div className="flex gap-x-6">
           <ThemeButton/>
           <ReloadButton theme={theme}/>

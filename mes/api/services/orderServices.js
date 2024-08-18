@@ -56,26 +56,29 @@ const getWorksToBuzlama = async () => {
 
 //! Yenı grup olustacak fonksıyon...
 async function createOrderGroup(params) {
+  console.log(params);
   if (!params || typeof params !== "object") {
     return { status: 400, message: "Invalid parameters." };
   }
 
   const {
     orderList,
-    selectedMachine,
-    selectedProcess,
+    machine_name,
+    process_id,
+    process_name,
     operatorId,
     section,
     areaName,
   } = params;
 
-  if (!orderList || !selectedMachine || !selectedProcess || !operatorId) {
+  if (!orderList || !operatorId) {
     return { status: 400, message: "Missing required parameters." };
   }
 
   const currentDateTimeOffset = new Date().toISOString();
 
   try {
+    // Giriş yapan kullanıcı olusturmayacaksa ekstra bır ıd alma popup ı yapacağız.
     const user = await User.findOne({
       where: {
         [Op.or]: [{ id_dec: operatorId }, { id_hex: operatorId }],
@@ -96,7 +99,12 @@ async function createOrderGroup(params) {
         },
       });
 
-      if (existingOrder && existingOrder.work_status !== "3") {
+      if (
+        existingOrder &&
+        existingOrder.work_status !== "3" &&
+        existingOrder.area_name === "buzlama" &&
+        existingOrder.work_status !== "4"
+      ) {
         // Eğer mevcut bir kayıt varsa ve work_status 3 değilse, direkt return yapıyoruz.
         return {
           status: 400,
@@ -123,11 +131,11 @@ async function createOrderGroup(params) {
       group_record_id: newGroupNo,
       group_no: newGroupNo,
       who_started_group: operatorId,
-      group_start_date: currentDateTimeOffset,
+      group_creation_date: currentDateTimeOffset,
       group_status: "1",
       // starting_order_numbers: orderIds,
-      process_name: selectedProcess,
-      machine_name: selectedMachine,
+      // process_name: process_name || "Default",  // Eğer process_name boşsa, "Default Process Name" kullanılır
+      // machine_name: machine_name || "Default",  // Eğer machine_name boşsa, "Default Machine Name" kullanılır
       section,
       area_name: areaName,
     });
@@ -148,11 +156,11 @@ async function createOrderGroup(params) {
           section,
           area_name: areaName,
           work_status: "0",
-          process_name: selectedProcess,
-          machine_name: selectedMachine,
+          // process_name: process_name || "Default", // Eğer process_name boşsa, "Default Process Name" kullanılır
+          // machine_name: machine_name || "Default", // Eğer machine_name boşsa, "Default Machine Name" kullanılır
           production_amount: sorder.PRODUCTION_AMOUNT,
           order_id: sorder.ORDER_ID,
-          process_id: "0",
+          // process_id: process_id || "Default", // Eğer process_id boşsa, "Default Process ID" kullanılır
           user_id_dec: user.id_dec,
           op_username: user.op_username,
           group_no: newGroupNo,
@@ -210,7 +218,6 @@ const mergeGroups = async (params) => {
       newGroupNo = "00001";
     }
 
-    console.log(newGroupNo);
     // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
     let allOrderIds = [];
     for (const groupId of parsedGroupIds) {
@@ -220,6 +227,17 @@ const mergeGroups = async (params) => {
 
       // Eğer group_no'ya bağlı order'lar varsa, bunları allOrderIds dizisine ekle
       if (orders && orders.length > 0) {
+        // work_status'u 1 olan bir order varsa, hata döndür
+        const ongoingOrder = orders.find(
+          (order) => order.work_status !== "2" || order.work_status !== "3"
+        );
+        if (ongoingOrder) {
+          return {
+            status: 400,
+            message: `Bu grupta devam eden yada bitmiş bir sipariş var: ${groupId}`,
+          };
+        }
+
         allOrderIds = allOrderIds.concat(orders.map((order) => order.order_no));
       } else {
         throw new Error(`Grup bulunamadı veya içinde sipariş yok: ${groupId}`);
@@ -231,7 +249,7 @@ const mergeGroups = async (params) => {
       group_record_id: newGroupNo,
       group_no: newGroupNo,
       who_started_group: operatorId,
-      group_start_date: new Date().toISOString(),
+      group_creation_date: new Date().toISOString(),
       group_status: "1",
       section,
       area_name: areaName,
@@ -265,22 +283,33 @@ const removeOrdersFromGroup = async (params) => {
   try {
     const parsedOrderIds = JSON.parse(orderIds);
     console.log(parsedOrderIds);
-    let ordersToDelete = [];
 
+    let ordersToDelete = []; // Gruptan cıkacak sıparıslerı topladıgımız dizi
+    let invalidOrders = []; // Başlamış suparıslerı topladıgımız dizi
     // 1. Order'ları bul ve silinmesi gerekenleri belirle
     for (const orderId of parsedOrderIds) {
       const order = await WorkLog.findOne({
         where: {
           order_no: orderId,
-          work_status:"0"
+          work_status: "0",
         },
       });
 
-      console.log({ order }); // order nesnesini kontrol edelim
-
-      if (order && order.work_status === "0") {
+      if (!order) {
+        invalidOrders.push(orderId);
+      } else if (order.work_status === "0") {
         ordersToDelete.push(order.order_no);
       }
+    }
+
+    // Eğer hatalı siparişler varsa, bir uyarı mesajı döndür
+    if (invalidOrders.length > 0) {
+      return {
+        status: 403,
+        message: `${invalidOrders.join(
+          ", "
+        )} no lu sipariş(ler) başlamış. Gruptan çıkarmak istediğiniz siparişleri tekrardan seçip işlemi gerçekleştirin.`,
+      };
     }
 
     console.log(ordersToDelete);
@@ -293,11 +322,6 @@ const removeOrdersFromGroup = async (params) => {
         },
       });
     }
-
-    // 3. Grup kayıtlarını güncelle (Optional)
-    // Eğer gruptan çıkarılan siparişlerin `GroupRecords` üzerinde başka bir etkisi yoksa bu adımı tamamen atlayabiliriz.
-    // Eğer grupların durumu güncellenmesi gerekiyorsa, burada yapılacak işlemleri belirleyebilirsiniz.
-    // Örneğin, grup içindeki tüm siparişler kaldırıldıysa grubu da kaldırabilirsiniz.
 
     return { status: 200, message: "Orders removed from groups successfully" };
   } catch (err) {
@@ -348,7 +372,6 @@ const closeSelectedGroup = async (params) => {
     // Grubu kapatma işlemi, örneğin group_status alanını güncelleyerek veya grubu silerek
     await GroupRecords.destroy({ where: { group_no: parsedGroupNos[0] } });
     return { status: 200, message: "Grup başarıyla kapatıldı." };
-
   } catch (err) {
     console.error("Internal server error", err);
     return { status: 500, message: "Internal server error" };
@@ -377,7 +400,7 @@ const addToGroup = async (params) => {
         where: {
           order_no: parsedOrdersId,
           area_name: "buzlama",
-          work_status : "0"
+          work_status: "0",
         },
       });
       console.log(orders);
@@ -409,7 +432,7 @@ const addToGroup = async (params) => {
 
 //! Gönderilen grubu makineye yollayacak servis... work status 0'dan 1'e
 const sendToMachine = async (params) => {
-  const { id_dec, selectedMachine, selectedProcess, group_no } = params;
+  const { id_dec, machine_name, process_name, process_id, group_no } = params;
   const currentDateTimeOffset = new Date().toISOString();
 
   try {
@@ -417,6 +440,7 @@ const sendToMachine = async (params) => {
       where: { group_no },
     });
 
+    // grup no yoksa...
     if (!group) {
       return {
         status: 404,
@@ -436,12 +460,24 @@ const sendToMachine = async (params) => {
       };
     }
 
+    await GroupRecords.update(
+      {
+        group_start_date: currentDateTimeOffset,
+      },
+      {
+        where: {
+          group_no,
+        },
+      }
+    );
+
     for (const order of orders) {
       await WorkLog.update(
         {
           work_status: "1",
-          process_name: selectedProcess,
-          machine_name: selectedMachine,
+          process_name,
+          machine_name,
+          process_id,
           work_start_date: currentDateTimeOffset,
           user_id_dec: id_dec,
         },
@@ -454,10 +490,14 @@ const sendToMachine = async (params) => {
     return { status: 200, message: "Grup başarıyla makineye gönderildi." };
   } catch (err) {
     console.error("Internal server error", err);
-    return { status: 500, message: "Sunucu hatası oluştu. Lütfen tekrar deneyiniz." };
+    return {
+      status: 500,
+      message: "Sunucu hatası oluştu. Lütfen tekrar deneyiniz.",
+    };
   }
 };
 
+//! Ölçüm veri girişi
 async function createMeasurementData(measurementsInfo) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -473,40 +513,42 @@ async function createMeasurementData(measurementsInfo) {
       exit_weight_50cm: measurementsInfo.exit_weight_50cm,
       data_entry_date: currentDateTimeOffset,
       description: measurementsInfo.description,
-      measurement_package: measurementsInfo.measurement_package
+      measurement_package: measurementsInfo.measurement_package,
     });
 
     // Başarılı yanıt döndür
     return {
       status: 200,
-      message: { success: true, message: newMeasurement }
+      message: { success: true, message: newMeasurement },
     };
-
   } catch (err) {
     console.error("Error creating measurement data:", err);
 
     // Hata durumunda yanıt döndür
     return {
       status: 500,
-      message: { success: false, error: "Ölçüm verisi kaydedilirken bir hata oluştu." }
+      message: {
+        success: false,
+        error: "Ölçüm verisi kaydedilirken bir hata oluştu.",
+      },
     };
   }
 }
 
-//! Ölçüm verilerini çekecek servis... 
+//! Ölçüm verilerini çekecek servis...
 async function getAllMeasurements(areaName) {
   try {
     // Tüm ölçüm verilerini veritabanından çek
     const measurements = await MeasureData.findAll({
-      where:{
-        area_name:areaName
-      }
+      where: {
+        area_name: areaName,
+      },
     });
 
     // Başarılı yanıt döndür
     return {
       status: 200,
-      message: measurements
+      message: measurements,
     };
   } catch (error) {
     console.error("Error fetching measurements:", error);
@@ -514,7 +556,10 @@ async function getAllMeasurements(areaName) {
     // Hata durumunda yanıt döndür
     return {
       status: 500,
-      message: { success: false, message: "Ölçüm verileri çekilirken bir hata oluştu." }
+      message: {
+        success: false,
+        message: "Ölçüm verileri çekilirken bir hata oluştu.",
+      },
     };
   }
 }
@@ -529,5 +574,5 @@ module.exports = {
   getWorksToBuzlama,
   sendToMachine,
   createMeasurementData,
-  getAllMeasurements
+  getAllMeasurements,
 };

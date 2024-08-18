@@ -77,11 +77,12 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
 };
 
 //! Aktıf olarak molada olan kullanıcıları donecek metot...
-const onBreakUsers = async () => {
+const onBreakUsers = async (areaName) => {
   try {
     const isBreakUsers = await BreakLog.findAll({
       where: {
         end_date: null,
+        area_name:areaName
       },
     });
     return isBreakUsers;

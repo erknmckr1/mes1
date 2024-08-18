@@ -20,19 +20,19 @@ const GroupRecords = sequelize.define(
     },
     group_start_date:{
         type:DataTypes.DATE,
-        allowNull:false,    
+        allowNull:true,    
     },
     group_end_date:{
+        type:DataTypes.DATE,
+        allowNull:true,    
+    },
+    group_creation_date:{
         type:DataTypes.DATE,
         allowNull:true,    
     },
     group_status:{
         type:DataTypes.STRING,
         allowNull:false
-    },
-    starting_order_numbers:{
-        type:DataTypes.STRING,
-        allowNull:true
     },
     process_name:{
         type:DataTypes.STRING,

@@ -59,6 +59,7 @@ function OrderGroupManagement() {
         } else {
           toast.error("Bu sipariş zaten listede mevcut.");
         }
+        setOrderId("");
       } else if (response.status === 404) {
         toast.error(`${orderId} nolu sipariş bulunamadı.`);
       }
@@ -149,16 +150,15 @@ function OrderGroupManagement() {
 
       if (
         operatorId &&
-        selectedMachine &&
-        selectedProcess &&
         orderList.length > 0
       ) {
         response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createOrderGroup`,
           {
             orderList: orderListString,
-            selectedMachine,
-            selectedProcess,
+            // machine_name:selectedMachine.machine_name,
+            // process_name:selectedProcess?.process_name,
+            // process_id: selectedProcess?.process_id,
             operatorId,
             section,
             areaName,
@@ -199,7 +199,7 @@ function OrderGroupManagement() {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/mergeGroups`,
           {
             groupIds,
-            operatorId,
+            operatorId, // şimdilik giriş yapan kullanıcının id sini almıyoruz. 
             section,
             areaName,
           }
@@ -218,7 +218,10 @@ function OrderGroupManagement() {
       }
     } catch (err) {
       console.log(err);
-      toast.error("Gruplar birleştirilemedi...");
+      if(err.response.status === 400){
+        toast(err.response.data)
+      }
+      
     }
   };
 
@@ -251,9 +254,8 @@ function OrderGroupManagement() {
   //! Seçili order ı gruptan cıkarak query gruptan cıkar ve worklog tablosundan ılgılı order ı sıl (status 0 ise);
   const handleRemoveOrderFromGroup = async () => {
     const orderIds = JSON.stringify(selectedOrderId);
-    console.log(orderIds)
     try {
-      if(selectedOrderId.length > 0){
+      if(selectedOrderId.length > 0 && selectedGroupNo.length < 2){
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/removeOrdersFromGroup`,
           {
@@ -274,10 +276,13 @@ function OrderGroupManagement() {
           dispatch(setSelectedOrderIds([]));
         }
       }else{
-        toast.error("Gruptan Çıkarmak istediğiniz siparişi seçiniz.")
+        toast.error("Gruptan Çıkarmak istediğiniz siparişi seçiniz. Yada sadece 1 grup üzerinden işlem yapın.")
       }
     } catch (err) {
       console.log(err);
+      if(err.response.status === 403){
+        toast.error(err.response.data)
+      }
     }
   };
 

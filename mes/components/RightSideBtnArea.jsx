@@ -28,7 +28,7 @@ function RightSideBtnArea() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
 
-  //! stop popup ı ac
+  // stop popup ı ac
   const handleOpenStopPopup = () => {
     if (selectedOrder && selectedOrder.work_status === "1") {
       dispatch(setStopReasonPopup(true));
@@ -113,7 +113,9 @@ function RightSideBtnArea() {
   const handleOpenSendMachinePopup = () => {
     if(selectedProcess && selectedMachine){
       dispatch(setSendToMachinePopup(true));
-    };
+    }else{
+      toast.error("Göndereceğiniz prosesi ve makineyi seçiniz.")
+    }
   }
 
   // ölçüm veri girişi popup ını açacak fonksıyon...
@@ -218,7 +220,6 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleCancelWork,
       children: "Ölçüm V. Girişi",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",

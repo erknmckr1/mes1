@@ -27,8 +27,9 @@ router.get("/getOrderById", async (req, res) => {
 router.post("/createOrderGroup", async (req, res) => {
   const {
     orderList,
-    selectedMachine,
-    selectedProcess,
+    machine_name,
+    process_name,
+    process_id,
     operatorId,
     section,
     areaName,
@@ -37,8 +38,9 @@ router.post("/createOrderGroup", async (req, res) => {
   try {
     const result = await createOrderGroup({
       orderList,
-      selectedMachine,
-      selectedProcess,
+      machine_name,
+      process_name,
+      process_id,
       operatorId,
       section,
       areaName,
@@ -94,8 +96,8 @@ router.get("/getWorkToBuzlama", async (req, res) => {
 
 //! Grubu makineye yollayacak route
 router.post("/sendToMachine", async (req, res) => {
-  const { id_dec, selectedMachine, selectedProcess, group_no } = req.body;
-  const result = await sendToMachine({ id_dec, selectedMachine, selectedProcess, group_no });
+  const { id_dec, machine_name, process_name,process_id, group_no } = req.body;
+  const result = await sendToMachine({ id_dec,  machine_name, process_name,process_id, group_no });
   return res.status(result.status).json(result.message);
 });
 

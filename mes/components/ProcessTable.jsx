@@ -52,7 +52,6 @@ function ProcessArea() {
     }
   };
 
-  console.log(selectedProcess)
   //! ilgili makine listesini getirecek query
   const getMachineList = async () => {
     try {
@@ -68,6 +67,20 @@ function ProcessArea() {
     }
   };
 
+
+  const filteredMachine = () => {
+    if (!machineList || !selectedProcess) {
+      return;
+    }
+    const filtered = machineList.filter(item => item.process_name === selectedProcess.process_name);
+    setOnMachine(filtered)
+  };
+  
+
+  useEffect(() => {
+    filteredMachine();
+  },[selectedProcess])
+ 
   useEffect(() => {
     getProcessList();
     getMachineList();
@@ -99,19 +112,19 @@ function ProcessArea() {
               ))}
           </ul>
         </div>
-        { pageName !== "kalite"  && <div className="w-1/2 h-full flex flex-col bg-white">
-          <div className="px-6 py-3 text-left text-xs bg-secondary  font-medium uppercase tracking-wider">
+        { pageName !== "kalite"  && <div className="w-1/2 h-full flex flex-col border-l">
+          <div className={`px-6 py-3 text-left text-xs ${theme} thead   font-medium uppercase tracking-wider`}>
             Makineler
           </div>
-          <ul className="overflow-y-auto bg-white text-center border-t-2">
+          <ul className="overflow-y-auto text-center bg-white border-t-2">
             {
-             machineList && machineList.map((item, index) => (
+             onMachine && onMachine.map((item, index) => (
                 <li
                   key={index}
                   className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                    onMachine === item.machine_name ? "bg-green-500" : ""
+                    selectedMachine.machine_name === item.machine_name ? "bg-green-500" : `listeleman ${theme}`
                   }`}
-                  onClick={() => setOnMachine(item.machine_name)}
+                  onClick={()=>dispatch(setSelectedMachine(item))}
                 >
                   {item.machine_name}
                 </li>
