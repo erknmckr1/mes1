@@ -25,7 +25,7 @@ const breakSlice = createSlice({
     onBreak_users: [],
     loading: false,
     error: null,
-    isCurrentBreak:false
+    isCurrentBreak:false // Giriş yapan kullanıcının mola durumunu tutan state...
   },
   reducers: {
     setİsCurrentBreak:(state,action)=>{

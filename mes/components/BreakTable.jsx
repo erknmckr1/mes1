@@ -9,11 +9,11 @@ function BreakTable() {
   const areaName = pathName.split("/")[3];
   const dispatch = useDispatch();
   const {theme} = useSelector(theme => theme.global)
-  const { onBreak_users, loading, error } = useSelector((state) => state.break);
+  const { onBreak_users, loading, error,isCurrentBreak } = useSelector((state) => state.break);
 
   useEffect(() => {
     dispatch(fetchOnBreakUsers({areaName}));
-  }, [dispatch]);
+  }, [dispatch,isCurrentBreak]);
 
   if (loading) {
     return <div>Loading...</div>;

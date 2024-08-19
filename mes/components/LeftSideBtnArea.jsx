@@ -25,7 +25,6 @@ function LeftSideBtnArea() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[2];
   //! Logout fonksıyonu...
-
   const logoutUser = async () => {
     try {
       if (confirm("Çıkış yapılsın mı?")) {
@@ -73,7 +72,6 @@ function LeftSideBtnArea() {
         if (response.status === 200) {
           toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
           dispatch(setİsCurrentBreak(false));
-          await dispatch(fetchOnBreakUsers({areaName}));
         }
       } else {
         toast.error("Kullanıcı molada değil veya bilgiler eksik.");
@@ -83,6 +81,7 @@ function LeftSideBtnArea() {
       toast.error("Moladan dönüş işlemi başarısız.");
     }
   };
+
 
   const buttons = [
     {
