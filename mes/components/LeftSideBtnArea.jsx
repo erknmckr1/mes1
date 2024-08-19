@@ -73,7 +73,7 @@ function LeftSideBtnArea() {
         if (response.status === 200) {
           toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
           dispatch(setİsCurrentBreak(false));
-          await dispatch(fetchOnBreakUsers());
+          await dispatch(fetchOnBreakUsers({areaName}));
         }
       } else {
         toast.error("Kullanıcı molada değil veya bilgiler eksik.");

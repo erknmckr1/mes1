@@ -15,7 +15,7 @@ function MolaPopup() {
   const userInfo = useSelector((state) => state.user.userInfo);
   const {isCurrentBreak} = useSelector((state)=>state.break)
   const pathname = usePathname();
-  const pageName = pathname.split("/")[3];
+  const areaName = pathname.split("/")[3];
   const section = pathname.split("/")[2];
 
   // popup ın durumnu kontrol eden state (acık kapalı)
@@ -53,7 +53,7 @@ function MolaPopup() {
     const startLog = {
       break_reason_id: araSebebi,
       operator_id: userInfo.id_dec,
-      area_name: pageName,
+      area_name: areaName,
       op_name: userInfo.op_username,
       section:section
     };
@@ -64,7 +64,7 @@ function MolaPopup() {
       );
 
       if (response.data.isAlreadyOnBreak === false) {
-        await dispatch(fetchOnBreakUsers());
+        await dispatch(fetchOnBreakUsers({areaName}));
         toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
         dispatch(setMolaPopup(false));
       } else if (response.data.isAlreadyOnBreak === true) {
