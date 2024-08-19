@@ -55,11 +55,10 @@ router.post("/createNewLeave", async (req, res) => {
 
 //! İK tarafından ızın olusturacak endpoint
 router.post("/createNewLeaveByIK", async (req, res) => {
-  const { formData, selectedReason, id_dec, op_username, auth1, auth2 } =
+  const { formData, id_dec, op_username, auth1, auth2 } =
     req.body;
   const result = await createNewLeaveByIK(
     formData,
-    selectedReason,
     id_dec,
     op_username,
     auth1,

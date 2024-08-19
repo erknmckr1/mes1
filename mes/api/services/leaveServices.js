@@ -43,6 +43,7 @@ const createNewLeave = async (
       newUniqId = "000001"; // Eğer kayıt yoksa ilk ID'yi oluştur
     }
 
+    // yenı izin kaydı..
     const result = await LeaveRecords.create({
       op_username,
       id_dec,
@@ -58,11 +59,12 @@ const createNewLeave = async (
       auth2,
     });
 
+    // izin talebı olusturan kullanıcının 1. onaycısınının mailini bul 
     const auth1Email = await User.findOne({
       where: {
         id_dec: auth1,
       },
-      attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
+      attributes: ["e_mail"], 
     });
 
     const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${newUniqId}&id_dec=${auth1}`;
@@ -129,6 +131,8 @@ async function createNewLeaveByIK(formData, id_dec, op_username, auth1, auth2) {
       auth2,
     });
 
+    console.log(result)
+
     if (result) {
       return { status: 200, message: "İzin talebi başarıyla oluşturuldu." };
     } else {
@@ -150,6 +154,7 @@ const getPendingLeaves = async ({ id_dec }) => {
           [Op.in]: ["1", "2"], // Sadece `1` ve `2` durumundaki izinler
         },
       },
+      order: [['leave_creation_date', 'DESC']],
     });
 
     if (Array.isArray(result) && result.length > 0) {
@@ -192,6 +197,7 @@ const getPastLeaves = async ({ id_dec }) => {
           [Op.in]: ["3", "4"],
         },
       },
+      order: [['leave_creation_date', 'DESC']],
     });
     if (Array.isArray(result) && result.length > 0) {
       return result;
@@ -282,6 +288,7 @@ async function getPendingApprovalLeaves({ id_dec }) {
           { auth2: id_dec, leave_status: "2" }, // auth2 onay bekleyen durum
         ],
       },
+      order: [['leave_creation_date', 'DESC']],
     });
     return pendingLeaves;
   } catch (err) {
@@ -340,7 +347,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
 
     const guvenlik_email = await User.findOne({
       where: {
-        op_section: "Guvenlik",
+        part: "Guvenlik",
       },
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
@@ -380,7 +387,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         emailContent
       );
     } else if (
-      (leaveRecord.auth1 === id_dec || isIK) &&
+      (leaveRecord.auth2 === id_dec || isIK) &&
       leaveRecord.leave_status === "2"
     ) {
       leaveRecord.leave_status = "3";
@@ -427,6 +434,7 @@ async function getManagerApprovedLeaves({ id_dec }) {
           { auth2: id_dec, leave_status: "3" }, // auth2 onay bekleyen durum
         ],
       },
+      order: [['leave_creation_date', 'DESC']],
     });
 
     if (approvedRecord.length > 0) {
@@ -452,6 +460,7 @@ async function getDateRangeLeave(leave_start_date, leave_end_date) {
           [Op.gte]: leave_start_date,
         },
       },
+      order: [['leave_creation_date', 'DESC']],
     });
 
     if (leaveRecords.length > 0) {
@@ -474,9 +483,10 @@ async function getAllTimeOff() {
     const allTimeOff = await LeaveRecords.findAll({
       where: {
         leave_status: {
-          [Op.in]: [1,2,3,4],
+          [Op.in]: [1, 2, 3, 4],
         },
       },
+      order: [['leave_creation_date', 'DESC']],
     });
 
     if (allTimeOff.length > 0) {

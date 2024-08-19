@@ -62,18 +62,6 @@ function LeaveTable({ status }) {
     fetchRecords();
   }, [userInfo, status]);
 
-  // const filterRecords = (records, filterText) => {
-  //   if (!filterText) return records;
-  //   const lowercasedFilter = filterText.toLowerCase();
-  //   return records.filter((record) => {
-  //     return Object.values(record).some((value) =>
-  //       String(value).toLowerCase().includes(lowercasedFilter)
-  //     );
-  //   });
-  // };
-
-  // const filteredRecords = filterRecords(records, filteredText);
-
   const rows = records.map((item) => {
     const onayci1User = allUser.find((user) => user.id_dec === item.auth1);
     const onayci2User = allUser.find((user) => user.id_dec === item.auth2);
@@ -140,7 +128,10 @@ function LeaveTable({ status }) {
                   <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
                 </button>
               )}
-            {((status === "alltimeoff" && (row.leave_status === "İzin Onaylandı" || row.leave_status ==="1. Onaycı bekleniyor" || row.leave_status ==="2. Onaycı bekleniyor"))  ||
+            {((status === "alltimeoff" &&
+              (row.leave_status === "İzin Onaylandı" ||
+                row.leave_status === "1. Onaycı bekleniyor" ||
+                row.leave_status === "2. Onaycı bekleniyor")) ||
               status === "pendingApproval" ||
               status === "pending") &&
               hasCancelPermission && (
@@ -168,7 +159,6 @@ function LeaveTable({ status }) {
     }
   }
 
-  console.log(selectionModel.join(","));
   //! İzni İptal Edecek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
     if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
@@ -229,9 +219,15 @@ function LeaveTable({ status }) {
   // status e gore satır renklendir...
   const getRowClassName = (params) => {
     const { row } = params;
-    if ((status === "past" || status === "alltimeoff" ) && row.leave_status === "İzin Onaylandı") {
+    if (
+      (status === "past" || status === "alltimeoff") &&
+      row.leave_status === "İzin Onaylandı"
+    ) {
       return "green-row";
-    } else if ((status === "past" || status === "alltimeoff") && row.leave_status === "İzin iptal edildi.") {
+    } else if (
+      (status === "past" || status === "alltimeoff") &&
+      row.leave_status === "İzin iptal edildi."
+    ) {
       return "red-row";
     } else if (
       selectionModel.includes(row.id) &&

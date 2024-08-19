@@ -85,7 +85,7 @@ function HrLeaveForm() {
 
         if (
           confirm(
-            `${formData.kullanici}/${user?.id_dec} kullanıcısı için izin talebi olusturulsun mu ?`
+            `${op_username}/${user?.id_dec} kullanıcısı için izin talebi olusturulsun mu ?`
           )
         ) {
           if(formData.kullanici === user.id_dec || formData.kullanici === user.id_hex ){

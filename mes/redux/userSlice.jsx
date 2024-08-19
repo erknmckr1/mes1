@@ -33,6 +33,7 @@ export const userSlice = createSlice({
 
 export const { setUserInfo,setOperatorid,setOnBreakUsers,setAllUser,setPermissions, } = userSlice.actions;
 
+//! Kullanıcının sahıp oldugu ızınlerı al...
 export const fetchUserPermissions = (userId) => async (dispatch) => {
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}/permissions`);
