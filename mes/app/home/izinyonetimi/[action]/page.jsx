@@ -11,6 +11,7 @@ export default function İzinYönetimi() {
   return (
     <div className="w-full h-full flex justify-center">
       {flow === "izinyonetimi" && <LeaveManagement />}
+      {flow === "mesaiyönetimi" && <LeaveManagement />}
     </div>
   );
 }

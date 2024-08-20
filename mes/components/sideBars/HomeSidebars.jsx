@@ -1,6 +1,6 @@
 import React from "react";
 import { CgMenuRight } from "react-icons/cg";
-import { FaEdit, FaMoneyBill, FaPaperPlane } from "react-icons/fa";
+import { FaEdit, FaPaperPlane } from "react-icons/fa";
 import { useState } from "react";
 import {
   MdKeyboardArrowDown,
@@ -8,9 +8,6 @@ import {
   MdDynamicFeed,
 } from "react-icons/md";
 import { BsCheckCircle } from "react-icons/bs";
-import { FcOvertime, FcSalesPerformance } from "react-icons/fc";
-import { PiScreencastLight } from "react-icons/pi";
-import { TbChartInfographic } from "react-icons/tb";
 import { useSelector, useDispatch } from "react-redux";
 import { FaRegUser } from "react-icons/fa";
 import { setSelectedFlow } from "@/redux/globalSlice";
@@ -23,15 +20,17 @@ import { toast } from "react-toastify";
 
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
-  const [isMesaiOpen, setIsMesaiOpen] = useState(false);
-  const [isIzinOpen, setIsIzinOpen] = useState(false);
-  const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);
+  const [isMesaiOpen, setIsMesaiOpen] = useState(false); // mesai menusunu acılıp kapanmasını yonetecek state 
+  const [isIzinOpen, setIsIzinOpen] = useState(false);  // izin menusunu acılıp kapanmasını yonetecek state 
+  const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);  // satın alma menusunu acılıp kapanmasını yonetecek state 
   const { selectedFlow } = useSelector((state) => state.global);
   const { selectedManagement } = useSelector((state) => state.flowmanagement);
   const dispatch = useDispatch();
   const { userInfo, permissions } = useSelector((state) => state.user);
   const pathName = usePathname();
 
+
+  // Tıklanan menuye göre ilgili stateleri günceller.
   const toggleSection = (flow) => {
     switch (flow) {
       case "mesai":
@@ -76,6 +75,7 @@ function HomeSidebars() {
   const seeAll = permissions.includes("Görme");
   const onay1 = permissions.includes("1. Onay");
   const onay2 = permissions.includes("2. Onay");
+
   const menuItems = [
     {
       label: "İzin Yönetimi",
@@ -100,33 +100,35 @@ function HomeSidebars() {
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
-    {
-      label: "Mesai Yönetimi",
-      icon: <FcOvertime />,
-      flow: "mesai",
-      isOpen: isMesaiOpen,
-      items: [
-        { label: "Mesai Oluştur", icon: <FaEdit /> },
-        { label: "Mesai Onayla", icon: <BsCheckCircle /> },
-      ],
-    },
-    {
-      label: "Satın Alma Yönetimi",
-      icon: <FaMoneyBill />,
-      flow: "satinAlma",
-      isOpen: İsSatinAlma,
-      items: [
-        { label: "Satın Alma Talebi Oluştur", icon: <FaEdit /> },
-        { label: "Satın Alma Talebi Onayla", icon: <BsCheckCircle /> },
-      ],
-    },
-    { label: "Performans Yönetimi", icon: <FcSalesPerformance /> },
-    {
-      label: "Üretim Ekranları",
-      icon: <PiScreencastLight className="text-white" />,
-    },
-    { label: "Raporlar", icon: <TbChartInfographic /> },
+    // {
+    //   label: "Mesai Yönetimi",
+    //   icon: <FcOvertime />,
+    //   flow: "mesai",
+    //   isOpen: isMesaiOpen,
+    //   items: [
+    //     { label: "Mesai Oluştur", icon: <FaEdit /> },
+    //     { label: "Mesai Onayla", icon: <BsCheckCircle /> },
+    //   ],
+    // },
+    // {
+    //   label: "Satın Alma Yönetimi",
+    //   icon: <FaMoneyBill />,
+    //   flow: "satinAlma",
+    //   isOpen: İsSatinAlma,
+    //   items: [
+    //     { label: "Satın Alma Talebi Oluştur", icon: <FaEdit /> },
+    //     { label: "Satın Alma Talebi Onayla", icon: <BsCheckCircle /> },
+    //   ],
+    // },
+    // { label: "Performans Yönetimi", icon: <FcSalesPerformance /> },
+    // {
+    //   label: "Üretim Ekranları",
+    //   icon: <PiScreencastLight className="text-white" />,
+    // },
+    // { label: "Raporlar", icon: <TbChartInfographic /> },
   ];
+
+  console.log({selectedManagement:selectedManagement , selectedFlow:selectedFlow})
 
   const handleSelection = (item) => {
     dispatch(setSelectedFlow(item));
@@ -134,7 +136,6 @@ function HomeSidebars() {
 
   const handleSelectionManagement = (item) => {
     dispatch(setSelectedManagement(item));
-    dispatch(setSelectedFlow(""));
   };
 
   return (
@@ -145,9 +146,11 @@ function HomeSidebars() {
       >
         <CgMenuRight size={24} />
       </button>
-      <div  className={`absolute sm:static top-0 left-0 h-full z-40 transition-transform transform ${
+      <div
+        className={`absolute sm:static top-0 left-0 h-full z-40 transition-transform transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } sm:translate-x-0 w-64 bg-black text-white border-r border-secondary`}>
+        } sm:translate-x-0 w-64 bg-black text-white border-r border-secondary`}
+      >
         {/* img div */}
         <div className="h-[15%] sm:h-[20%] w-full flex items-center justify-center">
           <img className="lg:w-60 w-40" src="/midas_logo.png" alt="logo" />
@@ -156,8 +159,10 @@ function HomeSidebars() {
           {/* name & icon */}
           <div className="w-full border-b border-gray-700  pb-10 flex flex-col gap-y-3">
             <div className="w-full flex items-center justify-between  px-3 border-b py-2 border-gray-700 ">
-              <span className="sm:hidden"><FaRegUser/></span>
-              <span className="sm:hidden">{userInfo?.op_username}</span>
+              <span className="">
+                <FaRegUser />
+              </span>
+              <span className="">{userInfo?.op_username}</span>
             </div>
             <Button
               onClick={logoutUser}
