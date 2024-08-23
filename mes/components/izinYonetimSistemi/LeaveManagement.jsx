@@ -42,7 +42,7 @@ function LeaveManagement() {
           <UserCard />
           {/* süreç ekranlarındaki sağ taraf */}
           {currentFlow && (
-            <div className="bg-[#F5F7F8] h-full  rounded-md shadow-md w-full sm:w-4/5">
+            <div className="bg-[#F5F7F8] h-full  rounded-md shadow-md w-full sm:w-4/5 4xl:w-3/5 transition-all ease-in">
               <TabButtons
                 tab={tab}
                 setTab={setTab}

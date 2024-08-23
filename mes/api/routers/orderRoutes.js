@@ -11,7 +11,9 @@ const {
   getWorksToBuzlama,
   sendToMachine,
   createMeasurementData,
-  getAllMeasurements
+  getAllMeasurements,
+  deliverSelectedOrder,
+  finishTheGroup
 } = require("../services/orderServices");
 
 //!
@@ -68,8 +70,8 @@ router.post("/mergeGroups", async (req, res) => {
 
 //! Gruptan order cıkarak route...
 router.post("/removeOrdersFromGroup",async(req,res)=>{
-  const {orderIds} = req.body;
-  const result = await removeOrdersFromGroup({orderIds});
+  const {orderUniqIds,groupNo,operatorId} = req.body;
+  const result = await removeOrdersFromGroup({orderUniqIds,groupNo,operatorId});
   return res.status(result.status).json(result.message);
 });
 
@@ -116,4 +118,18 @@ router.get("/getMeasurements", async (req, res) => {
     return res.status(result.status).json(result.message);
 });
 
+//! Grup yonetımınde seçili siparişi bitirecek route...
+router.put("/deliverSelectedOrder",async(req,res)=>{
+  const {order,id_dec,op_username,group_no} = req.body
+  const result = await deliverSelectedOrder(order,id_dec,op_username,group_no);
+  return res.status(result.status).json(result.message);
+});
+
+//! Gruptaki siparişleri bitirecek route
+router.put("/finishTheGroup",async(req,res)=>{
+  const { orders,groups,id_dec} = req.body;
+  console.log(groups);
+  const result = await finishTheGroup({groups,id_dec});
+  return res.status(result.status).json(result.message);
+})
 module.exports = router;

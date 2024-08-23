@@ -21,11 +21,12 @@ function SendToMachinePopup() {
     filteredGroup,
     selectedProcess,
     selectedMachine,
+    actionType
   } = useSelector((state) => state.order);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
-
+  
   useEffect(() => {
     dispatch(handleGetGroupList());
     dispatch(fetchBuzlamaWorks({ areaName }));
@@ -40,7 +41,8 @@ function SendToMachinePopup() {
       // Grup seçili değilse, ekle
       updatedSelectedGroupNo = [...selectedGroupNo, group_no];
     }
-    // Seçili gruplara ait order_id'leri yeniden hesapla
+
+    // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
     let newFilteredGroup = [];
     updatedSelectedGroupNo.forEach((no) => {
       const ordersForGroup = buzlamaWork.filter(
@@ -48,10 +50,13 @@ function SendToMachinePopup() {
       );
       newFilteredGroup = [
         ...newFilteredGroup,
-        ...ordersForGroup.map((order) => order.order_no),
+        ...ordersForGroup.map((order) => ({
+          order_no: order.order_no,
+          uniq_id: order.uniq_id,
+        })),
       ];
     });
-
+    // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
@@ -61,7 +66,7 @@ function SendToMachinePopup() {
     const groupNo = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
     const id_dec = userInfo && userInfo.id_dec;
     try {
-      if (selectedGroupNo.length > 1) {
+      if (selectedGroupNo.length > 1 ||selectedGroupNo.length === 0) {
         toast.error("Makineye göndermek için sadece bir grup seçiniz");
       } else {
         const response = await axios.post(
@@ -102,9 +107,48 @@ function SendToMachinePopup() {
     }
   };
 
-  // makineye gönder popup ını acacak fonksıyon...
-  const handleOpenSendMachinePopup = () => {
-    dispatch(setSendToMachinePopup(false));
+  console.log(selectedGroupNo);
+  //! Seçili grubtaki işleri bitirme fonksiyonu...
+  const handleFinishGroup = async () => {
+    const orders = JSON.stringify(filteredGroup)
+    const groups = JSON.stringify(selectedGroupNo)
+    const id_dec = userInfo && userInfo.id_dec;
+    try {
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishTheGroup`,{
+        orders,groups,id_dec
+      });
+
+      if (response.status === 200) {
+        toast.success(response.data);
+        getWorkList({
+          areaName,
+          userId: userInfo.id_dec,
+          dispatch,
+        });
+        dispatch(setSelectedGroupNos([]));
+        dispatch(setFilteredGroup([]));
+        dispatch(setSendToMachinePopup(false));
+        dispatch(setSelectedProcess(""));
+        dispatch(setSelectedMachine(""));
+      } else {
+        toast.error(
+          response.data.message || "İşlem sırasında bir hata oluştu."
+        );
+      } 
+    } catch (err) {
+      if(err){
+        toast.error(err.response?.data);
+        console.log(err);
+      }
+    }
+  }
+
+  const handleAction = () => {
+    if (actionType === "send") {
+      handleSendToMachine();
+    } else if (actionType === "finish") {
+      handleFinishGroup();
+    }
   };
 
   const buttons = [
@@ -113,31 +157,33 @@ function SendToMachinePopup() {
       type: "button",
       className:
         "w-[150px] h-[100px] bg-red-500 hover:bg-red-600 sm:py-2 text-md",
-      onClick: handleOpenSendMachinePopup,
+      onClick: () => dispatch(setSendToMachinePopup({ visible: false, actionType: "" })), // Popup'ı kapatıyoruz
     },
     {
-      children: "Makineye Gönder",
+      children:
+        actionType === "send" ? "Makineye Gönder" : "Grubu Bitir",
       type: "button",
       className: "w-[150px] h-[100px] sm:py-2 text-md",
-      onClick: handleSendToMachine,
+      onClick: handleAction,
     },
   ];
-  return (
+ return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
         <div className="md:w-[1000px] w-[800px] h-[600px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
-          {/* Header kısmı 20% */}
+          {/* Header kısmı */}
           <div className="h-[20%] w-full bg-secondary">
             <div className="w-full h-full flex items-center justify-center">
               <h1 className="text-[40px] font-semibold">
-                Makineye Göndereceğiniz Grubu Seçin
+                {actionType === "send"
+                  ? "Makineye Göndereceğiniz Grubu Seçin"
+                  : "Bitireceğiniz Grubu Seçin"}
               </h1>
             </div>
           </div>
-          {/* 80% */}
+          {/* Grup listesi ve seçili grup */}
           <div className="h-[60%] w-full mt-1 bg-black ">
             <div className="flex justify-between w-full h-full gap-x-1 ">
-              {/* w-1/2 */}
               <div className="w-1/2 h-full bg-gray-100">
                 <div className="flex flex-col h-full w-full">
                   <span className="h-[15%] border-b border-black text-lg flex items-center justify-center py-1">
@@ -164,7 +210,6 @@ function SendToMachinePopup() {
                   </div>
                 </div>
               </div>
-              {/* w-1/2 */}
               <div className="w-1/2 h-full bg-gray-100">
                 <div className="flex flex-col h-full w-full">
                   <span className="h-[15%] border-b border-black text-lg flex items-center justify-center py-1">
@@ -177,7 +222,7 @@ function SendToMachinePopup() {
                           className={`w-full py-3 px-2 shadow-md border-b  `}
                           key={index}
                         >
-                          {item}
+                          {item.order_no}
                         </ol>
                       ))}
                     </ul>
@@ -186,7 +231,7 @@ function SendToMachinePopup() {
               </div>
             </div>
           </div>
-          {/* buttons area */}
+          {/* Buttons */}
           <div className="h-[20%] w-full mt-1 bg-gray-100 flex items-center justify-center gap-x-10 ">
             {buttons.map((item, index) => (
               <Button
@@ -202,7 +247,7 @@ function SendToMachinePopup() {
       </div>
       <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
-  );
+  )
 }
 
 export default SendToMachinePopup;

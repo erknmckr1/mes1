@@ -62,7 +62,7 @@ const createNewLeave = async (
     // izin talebı olusturan kullanıcının 1. onaycısınının mailini bul
     const auth1Email = await User.findOne({
       where: {
-        id_dec: auth1,
+        id_dec: String(auth1),
       },
       attributes: ["e_mail"],
     });

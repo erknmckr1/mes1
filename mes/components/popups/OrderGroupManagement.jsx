@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { MdCancel } from "react-icons/md";
 import { usePathname } from "next/navigation";
-import { setOrderGroupManagement,fetchBuzlamaWorks } from "@/redux/orderSlice";
+import { setOrderGroupManagement, fetchBuzlamaWorks } from "@/redux/orderSlice";
+import { getWorkList } from "@/api/client/cOrderOperations";
 import GroupNos from "./GroupNos";
 import {
   setGroupListPopup,
@@ -20,8 +21,6 @@ function OrderGroupManagement() {
   const [orderId, setOrderId] = useState("");
   const [orderList, setOrderList] = useState([]);
   const {
-    selectedProcess,
-    selectedMachine,
     groupListPopup,
     groupList,
     filteredGroup,
@@ -29,6 +28,7 @@ function OrderGroupManagement() {
     selectedOrderId,
     buzlamaWork,
   } = useSelector((state) => state.order);
+  const { userInfo } = useSelector((state) => state.user);
   const [operatorId, setOperatorId] = useState("222222222");
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
@@ -84,13 +84,15 @@ function OrderGroupManagement() {
     }
   };
 
+  //! ilgili bolumdeki siparişleri çek
   useEffect(() => {
-    dispatch(fetchBuzlamaWorks({areaName}))
-  }, [dispatch,areaName]);
+    dispatch(fetchBuzlamaWorks({ areaName }));
+  }, [dispatch, areaName]);
 
   useEffect(() => {
     handleGetGroupList();
   }, []);
+
 
   console.log({
     orderIds: selectedOrderId,
@@ -98,6 +100,7 @@ function OrderGroupManagement() {
     filteredGroup: filteredGroup,
     gruplist: groupList,
   });
+
 
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
@@ -116,6 +119,7 @@ function OrderGroupManagement() {
     dispatch(setSelectedGroupNos([]));
   };
 
+  // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
   const handleOrderFilteredByGroup = (group_no) => {
     let updatedSelectedGroupNo = [];
     if (selectedGroupNo.includes(group_no)) {
@@ -125,18 +129,24 @@ function OrderGroupManagement() {
       // Grup seçili değilse, ekle
       updatedSelectedGroupNo = [...selectedGroupNo, group_no];
     }
-    // Seçili gruplara ait order_id'leri yeniden hesapla
+
+    // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
     let newFilteredGroup = [];
+
     updatedSelectedGroupNo.forEach((no) => {
       const ordersForGroup = buzlamaWork.filter(
         (order) => order.group_no === no
       );
       newFilteredGroup = [
         ...newFilteredGroup,
-        ...ordersForGroup.map((order) => order.order_no),
+        ...ordersForGroup.map((order) => ({
+          order_no: order.order_no,
+          uniq_id: order.uniq_id,
+        })),
       ];
     });
-
+    // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
+    console.log(newFilteredGroup);
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
@@ -148,17 +158,11 @@ function OrderGroupManagement() {
 
       let response;
 
-      if (
-        operatorId &&
-        orderList.length > 0
-      ) {
+      if (operatorId && orderList.length > 0) {
         response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createOrderGroup`,
           {
             orderList: orderListString,
-            // machine_name:selectedMachine.machine_name,
-            // process_name:selectedProcess?.process_name,
-            // process_id: selectedProcess?.process_id,
             operatorId,
             section,
             areaName,
@@ -168,7 +172,7 @@ function OrderGroupManagement() {
       if (response && response.status === 200) {
         toast.success("Sipariş grubu başarıyla oluşturuldu.");
         handleGetGroupList();
-        dispatch(fetchBuzlamaWorks({areaName}))
+        dispatch(fetchBuzlamaWorks({ areaName }));
         setOrderId("");
         setOrderList([]);
         dispatch(setSelectedOrderIds([]));
@@ -199,7 +203,7 @@ function OrderGroupManagement() {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/mergeGroups`,
           {
             groupIds,
-            operatorId, // şimdilik giriş yapan kullanıcının id sini almıyoruz. 
+            operatorId, // şimdilik giriş yapan kullanıcının id sini almıyoruz.
             section,
             areaName,
           }
@@ -208,7 +212,7 @@ function OrderGroupManagement() {
         if (response.status === 200) {
           toast.success("Grup birleştirme işlemi başarılı...");
           handleGetGroupList();
-          dispatch(fetchBuzlamaWorks({areaName}))
+          dispatch(fetchBuzlamaWorks({ areaName }));
           dispatch(setSelectedGroupNos([]));
           dispatch(setSelectedOrderIds([]));
           dispatch(setFilteredGroup([]));
@@ -218,25 +222,27 @@ function OrderGroupManagement() {
       }
     } catch (err) {
       console.log(err);
-      if(err.response.status === 400){
-        toast(err.response.data)
+      if (err.response.status === 400) {
+        toast.error(err.response.data);
+      }else if(err.response.status === 500){
+        toast.error(err.response.data);
       }
-      
     }
   };
 
   // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak...
-  const handleSelectOrderId = (order_id) => {
+  const handleSelectOrderId = (selectedOrder) => {
     let updatedSelectedOrderIds;
 
-    if (selectedOrderId?.includes(order_id)) {
+    if (
+      selectedOrderId?.some((order) => order.uniq_id === selectedOrder.uniq_id)
+    ) {
       updatedSelectedOrderIds = selectedOrderId.filter(
-        (item) => order_id !== item
+        (order) => order.uniq_id !== selectedOrder.uniq_id
       );
     } else {
-      updatedSelectedOrderIds = [...selectedOrderId, order_id];
+      updatedSelectedOrderIds = [...selectedOrderId, selectedOrder];
     }
-    console.log(updatedSelectedOrderIds);
     dispatch(setSelectedOrderIds(updatedSelectedOrderIds));
   };
 
@@ -253,36 +259,51 @@ function OrderGroupManagement() {
 
   //! Seçili order ı gruptan cıkarak query gruptan cıkar ve worklog tablosundan ılgılı order ı sıl (status 0 ise);
   const handleRemoveOrderFromGroup = async () => {
-    const orderIds = JSON.stringify(selectedOrderId);
+    //her satırın bır unıq ıd sı var onu yolluyoruz...
+    const orderUniqIds = JSON.stringify(
+      selectedOrderId
+    );
+    const groupNo = JSON.stringify(
+      selectedGroupNo
+    )
     try {
-      if(selectedOrderId.length > 0 && selectedGroupNo.length < 2){
+      if (selectedOrderId.length > 0 && selectedGroupNo.length < 2) {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/removeOrdersFromGroup`,
           {
-            orderIds,
+            orderUniqIds,
+            groupNo,
+            operatorId
           }
         );
-  
+
         if (response.status === 200) {
-          toast.success(
-            "Gruptan siparişleri silme işlemi başarıyla gerçekleştirildi."
-          );
-          dispatch(fetchBuzlamaWorks({areaName}))
-          // OrderList'i ve diğer state'leri güncelleyin
-          const updatedOrderList = filteredGroup.filter(
-            (order) => !selectedOrderId.includes(order)
-          );
-          dispatch(setFilteredGroup(updatedOrderList));
-          dispatch(setSelectedOrderIds([]));
+          if (response.data.includes("Grup kapatıldı")) {
+            toast.success(response.data);
+            dispatch(setFilteredGroup([]));
+            handleGetGroupList(); // grup listesini guncellemek ıcın tekrardan servise istek attık
+            dispatch(setSelectedGroupNos()); // seçili grubu bırak cunku grup db sılındı yada kapatıldı... 
+          } else {
+            toast.success(response.data);
+            const updatedOrderList = filteredGroup.filter(
+              (order) => !selectedOrderId.some(
+                (selected) => selected.uniq_id === order.uniq_id
+              )
+            );
+            dispatch(setFilteredGroup(updatedOrderList));
+            dispatch(setSelectedOrderIds([]));
+          }
+        } else {
+          toast.error(response.data);
         }
-      }else{
-        toast.error("Gruptan Çıkarmak istediğiniz siparişi seçiniz. Yada sadece 1 grup üzerinden işlem yapın.")
+
+      } else {
+        toast.error(
+          "Gruptan Çıkarmak istediğiniz siparişi seçiniz. Yada sadece 1 grup üzerinden işlem yapın."
+        );
       }
     } catch (err) {
       console.log(err);
-      if(err.response.status === 403){
-        toast.error(err.response.data)
-      }
     }
   };
 
@@ -314,8 +335,53 @@ function OrderGroupManagement() {
       }
     } catch (err) {
       console.log(err);
+      if (err.response.status === 400) {
+        toast.error(err.response.data);
+      }
+    }
+  };
+
+  //! Siparişi teslim edecek istek...
+  const deliverSelectedOrder = async () => {
+    const order = selectedOrderId[0];
+    const group_no = selectedGroupNo[0];
+    const { id_dec, op_username } = userInfo;
+    try {
+      if (selectedOrderId.length === 1 && selectedGroupNo.length === 1) {
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/deliverSelectedOrder`,
+          {
+            order,
+            id_dec,
+            op_username,
+            group_no,
+          }
+        );
+        if (response.status === 200) {
+          console.log(response.data);
+          toast.success("Sipariş başarıyla bitirildi.");
+          handleGetGroupList();
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          dispatch(fetchBuzlamaWorks({ areaName }));
+          const updatedOrderList = filteredGroup.filter(
+            (order) =>
+              !selectedOrderId.some(
+                (selected) => selected.uniq_id === order.uniq_id
+              )
+          );
+          dispatch(setFilteredGroup(updatedOrderList));
+          dispatch(setSelectedOrderIds([]));
+          dispatch(setSelectedGroupNos([]));
+        }
+      } else {
+        toast.error("Sedece bir grup ve bir sipariş seçin.");
+      }
+    } catch (err) {
+      console.log(err);
       if(err.response.status === 400){
-        toast.error(err.response.data)
+        toast.error(err.response.data);
+      }else if (err.response.status === 500){
+        toast.error(err.response.data);
       }
     }
   };
@@ -348,6 +414,7 @@ function OrderGroupManagement() {
       children: "Siparişi Teslim Et",
       type: "button",
       className: "w-[150px] sm:py-2 text-sm",
+      onClick: deliverSelectedOrder,
     },
   ];
   return (
@@ -431,7 +498,7 @@ function OrderGroupManagement() {
                                   handleOrderFilteredByGroup(item.group_no)
                                 }
                                 className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                                  selectedGroupNo.includes(item.group_no)
+                                  selectedGroupNo?.includes(item.group_no)
                                     ? "bg-slate-300"
                                     : ""
                                 }`}
@@ -482,14 +549,16 @@ function OrderGroupManagement() {
                             {filteredGroup?.map((item, index) => (
                               <ol
                                 className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-300 ${
-                                  selectedOrderId.includes(item)
+                                  selectedOrderId.some(
+                                    (order) => order.uniq_id === item.uniq_id
+                                  )
                                     ? "bg-slate-300"
                                     : ""
                                 }`}
                                 key={index}
                                 onClick={() => handleSelectOrderId(item)}
                               >
-                                {item}
+                                {item.order_no}
                               </ol>
                             ))}
                           </ul>

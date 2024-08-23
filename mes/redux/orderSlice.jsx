@@ -56,6 +56,7 @@
       filteredGroup:[],
       buzlamaWork:[],
       sendToMachinePopup:false, // makineye göndermek ıcın ılgılı popup ın durumunu tutan state...
+      actionType: "", // send to machine popup ı 2 farklı olayda kullandık... 
       // Ölçüm veri girişi 
       measurementEntryPopup:false,
     },
@@ -120,12 +121,13 @@
       setBuzlamaWorks:(state,action) => {
         state.buzlamaWork = action.payload;
       },
-      setSendToMachinePopup:(state,action) => {
-        state.sendToMachinePopup = action.payload;
+      setSendToMachinePopup: (state, action) => {
+        state.sendToMachinePopup = action.payload.visible;
+        state.actionType = action.payload.actionType || ""; // actionType'ı da buradan yönetiyoruz
       },
       setMeasurementPopup:(state,action) => {
         state.measurementEntryPopup = action.payload;
-      }
+      },
     },
     extraReducers: (builder) => {
       builder

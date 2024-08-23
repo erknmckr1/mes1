@@ -1,15 +1,22 @@
 import React from "react";
-import { useSelector,useDispatch } from "react-redux";
-import { setFilteredGroup, setGroupListPopup, setSelectedGroupNos,setSelectedOrderIds } from "@/redux/orderSlice";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  setFilteredGroup,
+  setGroupListPopup,
+  setSelectedGroupNos,
+  setSelectedOrderIds,
+} from "@/redux/orderSlice";
 import Button from "../ui/Button";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 
-function GroupNos({fetchBuzlamaWorks}) {
-  const [selectedSendGroup,setSelectedSendGroup] = useState("");
-  const { groupListPopup,groupList,selectedOrderId } = useSelector((state) => state.order);
+function GroupNos({ fetchBuzlamaWorks }) {
+  const [selectedSendGroup, setSelectedSendGroup] = useState("");
+  const { groupList, selectedOrderId, selectedGroupNo } = useSelector(
+    (state) => state.order
+  );
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
@@ -19,15 +26,19 @@ function GroupNos({fetchBuzlamaWorks}) {
   };
   const handleSelectedSendGroup = (group_no) => {
     setSelectedSendGroup(group_no);
-  }
-  
+  };
+
+  //! Gruba seçili orderları ekleyecek istek
   const handleAddToGroup = async () => {
     const soId = JSON.stringify(selectedOrderId);
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/addToGroup`, {
-        group_no: selectedSendGroup,
-        selectedOrderId: soId
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/addToGroup`,
+        {
+          group_no: selectedSendGroup,
+          selectedOrderId: soId,
+        }
+      );
       if (response.status === 200) {
         toast.success(response.data);
         setSelectedSendGroup("");
@@ -35,7 +46,7 @@ function GroupNos({fetchBuzlamaWorks}) {
         dispatch(setSelectedGroupNos([]));
         dispatch(setFilteredGroup([]));
         dispatch(setGroupListPopup(false));
-        dispatch(fetchBuzlamaWorks({areaName}));
+        dispatch(fetchBuzlamaWorks({ areaName }));
       }
     } catch (err) {
       console.log(err);
@@ -43,25 +54,31 @@ function GroupNos({fetchBuzlamaWorks}) {
         toast.error(err.response.data);
       }
     }
-  }
-  
+  };
+
+  console.log(selectedGroupNo);
   return (
     <div className="absolute w-full h-full top-0 left-0">
       <div className="w-full h-full flex items-center justify-center">
         <div className="w-[400px] h-[400px] bg-white z-20 rounded-md shadow-md">
           <div className="h-[10%] border-b shadow-md flex justify-center items-center">
-            <span className="text-xl">Grup Listesi</span>
+            <span className="text-xl text-black">Grup Listesi</span>
           </div>
-          <div className="h-[60%] w-full">
+          <div className="h-[60%] w-full text-black">
             <ul className="w-full h-full">
-                {groupList && groupList.map((item,index)=>(
-                        <ol
-                          className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${selectedSendGroup === item.group_no ? "bg-slate-300" :""} `}
-                          key={index}
-                          onClick={()=>{handleSelectedSendGroup(item.group_no)}}
-                        >
-                          {item.group_no}
-                        </ol>
+              {groupList &&
+                groupList.map((item, index) => (
+                  <ol
+                    className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
+                      selectedSendGroup === item.group_no ? "bg-slate-300" : ""
+                    } `}
+                    key={index}
+                    onClick={() => {
+                      handleSelectedSendGroup(item.group_no);
+                    }}
+                  >
+                    {item.group_no}
+                  </ol>
                 ))}
             </ul>
           </div>

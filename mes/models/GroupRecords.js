@@ -18,6 +18,10 @@ const GroupRecords = sequelize.define(
         type:DataTypes.STRING,
         allowNull:false
     },
+    who_ended_group:{
+        type:DataTypes.STRING,
+        allowNull:true
+    },
     group_start_date:{
         type:DataTypes.DATE,
         allowNull:true,    

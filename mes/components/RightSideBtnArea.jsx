@@ -7,9 +7,11 @@ import {
   setSelectedOrder,
   setOrderGroupManagement,
   setSendToMachinePopup,
-  setMeasurementPopup
+  setMeasurementPopup,
+  setGroupListPopup,
+  setFinishedGroupPopup,
+  handleGetGroupList,
 } from "@/redux/orderSlice";
-
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -20,9 +22,11 @@ function RightSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-  const { stopReasonPopup, selectedOrder,groupManagementPopup,sendToMachinePopup,selectedProcess,selectedMachine } = useSelector(
-    (state) => state.order
-  );
+  const {
+    selectedOrder,
+    selectedProcess,
+    selectedMachine
+  } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const pathName = usePathname();
@@ -37,9 +41,11 @@ function RightSideBtnArea() {
     }
   };
 
+  // Grup yönetimi popup ını acacak fonksiyon
   const handleOpenGroupManagementPopup = () => {
     dispatch(setOrderGroupManagement(true));
-  }
+    dispatch(handleGetGroupList())
+  };
 
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
@@ -71,6 +77,7 @@ function RightSideBtnArea() {
     }
   };
 
+  // iş bitirme popını acacak...
   const handleOpenFinishedPopup = () => {
     if (
       (selectedOrder && selectedOrder?.work_status === "1") ||
@@ -109,20 +116,22 @@ function RightSideBtnArea() {
     }
   };
 
-  // makineye gönder popup ını acacak fonksıyon... 
-  const handleOpenSendMachinePopup = () => {
-    if(selectedProcess && selectedMachine){
-      dispatch(setSendToMachinePopup(true));
-    }else{
-      toast.error("Göndereceğiniz prosesi ve makineyi seçiniz.")
-    }
-  }
-
   // ölçüm veri girişi popup ını açacak fonksıyon...
   const handleOpenMeasurementPopup = () => {
     dispatch(setMeasurementPopup(true));
-  }
+  };
 
+  // send machine popup ını acacak fonksıyon... 
+  const handleOpenSendMachinePopup = () => {
+    if(selectedMachine && selectedProcess) {
+      dispatch(setSendToMachinePopup({ visible: true, actionType: "send" }));
+      dispatch(handleGetGroupList());
+    }else{
+      toast.error("Proses ve Makine seçiniz.")
+    }
+  };
+
+ 
   // Kalite buttons
   const buttons_r = [
     {
@@ -164,8 +173,15 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleOpenSendMachinePopup,
+      onClick: handleOpenSendMachinePopup, // Gönderme işlemi
       children: "Makineye Gönder",
+      type: "button",
+      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: () => dispatch(setSendToMachinePopup({ visible: true, actionType: "finish" })), // Bitirme işlemi
+      children: "Grubu Teslim Et",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",
       disabled: isCurrentBreak,
@@ -193,13 +209,6 @@ function RightSideBtnArea() {
     },
     {
       onClick: handleOpenFinishedPopup,
-      children: "Grubu Teslim  Et",
-      type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
-      disabled: isCurrentBreak,
-    },
-    {
-      onClick: handleOpenFinishedPopup,
       children: "Seçilenleri Ş. Bitir",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm ",
@@ -216,15 +225,17 @@ function RightSideBtnArea() {
       onClick: handleCancelWork,
       children: "Sipariş İptal",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-red-600 hover:bg-red-500",
+      className:
+        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     {
       children: "Ölçüm V. Girişi",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
+      className:
+        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
       disabled: isCurrentBreak,
-      onClick:handleOpenMeasurementPopup
+      onClick: handleOpenMeasurementPopup,
     },
   ];
 
