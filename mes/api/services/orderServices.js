@@ -296,7 +296,7 @@ const mergeGroups = async (params) => {
 
 //! Gruptan sipariş çıkaracak servis...
 const removeOrdersFromGroup = async (params) => {
-  const { orderUniqIds,groupNo,operatorId } = params;
+  const { orderUniqIds, groupNo, operatorId } = params;
   try {
     const parsedOrderIds = JSON.parse(orderUniqIds);
     const parsedGroupNo = JSON.parse(groupNo);
@@ -355,9 +355,9 @@ const removeOrdersFromGroup = async (params) => {
 
     // yollanan grup no da hiç sipariş yoksa 0 lar yukarıda silindi grubu sil...
     const orderByGroup = await WorkLog.findAll({
-      where:{
-        group_no : parsedGroupNo
-      }
+      where: {
+        group_no: parsedGroupNo,
+      },
     });
 
     if (orderByGroup.length === 0) {
@@ -366,12 +366,16 @@ const removeOrdersFromGroup = async (params) => {
           group_no: parsedGroupNo,
         },
       });
-      return { status: 200, message: "Grup kapatıldı ve tüm siparişler silindi" };
-      
+      return {
+        status: 200,
+        message: "Grup kapatıldı ve tüm siparişler silindi",
+      };
     } else {
-         // grup içinde daha onceden iptal edilen ve bitmiş işler var ve devam eden bir iş yok ise grubu otomatik kapatmak ıcın arama yapıyoruz
+      // grup içinde daha onceden iptal edilen ve bitmiş işler var ve devam eden bir iş yok ise grubu otomatik kapatmak ıcın arama yapıyoruz
       const isFinishedOrder = orderByGroup.some(
-        (item) => (item.work_status === "3" || item.work_status === "4") && item.work_status !== "1"
+        (item) =>
+          (item.work_status === "3" || item.work_status === "4") &&
+          item.work_status !== "1"
       );
 
       if (isFinishedOrder) {
@@ -387,12 +391,17 @@ const removeOrdersFromGroup = async (params) => {
             },
           }
         );
-        return { status: 200, message: "Grup kapatıldı ve siparişler güncellendi" };
-      };
+        return {
+          status: 200,
+          message: "Grup kapatıldı ve siparişler güncellendi",
+        };
+      }
+    }
+
+    return {
+      status: 200,
+      message: "Siparişler gruptan başarıyla çıkarıldı, grup kapatılmadı",
     };
-
-
-    return { status: 200, message: "Siparişler gruptan başarıyla çıkarıldı, grup kapatılmadı" };
   } catch (err) {
     console.error("Internal server error", err);
     return { status: 500, message: "Internal server error" };
@@ -759,7 +768,7 @@ async function deliverSelectedOrder(order, id_dec, op_username, group_no) {
 }
 
 //! Gruptaki işleri bitirip grubu guncelleyecek servis
-async function finishTheGroup({groups, id_dec}) {
+async function finishTheGroup({ orders, id_dec }) {
   const gruopsIds = JSON.parse(groups);
 
   try {
@@ -791,7 +800,7 @@ async function finishTheGroup({groups, id_dec}) {
           allOrderUniqId = allOrderUniqId.concat(
             orders.map((order) => order.uniq_id)
           );
-        };
+        }
       } else {
         return {
           status: 400,
@@ -823,7 +832,7 @@ async function finishTheGroup({groups, id_dec}) {
       const updatedOrders = await WorkLog.findAll({
         where: { group_no: groupId },
       });
-    
+
       if (updatedOrders && updatedOrders.length > 0) {
         const incompleteOrder = updatedOrders.find(
           (order) => order.work_status !== "3" && order.work_status !== "4"
@@ -838,10 +847,10 @@ async function finishTheGroup({groups, id_dec}) {
           message: `Güncelleme sonrası grup bulunamadı veya içinde sipariş yok: ${groupId}`,
         };
       }
-    }    
+    }
 
     // Eğer tüm siparişler "3" veya "4" ise grubu güncelle
-    
+
     if (allGroupsCompleted) {
       const [updatedRows] = await GroupRecords.update(
         {
@@ -854,11 +863,11 @@ async function finishTheGroup({groups, id_dec}) {
           },
         }
       );
-    
+
       console.log(`Güncellenen satır sayısı: ${updatedRows}`);
     }
 
-    console.log(allGroupsCompleted,gruopsIds);
+    console.log(allGroupsCompleted, gruopsIds);
 
     return {
       status: 200,
@@ -870,6 +879,79 @@ async function finishTheGroup({groups, id_dec}) {
       status: 500,
       message: "Sunucu hatası.",
     };
+  }
+}
+
+//! Seçili siparişleri bitirecek servis
+async function finishSelectedOrders(params) {
+  const { orders, id_dec } = params;
+
+  try {
+    // Bütün siparişler aynı grupta mı?
+    const areGroupsSimilar = (orders) => {
+      if (orders.length === 0) {
+        return { status: 400, message: "Sipariş listesi boş olamaz." };
+      }
+      const firstGroupNo = orders[0].group_no; // İlk order'ın grup numarasını alıyoruz
+      return orders.every((order) => order.group_no === firstGroupNo);
+    };
+
+    const groupsSimilarResult = areGroupsSimilar(orders);
+
+    if (groupsSimilarResult !== true) {
+      return groupsSimilarResult; // Eğer gruplar aynı değilse hata mesajını döner
+    }
+
+    // Aynı grupta olan siparişleri bitir
+    for (const order of orders) {
+      await WorkLog.update(
+        {
+          work_status: "4",
+          work_end_date: new Date().toISOString(),
+          work_finished_op_dec: id_dec,
+        },
+        {
+          where: {
+            uniq_id: order.uniq_id,
+          },
+        }
+      );
+    }
+
+    // Gruba ait tüm siparişleri kontrol et
+    const groupOrder = await WorkLog.findAll({
+      where: {
+        group_no: orders[0].group_no,
+      },
+    });
+
+    const allOrderOver = groupOrder.every(
+      (item) => item.work_status === "4" || item.work_status === "3"
+    );
+
+    if (allOrderOver) {
+      await GroupRecords.update(
+        {
+          group_end_date: new Date().toISOString(),
+          group_status: "2",
+        },
+        {
+          where: {
+            group_no: orders[0].group_no,
+          },
+        }
+      );
+
+      return {
+        status: 200,
+        message: "Gruptaki bütün siparişler bitirildi ve grup kapatıldı.",
+      };
+    }
+
+    return { status: 200, message: "Siparişler başarıyla tamamlandı." };
+  } catch (err) {
+    console.log(err);
+    return { status: 500, message: "Sunucu hatası, lütfen tekrar deneyin." };
   }
 }
 
@@ -887,4 +969,5 @@ module.exports = {
   getAllMeasurements,
   deliverSelectedOrder,
   finishTheGroup,
+  finishSelectedOrders,
 };

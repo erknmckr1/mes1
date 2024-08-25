@@ -34,7 +34,7 @@
   const orderSlice = createSlice({
     name: "order",
     initialState: {
-      selectedOrder: null, // seçili siparişi tutacak state...
+      selectedOrder: [], // seçili siparişi tutacak state...
       workList:[], // Mevcut işleri tutacak state
       stopReasonPopup: null, // sipariş durdurma popup ın durumunu tutan state
       cancelReasonPopup: null, // sipariş iptal popupının durumunu tutan state

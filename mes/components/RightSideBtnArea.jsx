@@ -22,20 +22,20 @@ function RightSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-  const {
-    selectedOrder,
-    selectedProcess,
-    selectedMachine
-  } = useSelector((state) => state.order);
+  const { selectedOrder, selectedProcess, selectedMachine } = useSelector(
+    (state) => state.order
+  );
   const { userInfo } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
 
-  // stop popup ı ac
+  // stop popup'ı aç
   const handleOpenStopPopup = () => {
-    if (selectedOrder && selectedOrder.work_status === "1") {
+    if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
       dispatch(setStopReasonPopup(true));
+    } else if (selectedOrder.length > 1) {
+      toast.error("Durdurmak için sadece bir sipariş seçin.");
     } else {
       toast.error("İşleme devam etmek için aktif bir iş seçin");
     }
@@ -44,30 +44,32 @@ function RightSideBtnArea() {
   // Grup yönetimi popup ını acacak fonksiyon
   const handleOpenGroupManagementPopup = () => {
     dispatch(setOrderGroupManagement(true));
-    dispatch(handleGetGroupList())
+    dispatch(handleGetGroupList());
   };
 
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
     try {
-      if (selectedOrder && selectedOrder.work_status === "2") {
+      if (selectedOrder.length === 1 && selectedOrder[0].work_status === "2") {
         if (confirm("İş tekrardan baslatilsin mi ? ")) {
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
             {
-              work_log_uniq_id: selectedOrder.uniq_id,
+              work_log_uniq_id: selectedOrder[0].uniq_id,
               currentUser: userInfo.id_dec,
-              startedUser: selectedOrder.user_id_dec,
-              selectedOrder,
+              startedUser: selectedOrder[0].user_id_dec,
+              selectedOrder: selectedOrder[0],
             }
           );
 
           if (response.status === 200) {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
             toast.success("Tekrardan başlatma işlemi başarılı.");
-            dispatch(setSelectedOrder(null));
+            dispatch(setSelectedOrder([]));
           }
         }
+      } else if (selectedOrder.length > 1) {
+        toast.error("Yenıden baslatmak ıcın sadece 1 durdurulmus iş seçiniz.");
       } else {
         toast.error("Durdurulmuş bir iş seçiniz...");
       }
@@ -80,7 +82,7 @@ function RightSideBtnArea() {
   // iş bitirme popını acacak...
   const handleOpenFinishedPopup = () => {
     if (
-      (selectedOrder && selectedOrder?.work_status === "1") ||
+      (selectedOrder.length === 1 && selectedOrder[0]?.work_status === "1") ||
       selectedOrder?.work_status === "2"
     ) {
       dispatch(setFinishedWorkPopup(true));
@@ -92,23 +94,25 @@ function RightSideBtnArea() {
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
-      if (selectedOrder) {
+      if (selectedOrder.length === 1) {
         if (confirm("Sipariş iptal edilsin mi ?")) {
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/cancelWork`,
             {
-              uniq_id: selectedOrder.uniq_id,
+              uniq_id: selectedOrder[0].uniq_id,
               currentUser: userInfo.id_dec,
             }
           );
           if (response.status === 200) {
             toast.success(
-              `${selectedOrder?.uniq_id} numaralı sipariş iptal edildi...`
+              `${selectedOrder[0]?.uniq_id} numaralı sipariş iptal edildi...`
             );
-            dispatch(setSelectedOrder(null));
+            dispatch(setSelectedOrder([]));
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           }
         }
+      } else {
+        toast.error("İptal etmek için sadece 1 sipariş seçin");
       }
     } catch (err) {
       console.log(err);
@@ -116,22 +120,53 @@ function RightSideBtnArea() {
     }
   };
 
+  //! Seçilenleri bitirme isteği...
+  const finishSelectedOrder = async () => {
+    const onGoingOrder = selectedOrder.every(
+      (item) => item.work_status === "1" || item.work_status === "2"
+    );
+  
+    try {
+      if (onGoingOrder) {
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishSelectedOrders`,
+          {
+            orders: selectedOrder,
+            id_dec: userInfo.id_dec,
+          }
+        );
+  
+        if (response.status === 200) {
+          toast.success(response.data); 
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          dispatch(setSelectedOrder([]));
+        }
+      } else {
+        toast.error(
+          "Seçtiğiniz bütün siparişler devam eden ya da durdurulmuş olmalı."
+        );
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Siparişleri tamamlama işlemi başarısız oldu.');
+    }
+  };
+  
+
   // ölçüm veri girişi popup ını açacak fonksıyon...
   const handleOpenMeasurementPopup = () => {
     dispatch(setMeasurementPopup(true));
   };
 
-  // send machine popup ını acacak fonksıyon... 
+  // send machine popup ını acacak fonksıyon...
   const handleOpenSendMachinePopup = () => {
-    if(selectedMachine && selectedProcess) {
+    if (selectedMachine && selectedProcess) {
       dispatch(setSendToMachinePopup({ visible: true, actionType: "send" }));
       dispatch(handleGetGroupList());
-    }else{
-      toast.error("Proses ve Makine seçiniz.")
+    } else {
+      toast.error("Proses ve Makine seçiniz.");
     }
   };
 
- 
   // Kalite buttons
   const buttons_r = [
     {
@@ -180,7 +215,10 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: () => dispatch(setSendToMachinePopup({ visible: true, actionType: "finish" })), // Bitirme işlemi
+      onClick: () =>
+        dispatch(
+          setSendToMachinePopup({ visible: true, actionType: "finish" })
+        ), // Bitirme işlemi
       children: "Grubu Teslim Et",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",
@@ -202,20 +240,13 @@ function RightSideBtnArea() {
     },
     {
       onClick: handleOpenFinishedPopup,
-      children: "Prosesi Bitir",
-      type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
-      disabled: isCurrentBreak,
-    },
-    {
-      onClick: handleOpenFinishedPopup,
       children: "Seçilenleri Ş. Bitir",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm ",
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleOpenStopPopup,
+      onClick: finishSelectedOrder,
       children: "Seçilenleri Bitir",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",

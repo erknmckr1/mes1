@@ -37,14 +37,28 @@ function JobTable() {
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
 
-  const handleSelectedRow = (params) => {
-    if (params.row.id === selectedOrder?.id) {
-      dispatch(setSelectedOrder(null));
+  // Tekli veya çoklu seçim yönetimi
+  const handleRowSelection = (params) => {
+    const isSelected = selectedOrder?.some((item) => item.id === params.row.id);
+    if (isSelected) {
+      // Zaten seçili ise, kaldır
+      const updatedSelection = selectedOrder.filter(
+        (item) => item.id !== params.row.id
+      );
+      dispatch(setSelectedOrder(updatedSelection));
     } else {
-      dispatch(setSelectedOrder(params.row));
+      // Seçili değilse, ekle
+      if (areaName === "kalite") {
+        // Kalite ekranında sadece tek seçim yapılabilir
+        dispatch(setSelectedOrder([params.row]));
+      } else if (areaName === "buzlama") {
+        // Buzlama ekranında çoklu seçim yapılabilir
+        dispatch(setSelectedOrder([...selectedOrder, params.row]));
+      }
     }
   };
 
+  console.log(selectedOrder)
   const columns = [
     {
       field: "id",
@@ -120,20 +134,25 @@ function JobTable() {
         work_finished_op_dec: item.work_finished_op_dec,
         work_status: item.work_status,
         uniq_id: item.uniq_id,
+        group_no:item.group_no
       };
     });
 
-  const getRowClassName = (params) => {
-    const { row } = params;
-    if (selectedOrder && row.id === selectedOrder.id) {
-      return "selected-row";
-    } else if (row.work_status === "1") {
-      return "green-row";
-    } else if (row.work_status === "2") {
-      return "red-row";
-    }
-    return "";
-  };
+    const getRowClassName = (params) => {
+      const { row } = params;
+      // Seçili satırların stilini belirle
+      if (selectedOrder?.some((item) => item.id === row.id)) {
+        return "selected-row";
+      }
+      // İş durumuna göre stil ayarlama
+      if (row.work_status === "1") {
+        return "green-row";
+      } else if (row.work_status === "2") {
+        return "red-row";
+      }
+  
+      return "";
+    };
 
   return (
     <ThemeProvider theme={theme}>
@@ -143,7 +162,7 @@ function JobTable() {
           columns={columns}
           pagination={false}
           //checkboxSelection
-          onRowClick={(params) => handleSelectedRow(params)}
+          onRowClick={(params) => handleRowSelection(params)}
           getRowClassName={getRowClassName}
         />
       </div>

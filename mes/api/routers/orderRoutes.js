@@ -13,7 +13,8 @@ const {
   createMeasurementData,
   getAllMeasurements,
   deliverSelectedOrder,
-  finishTheGroup
+  finishTheGroup,
+  finishSelectedOrders
 } = require("../services/orderServices");
 
 //!
@@ -128,8 +129,15 @@ router.put("/deliverSelectedOrder",async(req,res)=>{
 //! Gruptaki siparişleri bitirecek route
 router.put("/finishTheGroup",async(req,res)=>{
   const { orders,groups,id_dec} = req.body;
-  console.log(groups);
   const result = await finishTheGroup({groups,id_dec});
   return res.status(result.status).json(result.message);
-})
+});
+
+//! Seçili siparişleri bitirecek rota 
+router.put("/finishSelectedOrders",async(req,res)=>{
+  const {orders,id_dec} = req.body;
+  const result = await finishSelectedOrders({orders,id_dec});
+  console.log(orders)
+  return res.status(result.status).json(result.message);
+});
 module.exports = router;

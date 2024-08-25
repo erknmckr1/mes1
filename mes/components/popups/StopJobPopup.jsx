@@ -33,30 +33,37 @@ function StopJobPopup() {
     }
   };
 
-  //! Seçilen işi durdurmak için gerekli istek...
-  const stopSelectedWork = async () => {
-    try {
+ //! Seçilen işi durdurmak için gerekli istek...
+const stopSelectedWork = async () => {
+  try {
+    if (selectedOrder.length === 1) {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
         {
-          order_id: selectedOrder.order_no,
+          order_id: selectedOrder[0].order_no,
           stop_reason_id: molaSebebi.stop_reason_id,
-          work_log_uniq_id: selectedOrder.uniq_id,
-          user_who_stopped:userInfo?.id_dec
+          work_log_uniq_id: selectedOrder[0].uniq_id,
+          user_who_stopped: userInfo?.id_dec,
         }
       );
+
       if (response.status === 200) {
-        toast.success(`Siparişi durdurma işlemi başarili...`);
+        toast.success(`Siparişi durdurma işlemi başarılı...`);
         dispatch(setStopReasonPopup(false));
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // worklist i tekrardan cagır gridi yenile...
-        dispatch(setSelectedOrder(null))
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
+        dispatch(setSelectedOrder([])); // Seçimi temizle
       } else {
-        toast.error("Sipariş durdurulamadi...");
+        toast.error("Sipariş durdurulamadı...");
       }
-    } catch (err) {
-      console.log(err);
+    } else {
+      toast.error("Durdurmak için sadece bir sipariş seçiniz.");
     }
-  };
+  } catch (err) {
+    console.log(err);
+    toast.error("Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin.");
+  }
+};
+
 
   useEffect(() => {
     getBreakReason();
