@@ -11,6 +11,7 @@ import {
   setGroupListPopup,
   setFinishedGroupPopup,
   handleGetGroupList,
+  setConditionalFinishPopup
 } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -91,6 +92,15 @@ function RightSideBtnArea() {
     }
   };
 
+  // şartlı bıtırme popupını acacak fonksıyon..
+  const handleOpenConditionalFinishPopup = () => {
+    if(selectedOrder.length > 0 ){
+      dispatch(setConditionalFinishPopup(true));
+    }else {
+      toast.error("Şartlı bitirmek istediğiniz siparişleri seçiniz")
+    };
+  };
+
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
@@ -126,6 +136,7 @@ function RightSideBtnArea() {
       (item) => item.work_status === "1" || item.work_status === "2"
     );
   
+   if(confirm("Seçili siparişler bitirilsin mi ? ")){
     try {
       if (onGoingOrder) {
         const response = await axios.put(
@@ -149,6 +160,7 @@ function RightSideBtnArea() {
     } catch (err) {
       toast.error(err.response?.data?.error || 'Siparişleri tamamlama işlemi başarısız oldu.');
     }
+   }
   };
   
 
@@ -239,7 +251,7 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleOpenFinishedPopup,
+      onClick: handleOpenConditionalFinishPopup,
       children: "Seçilenleri Ş. Bitir",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm ",
@@ -267,6 +279,13 @@ function RightSideBtnArea() {
         "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
       disabled: isCurrentBreak,
       onClick: handleOpenMeasurementPopup,
+    },
+    {
+      children: "Geçmiş Gruplar",
+      type: "button",
+      className:
+        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
+      disabled: isCurrentBreak,
     },
   ];
 

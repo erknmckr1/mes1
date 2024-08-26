@@ -59,6 +59,7 @@
       actionType: "", // send to machine popup ı 2 farklı olayda kullandık... 
       // Ölçüm veri girişi 
       measurementEntryPopup:false,
+      conditionalFinishPopup:false // şartlı bitirme popup ınını durumunu tutan state... 
     },
     reducers: {
       setSelectedOrder: (state, action) => {
@@ -128,6 +129,9 @@
       setMeasurementPopup:(state,action) => {
         state.measurementEntryPopup = action.payload;
       },
+      setConditionalFinishPopup:(state,action) => {
+        state.conditionalFinishPopup = action.payload;
+      }
     },
     extraReducers: (builder) => {
       builder
@@ -178,6 +182,7 @@
     setBuzlamaWorks,
     setSendToMachinePopup,
     // ölçüm veri girişi
-    setMeasurementPopup
+    setMeasurementPopup,
+    setConditionalFinishPopup
   } = orderSlice.actions;
   export default orderSlice.reducer;

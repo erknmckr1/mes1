@@ -14,7 +14,9 @@ const {
   getAllMeasurements,
   deliverSelectedOrder,
   finishTheGroup,
-  finishSelectedOrders
+  finishSelectedOrders,
+  getConditionalReason,
+  conditionalFinish
 } = require("../services/orderServices");
 
 //!
@@ -137,7 +139,19 @@ router.put("/finishTheGroup",async(req,res)=>{
 router.put("/finishSelectedOrders",async(req,res)=>{
   const {orders,id_dec} = req.body;
   const result = await finishSelectedOrders({orders,id_dec});
-  console.log(orders)
   return res.status(result.status).json(result.message);
 });
+
+//! Şartlı bitirme nedenlerini çekecek rota
+router.get("/getConditionalReason",async(req,res)=>{
+  const result = await getConditionalReason();
+  return res.status(result.status).json(result.message);
+});
+
+//! Siparişleri şartlı bıtırecek rota 
+router.put("/conditionalFinish",async(req,res)=>{
+  const {orders,id_dec,conditional_finish,end_desc} = req.body;
+  const result = await conditionalFinish(orders,id_dec,conditional_finish,end_desc);
+  return res.status(result.status).json(result.message);
+})
 module.exports = router;

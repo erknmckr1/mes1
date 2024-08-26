@@ -122,7 +122,7 @@ function OrderGroupManagement() {
   // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
   const handleOrderFilteredByGroup = (group_no) => {
     let updatedSelectedGroupNo = [];
-    if (selectedGroupNo.includes(group_no)) {
+    if (selectedGroupNo?.includes(group_no)) {
       // Grup zaten seçiliyse, kaldır
       updatedSelectedGroupNo = selectedGroupNo.filter((no) => no !== group_no);
     } else {

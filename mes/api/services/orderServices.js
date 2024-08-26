@@ -5,6 +5,7 @@ const User = require("../../models/User");
 const { Op, json } = require("sequelize");
 const { createWork } = require("../orderOperations");
 const MeasureData = require("../../models/MeasureData");
+const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
 //! id ye gore sıparısı getırecek servis...
 async function getOrderById(orderId) {
   try {
@@ -113,6 +114,7 @@ async function createOrderGroup(params) {
       }
     }
 
+    // Benzersiz group_no oluşturma
     const latestGroupNo = await GroupRecords.findOne({
       order: [["group_no", "DESC"]],
     });
@@ -125,17 +127,27 @@ async function createOrderGroup(params) {
       newGroupNo = "00001";
     }
 
+    // Benzersiz group_record_id oluşturma
+    const latestRecordId = await GroupRecords.findOne({
+      order: [["group_record_id", "DESC"]],
+    });
+
+    let newUniqId;
+    if (latestRecordId) {
+      const latestId = parseInt(latestRecordId.group_record_id, 10); 
+      newUniqId = String(latestId + 1).padStart(6, "0");
+    } else {
+      newUniqId = "000001";
+    }
+
     const orderIds = orders.map((order) => order.ORDER_ID).join(",");
 
     const newGroupRecord = await GroupRecords.create({
-      group_record_id: newGroupNo,
+      group_record_id: newUniqId,
       group_no: newGroupNo,
       who_started_group: operatorId,
       group_creation_date: currentDateTimeOffset,
       group_status: "1",
-      // starting_order_numbers: orderIds,
-      // process_name: process_name || "Default",  // Eğer process_name boşsa, "Default Process Name" kullanılır
-      // machine_name: machine_name || "Default",  // Eğer machine_name boşsa, "Default Machine Name" kullanılır
       section,
       area_name: areaName,
     });
@@ -164,6 +176,7 @@ async function createOrderGroup(params) {
           user_id_dec: user.id_dec,
           op_username: user.op_username,
           group_no: newGroupNo,
+          group_record_id: newUniqId,
         };
 
         await createWork({ work_info, currentDateTimeOffset });
@@ -248,7 +261,7 @@ const mergeGroups = async (params) => {
           };
         }
 
-        allOrderIds = allOrderIds.concat(orders.map((order) => order.order_no));
+        allOrderIds = allOrderIds.concat(orders.map((order) => order.uniq_id));
       } else {
         return {
           status: 400,
@@ -270,11 +283,12 @@ const mergeGroups = async (params) => {
         area_name: areaName,
       });
 
+      console.log(allOrderIds);
       // WorkLog tablosundaki her siparişin group_no sütununu güncelle
       for (const orderId of allOrderIds) {
         await WorkLog.update(
           { group_no: newGroupNo },
-          { where: { order_no: orderId } }
+          { where: { uniq_id: orderId } }
         );
       }
 
@@ -768,9 +782,8 @@ async function deliverSelectedOrder(order, id_dec, op_username, group_no) {
 }
 
 //! Gruptaki işleri bitirip grubu guncelleyecek servis
-async function finishTheGroup({ orders, id_dec }) {
+async function finishTheGroup({ orders, groups, id_dec }) {
   const gruopsIds = JSON.parse(groups);
-
   try {
     // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
     let allOrderUniqId = [];
@@ -926,7 +939,10 @@ async function finishSelectedOrders(params) {
     });
 
     const allOrderOver = groupOrder.every(
-      (item) => item.work_status === "4" || item.work_status === "3"
+      (item) =>
+        item.work_status === "4" ||
+        item.work_status === "3" ||
+        item.work_status === "5"
     );
 
     if (allOrderOver) {
@@ -955,6 +971,92 @@ async function finishSelectedOrders(params) {
   }
 }
 
+//! Şarrtlı bıtırme nedenlerını cekecek servis
+async function getConditionalReason() {
+  try {
+    const result = await ConditionalFinishReason.findAll(); // Tüm nedenleri çek
+    return { status: 200, message: result }; // Başarılı olduğunda 200 ve sonuçları dön
+  } catch (err) {
+    console.error("Error fetching conditional reasons:", err); // Hata logu
+    return { status: 500, message: "Internal Server Error" }; // Hata durumunda 500 ve hata mesajı dön
+  }
+}
+
+//! Gönderilen siparişleri şartlı bıtırecek popup...
+async function conditionalFinish(orders, id_dec, conditional_finish, end_desc) {
+  try {
+    // Bütün siparişler aynı grupta mı?
+    const areGroupsSimilar = (orders) => {
+      if (orders.length === 0) {
+        return { status: 400, message: "Sipariş listesi boş olamaz." };
+      }
+      const firstGroupNo = orders[0].group_no; // İlk order'ın grup numarasını alıyoruz
+      return orders.every((order) => order.group_no === firstGroupNo);
+    };
+
+    const groupsSimilarResult = areGroupsSimilar(orders);
+
+    if (groupsSimilarResult !== true) {
+      return groupsSimilarResult; // Eğer gruplar aynı değilse hata mesajını döner
+    }
+
+    // Aynı grupta olan siparişleri bitir
+    for (const order of orders) {
+      await WorkLog.update(
+        {
+          work_status: "5",
+          work_end_date: new Date().toISOString(),
+          work_finished_op_dec: id_dec,
+          conditional_finish,
+          end_desc,
+        },
+        {
+          where: {
+            uniq_id: order.uniq_id,
+          },
+        }
+      );
+    }
+
+    // Gruba ait tüm siparişleri kontrol et
+    const groupOrder = await WorkLog.findAll({
+      where: {
+        group_no: orders[0].group_no,
+      },
+    });
+
+    const allOrderOver = groupOrder.every(
+      (item) =>
+        item.work_status === "4" ||
+        item.work_status === "3" ||
+        item.work_status === "5"
+    );
+
+    if (allOrderOver) {
+      await GroupRecords.update(
+        {
+          group_end_date: new Date().toISOString(),
+          group_status: "2",
+        },
+        {
+          where: {
+            group_no: orders[0].group_no,
+          },
+        }
+      );
+
+      return {
+        status: 200,
+        message: "Gruptaki bütün siparişler bitirildi ve grup kapatıldı.",
+      };
+    }
+    return { status: 200, message: "Siparişler başarıyla tamamlandı." };
+  } catch (err) {
+    console.log(err);
+    return { status: 500, message: "Sunucu hatası, lütfen tekrar deneyin." };
+  }
+}
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -970,4 +1072,6 @@ module.exports = {
   deliverSelectedOrder,
   finishTheGroup,
   finishSelectedOrders,
+  getConditionalReason,
+  conditionalFinish,
 };

@@ -18,6 +18,8 @@ const Permission = require("./Permissions");
 const Role = require("./Roles");
 const GroupRecords = require("./GroupRecords");
 const MeasureData = require("./MeasureData");
+const ConditionalFinishReason = require("./ConditionalFinishReasons");
+const WorkStatus = require("./WorkStatus");
 const models = {
   User,
   BreakLog,
@@ -37,7 +39,9 @@ const models = {
   Permission,
   RolePermission,
   GroupRecords,
-  MeasureData
+  MeasureData,
+  ConditionalFinishReason,
+  WorkStatus
 };
 
 // İlişkileri tanımlama
