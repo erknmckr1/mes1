@@ -11,7 +11,8 @@ import {
   setGroupListPopup,
   setFinishedGroupPopup,
   handleGetGroupList,
-  setConditionalFinishPopup
+  setConditionalFinishPopup,
+  setPastGroupOperationsPopup
 } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -47,6 +48,11 @@ function RightSideBtnArea() {
     dispatch(setOrderGroupManagement(true));
     dispatch(handleGetGroupList());
   };
+
+  // Kapanmıs gruplar ıcın ıslem yapılacak popup ı acacak fonksıyon..
+  const handleOpenPastGroupsPopup = () => {
+    dispatch(setPastGroupOperationsPopup(true));
+  }
 
   //! Seçili ve durdurulmus siparişi yeniden baslat...
   const restartWork = async () => {
@@ -284,8 +290,9 @@ function RightSideBtnArea() {
       children: "Geçmiş Gruplar",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
+        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-gray-500 hover:bg-gray-600",
       disabled: isCurrentBreak,
+      onClick:handleOpenPastGroupsPopup,
     },
   ];
 

@@ -55,6 +55,32 @@ const getWorksToBuzlama = async () => {
   }
 };
 
+//! Bölümdeki bitmiş yada iptal olan işleri çek...
+const getFinishedOrders = async (area_name) => {
+  try {
+    const result = await WorkLog.findAll({
+      where: {
+        area_name,
+        work_status: {
+          [Op.in]: ["3", "4", "5"],
+        },
+      },
+    });
+
+    if (result.length > 0) {
+      return { status: 200, message: result };
+    } else {
+      return {
+        status: 404,
+        message: `${area_name} alanında iş bulunamadı.`,
+      };
+    }
+  } catch (err) {
+    console.log("Internal server error", err);
+    return { status: 500, message: "Internal server error" };
+  }
+};
+
 //! Yenı grup olustacak fonksıyon...
 async function createOrderGroup(params) {
   console.log(params);
@@ -134,7 +160,7 @@ async function createOrderGroup(params) {
 
     let newUniqId;
     if (latestRecordId) {
-      const latestId = parseInt(latestRecordId.group_record_id, 10); 
+      const latestId = parseInt(latestRecordId.group_record_id, 10);
       newUniqId = String(latestId + 1).padStart(6, "0");
     } else {
       newUniqId = "000001";
@@ -213,6 +239,25 @@ const getGroupList = async () => {
   }
 };
 
+//! Kapanmıs Grupları cekecek servis
+//! Grupları çekecek servis...
+const getClosedGroups = async () => {
+  try {
+    const result = await GroupRecords.findAll({
+      where: {
+        group_status: "2",
+      },
+    });
+
+    if (result.length === 0) {
+      return { status: 404, message: "Grup bulunamadı" };
+    }
+    return { status: 200, message: result };
+  } catch (err) {
+    console.error("Internal server error", err);
+    return { status: 500, message: "Internal server error" };
+  }
+};
 //! Grupları birleştirecek servis...
 const mergeGroups = async (params) => {
   const { groupIds, operatorId, section, areaName } = params;
@@ -1057,6 +1102,102 @@ async function conditionalFinish(orders, id_dec, conditional_finish, end_desc) {
   }
 }
 
+//! Kapatılan gruplar ve siparişleri ile aynı yada farklı proseslerde tekrardan iş baslatacak servis
+async function restartGroupProcess(
+  areaName,
+  section,
+  id_dec,
+  machine_name,
+  group_no,
+  group_record_id,
+  process_id,
+  process_name
+) {
+  try {
+    const orders = await WorkLog.findAll({
+      where: {
+        group_record_id,
+      },
+    });
+    if (orders.length === 0) {
+      return {
+        status: 404,
+        message: `${group_record_id} idsine ait geçmiş sipariş bulunamadı.`,
+      };
+    }
+
+    console.log({orders:orders})
+    // Benzersiz group_record_id oluşturma
+    const latestRecordId = await GroupRecords.findOne({
+      order: [["group_record_id", "DESC"]],
+    });
+
+    let newUniqId;
+    if (latestRecordId) {
+      const latestId = parseInt(latestRecordId.group_record_id, 10);
+      newUniqId = String(latestId + 1).padStart(6, "0");
+    } else {
+      newUniqId = "000001";
+    }
+
+    const groupRecord = await GroupRecords.create({
+      group_record_id: newUniqId,
+      group_no: group_no,
+      who_started_group: id_dec,
+      group_creation_date: new Date().toISOString(),
+      group_start_date:new Date().toISOString(),
+      group_status: "1",
+      section,
+      area_name: areaName,
+      process_name,
+      machine_name,
+    });
+
+    const currentDateTimeOffset = new Date().toISOString();
+
+    if (groupRecord) {
+      for (const order of orders) {
+        const sorder = await WorkLog.findOne({
+          where: {
+            order_no:order.order_no
+          },
+        });
+
+        if (!sorder) {
+          throw new Error(`Order not found for ORDER_ID: ${order.order_no}`);
+        }
+
+        const work_info = {
+          section,
+          area_name: areaName,
+          work_status: "1",
+          process_name,
+          machine_name,
+          production_amount: sorder.production_amount,
+          order_id: sorder.order_no,
+          process_id,
+          user_id_dec: id_dec,
+          group_record_id: newUniqId,
+      group_no: group_no,
+        };
+
+        await createWork({ work_info, currentDateTimeOffset });
+      };
+
+      return {
+        status: 200,
+        message: "Grup ve siparişler başarıyla yeniden başlatıldı.",
+      };
+    }
+  } catch (err) {
+    console.log(err);
+    return {
+      status: 500,
+      message: "Internal server error",
+    };
+  }
+}
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -1074,4 +1215,7 @@ module.exports = {
   finishSelectedOrders,
   getConditionalReason,
   conditionalFinish,
+  getClosedGroups,
+  getFinishedOrders,
+  restartGroupProcess
 };

@@ -16,7 +16,10 @@ const {
   finishTheGroup,
   finishSelectedOrders,
   getConditionalReason,
-  conditionalFinish
+  conditionalFinish,
+  getClosedGroups,
+  getFinishedOrders,
+  restartGroupProcess,
 } = require("../services/orderServices");
 
 //!
@@ -64,6 +67,12 @@ router.get("/getGroupList", async (req, res) => {
   return res.status(result.status).json(result.message);
 });
 
+//! Grup listesini çekecek route...
+router.get("/getClosedGroups", async (req, res) => {
+  const result = await getClosedGroups();
+  return res.status(result.status).json(result.message);
+});
+
 //! Grup birlestirmek için istek atılacak route
 router.post("/mergeGroups", async (req, res) => {
   const { groupIds, operatorId, section, areaName } = req.body;
@@ -72,25 +81,29 @@ router.post("/mergeGroups", async (req, res) => {
 });
 
 //! Gruptan order cıkarak route...
-router.post("/removeOrdersFromGroup",async(req,res)=>{
-  const {orderUniqIds,groupNo,operatorId} = req.body;
-  const result = await removeOrdersFromGroup({orderUniqIds,groupNo,operatorId});
+router.post("/removeOrdersFromGroup", async (req, res) => {
+  const { orderUniqIds, groupNo, operatorId } = req.body;
+  const result = await removeOrdersFromGroup({
+    orderUniqIds,
+    groupNo,
+    operatorId,
+  });
   return res.status(result.status).json(result.message);
 });
 
 //! Grubu kapatacak route
-router.post("/closeSelectedGroup",async(req,res)=>{
-  const {groupNos} = req.body;
-  const result = await closeSelectedGroup({groupNos});
+router.post("/closeSelectedGroup", async (req, res) => {
+  const { groupNos } = req.body;
+  const result = await closeSelectedGroup({ groupNos });
   return res.status(result.status).json(result.message);
 });
 
-//! Bir siparişi farklı bır gruba ekleyecek route... 
-router.post("/addToGroup",async(req,res)=>{
-  const {group_no,selectedOrderId} = req.body;
-  const result = await addToGroup({group_no,selectedOrderId});
+//! Bir siparişi farklı bır gruba ekleyecek route...
+router.post("/addToGroup", async (req, res) => {
+  const { group_no, selectedOrderId } = req.body;
+  const result = await addToGroup({ group_no, selectedOrderId });
   return res.status(result.status).json(result.message);
-})
+});
 
 router.get("/getWorkToBuzlama", async (req, res) => {
   const { areaName } = req.query;
@@ -98,60 +111,108 @@ router.get("/getWorkToBuzlama", async (req, res) => {
   return res.status(result.status).json(result.message);
 });
 
-
 //! Grubu makineye yollayacak route
 router.post("/sendToMachine", async (req, res) => {
-  const { id_dec, machine_name, process_name,process_id, group_no } = req.body;
-  const result = await sendToMachine({ id_dec,  machine_name, process_name,process_id, group_no });
+  const { id_dec, machine_name, process_name, process_id, group_no } = req.body;
+  const result = await sendToMachine({
+    id_dec,
+    machine_name,
+    process_name,
+    process_id,
+    group_no,
+  });
   return res.status(result.status).json(result.message);
 });
 
 //! Ölçüm verilerini yollayacagımız route
-router.post("/measurements",async(req,res)=>{
+router.post("/measurements", async (req, res) => {
   const measurementsInfo = req.body;
-  console.log("x")
+  console.log("x");
   const result = await createMeasurementData(measurementsInfo);
   return res.status(result.status).json(result.message);
-})
+});
 
 //! Ölçüm verilerini cekecek route
 router.get("/getMeasurements", async (req, res) => {
-    const {areaName} = req.query
-    const result = await getAllMeasurements(areaName);
-    return res.status(result.status).json(result.message);
+  const { areaName } = req.query;
+  const result = await getAllMeasurements(areaName);
+  return res.status(result.status).json(result.message);
 });
 
 //! Grup yonetımınde seçili siparişi bitirecek route...
-router.put("/deliverSelectedOrder",async(req,res)=>{
-  const {order,id_dec,op_username,group_no} = req.body
-  const result = await deliverSelectedOrder(order,id_dec,op_username,group_no);
+router.put("/deliverSelectedOrder", async (req, res) => {
+  const { order, id_dec, op_username, group_no } = req.body;
+  const result = await deliverSelectedOrder(
+    order,
+    id_dec,
+    op_username,
+    group_no
+  );
   return res.status(result.status).json(result.message);
 });
 
 //! Gruptaki siparişleri bitirecek route
-router.put("/finishTheGroup",async(req,res)=>{
-  const { orders,groups,id_dec} = req.body;
-  const result = await finishTheGroup({groups,id_dec});
+router.put("/finishTheGroup", async (req, res) => {
+  const { orders, groups, id_dec } = req.body;
+  const result = await finishTheGroup({ groups, id_dec });
   return res.status(result.status).json(result.message);
 });
 
-//! Seçili siparişleri bitirecek rota 
-router.put("/finishSelectedOrders",async(req,res)=>{
-  const {orders,id_dec} = req.body;
-  const result = await finishSelectedOrders({orders,id_dec});
+//! Seçili siparişleri bitirecek rota
+router.put("/finishSelectedOrders", async (req, res) => {
+  const { orders, id_dec } = req.body;
+  const result = await finishSelectedOrders({ orders, id_dec });
   return res.status(result.status).json(result.message);
 });
 
 //! Şartlı bitirme nedenlerini çekecek rota
-router.get("/getConditionalReason",async(req,res)=>{
+router.get("/getConditionalReason", async (req, res) => {
   const result = await getConditionalReason();
   return res.status(result.status).json(result.message);
 });
 
-//! Siparişleri şartlı bıtırecek rota 
-router.put("/conditionalFinish",async(req,res)=>{
-  const {orders,id_dec,conditional_finish,end_desc} = req.body;
-  const result = await conditionalFinish(orders,id_dec,conditional_finish,end_desc);
+//! Siparişleri şartlı bıtırecek rota
+router.put("/conditionalFinish", async (req, res) => {
+  const { orders, id_dec, conditional_finish, end_desc } = req.body;
+  const result = await conditionalFinish(
+    orders,
+    id_dec,
+    conditional_finish,
+    end_desc
+  );
   return res.status(result.status).json(result.message);
-})
+});
+
+//! Siparişleri şartlı bıtırecek rota
+router.get("/getFinishedOrders", async (req, res) => {
+  const { area_name } = req.query;
+  const result = await getFinishedOrders(area_name);
+  return res.status(result.status).json(result.message);
+});
+
+//! kapanmıs bır grubu ve siparişlerini tekrardan aynı yada baska bir proseste baslatacak route..
+router.post("/restartGroupProcess", async (req, res) => {
+  const {
+    areaName,
+    section,
+    id_dec,
+    machine_name,
+    group_no,
+    group_record_id,
+    process_id,
+    process_name
+  } = req.body;
+  console.log(req.body);
+  const result = await restartGroupProcess(
+    areaName,
+    section,
+    id_dec,
+    machine_name,
+    group_no,
+    group_record_id,
+    process_id,
+    process_name
+  );
+  return res.status(result.status).json(result.message);
+});
 module.exports = router;

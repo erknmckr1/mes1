@@ -57,9 +57,11 @@
       buzlamaWork:[],
       sendToMachinePopup:false, // makineye göndermek ıcın ılgılı popup ın durumunu tutan state...
       actionType: "", // send to machine popup ı 2 farklı olayda kullandık... 
+      conditionalFinishPopup:false, // şartlı bitirme popup ınını durumunu tutan state... 
+      pastGroupOperationsPopup:false, // geçmiş grup işlemlerini yapacagımız popup kapanmıs bır grup ıle yenı ıslemler baslatma vs... 
       // Ölçüm veri girişi 
       measurementEntryPopup:false,
-      conditionalFinishPopup:false // şartlı bitirme popup ınını durumunu tutan state... 
+     
     },
     reducers: {
       setSelectedOrder: (state, action) => {
@@ -131,6 +133,9 @@
       },
       setConditionalFinishPopup:(state,action) => {
         state.conditionalFinishPopup = action.payload;
+      },
+      setPastGroupOperationsPopup:(state,action) => {
+        state.pastGroupOperationsPopup = action.payload;
       }
     },
     extraReducers: (builder) => {
@@ -181,6 +186,7 @@
     setFilteredGroup,
     setBuzlamaWorks,
     setSendToMachinePopup,
+    setPastGroupOperationsPopup,
     // ölçüm veri girişi
     setMeasurementPopup,
     setConditionalFinishPopup

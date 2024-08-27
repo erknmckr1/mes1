@@ -1,5 +1,5 @@
 const CancelReason = require("../models/CancelReason");
-const {Op} = require('sequelize')
+const { Op } = require("sequelize");
 const RepairReason = require("../models/RepairReason");
 const OrderTable = require("../models/OrderTable");
 const Processes = require("../models/Processes");
@@ -20,22 +20,24 @@ const getCancelReason = async ({ area_name }) => {
 
 const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser }) => {
   try {
-    const result = await WorkLog.update({
-      work_status: "3",
-      work_end_date: currentDateTimeOffset,
-      work_finished_op_dec: currentUser
-    }, {
-
-      where: {
-        uniq_id: uniq_id
+    const result = await WorkLog.update(
+      {
+        work_status: "3",
+        work_end_date: currentDateTimeOffset,
+        work_finished_op_dec: currentUser,
+      },
+      {
+        where: {
+          uniq_id: uniq_id,
+        },
       }
-    });
+    );
     return result;
   } catch (err) {
     console.log(err);
     throw err;
   }
-}
+};
 
 //! Tamir nedenlerini çekecek query
 const getRepairReason = async ({ area_name }) => {
@@ -112,7 +114,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     machine_name,
     production_amount,
     group_no,
-    group_record_id
+    group_record_id,
   } = work_info;
 
   // En büyük uniq_id'yi bul ve bir artır
@@ -129,40 +131,56 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
   }
 
   try {
-   if(work_status === "0"){
-    const result = await WorkLog.create({
-      uniq_id: newUniqId,
-      user_id_dec: user_id_dec,
-      op_username:op_username,
-      order_no: order_id,
-      section: section,
-      area_name: area_name,
-      work_status: work_status,
-      process_id: process_id,
-      process_name: process_name,
-      production_amount: production_amount,
-      machine_name,
-      group_no,
-      group_record_id
-    });
-   }else{
-    const result = await WorkLog.create({
-      uniq_id: newUniqId,
-      user_id_dec: user_id_dec,
-      op_username:op_username,
-      order_no: order_id,
-      section: section,
-      area_name: area_name,
-      work_status: work_status,
-      process_id: process_id,
-      work_start_date: currentDateTimeOffset,
-      process_name: process_name,
-      production_amount: production_amount,
-      machine_name
-    });
+    if (work_status === "0") {
+      const result = await WorkLog.create({
+        uniq_id: newUniqId,
+        user_id_dec: user_id_dec,
+        op_username: op_username,
+        order_no: order_id,
+        section: section,
+        area_name: area_name,
+        work_status: work_status,
+        process_id: process_id,
+        process_name: process_name,
+        production_amount: production_amount,
+        machine_name,
+        group_no,
+        group_record_id,
+      });
+    } else if (work_status === "1" && area_name === "buzlama") {
+      const result = await WorkLog.create({
+        uniq_id: newUniqId,
+        user_id_dec: user_id_dec,
+        op_username: op_username,
+        order_no: order_id,
+        section: section,
+        area_name: area_name,
+        work_status: work_status,
+        process_id: process_id,
+        process_name: process_name,
+        production_amount: production_amount,
+        machine_name,
+        group_no,
+        group_record_id,
+      });
+    } else {
+      const result = await WorkLog.create({
+        uniq_id: newUniqId,
+        user_id_dec: user_id_dec,
+        op_username: op_username,
+        order_no: order_id,
+        section: section,
+        area_name: area_name,
+        work_status: work_status,
+        process_id: process_id,
+        work_start_date: currentDateTimeOffset,
+        process_name: process_name,
+        production_amount: production_amount,
+        machine_name,
+      });
 
-    return result;
-   }
+      return result;
+    }
   } catch (err) {
     throw err;
   }
@@ -175,7 +193,7 @@ const getWorks = async ({ area_name, user_id_dec }) => {
       where: {
         area_name: area_name,
         user_id_dec: user_id_dec,
-        work_status : "1"
+        work_status: "1",
         // work_status: {
         //   [Op.in]: ["0", "1"] // work_status '0' veya '1' olanları çek
         // }
@@ -187,20 +205,20 @@ const getWorks = async ({ area_name, user_id_dec }) => {
   }
 };
 
-//! Bir birimin durdurulmus işlerini çekecek query... 
-const getStoppedWorks = async ({ area_name, }) => {
+//! Bir birimin durdurulmus işlerini çekecek query...
+const getStoppedWorks = async ({ area_name }) => {
   try {
     const result = await WorkLog.findAll({
       where: {
         area_name: area_name,
-        work_status: "2"
-      }
+        work_status: "2",
+      },
     });
     return result;
   } catch (err) {
     console.log(err);
   }
-}
+};
 
 //! Seçili işi durduracak query...
 const stopWork = async ({
@@ -208,7 +226,7 @@ const stopWork = async ({
   currentDateTimeOffset,
   stop_reason_id,
   order_id,
-  user_who_stopped
+  user_who_stopped,
 }) => {
   try {
     // İlgili uniq id ile olusturulmus bir stop işlemi var mı?
@@ -229,7 +247,7 @@ const stopWork = async ({
       stop_start_date: currentDateTimeOffset,
       work_log_uniq_id,
       stop_reason_id,
-      user_who_stopped
+      user_who_stopped,
     });
 
     // stop kaydını olusturduktan sonra durdurulan işin work_status degerını guncelle...
@@ -251,15 +269,21 @@ const stopWork = async ({
 };
 
 //! Seçili işi yeniden baslatacak query...
-const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, startedUser, selectedOrder }) => {
-  console.log({rwork:currentDateTimeOffset})
+const rWork = async ({
+  currentDateTimeOffset,
+  work_log_uniq_id,
+  currentUser,
+  startedUser,
+  selectedOrder,
+}) => {
+  console.log({ rwork: currentDateTimeOffset });
   try {
     const stoppedWork = await StoppedWorksLogs.findOne({
       where: { work_log_uniq_id, stop_end_date: null },
-      order: [['stop_start_date', 'DESC']],
+      order: [["stop_start_date", "DESC"]],
     });
 
-    //stoppedwork yoksa 
+    //stoppedwork yoksa
     if (!stoppedWork) {
       throw new Error("Durdurulmuş iş bulunamadı.");
     }
@@ -269,12 +293,12 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
       await StoppedWorksLogs.update(
         {
           stop_end_date: currentDateTimeOffset,
-          user_who_started:currentUser
+          user_who_started: currentUser,
         },
         {
           where: {
-            id: stoppedWork.id, // durdurulmus ıd si durdurulmus ısı su sekılde anlıyoruz. Eğer ilgili iş(id) için bir tablo da bır durdurma kaydı yoksa yenı bır kayıt olusturuyoruz. Eğer stop_end_date dolu ıse iş tekrar baslamıstır. İşi yenıden baslatmak ıcın 
-          },                    // stop_log tablosunda ılgılı durdurulmus ısın unıq ıd si ile stop_end_date i dolduruyoruz.
+            id: stoppedWork.id, // durdurulmus ıd si durdurulmus ısı su sekılde anlıyoruz. Eğer ilgili iş(id) için bir tablo da bır durdurma kaydı yoksa yenı bır kayıt olusturuyoruz. Eğer stop_end_date dolu ıse iş tekrar baslamıstır. İşi yenıden baslatmak ıcın
+          }, // stop_log tablosunda ılgılı durdurulmus ısın unıq ıd si ile stop_end_date i dolduruyoruz.
         }
       );
 
@@ -283,13 +307,12 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
         { where: { uniq_id: work_log_uniq_id } }
       );
 
-    // durdurulmus ıs varsa ve durduran ve baslatan farklı ıse... 
+      // durdurulmus ıs varsa ve durduran ve baslatan farklı ıse...
     } else {
-
       await StoppedWorksLogs.update(
         {
           stop_end_date: currentDateTimeOffset,
-          user_who_started:currentUser
+          user_who_started: currentUser,
         },
         {
           where: {
@@ -299,7 +322,12 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
       );
 
       await WorkLog.update(
-        { work_status: "4", work_end_date: currentDateTimeOffset, work_finished_op_dec: currentUser, produced_amount: 0, },
+        {
+          work_status: "4",
+          work_end_date: currentDateTimeOffset,
+          work_finished_op_dec: currentUser,
+          produced_amount: 0,
+        },
         { where: { uniq_id: work_log_uniq_id } }
       );
 
@@ -330,7 +358,6 @@ const rWork = async ({ currentDateTimeOffset, work_log_uniq_id, currentUser, sta
       });
 
       return result;
-
     }
     return { message: "İş başarıyla yeniden başlatıldı." };
   } catch (err) {
@@ -353,7 +380,7 @@ const finishedWork = async ({
   repair_reason_3,
   repair_reason_4,
   repair_section,
-  end_desc
+  end_desc,
 }) => {
   try {
     const result = await WorkLog.update(
@@ -372,7 +399,7 @@ const finishedWork = async ({
         repair_reason_3,
         repair_reason_4,
         repair_section,
-        end_desc
+        end_desc,
       },
       {
         where: {
@@ -398,5 +425,5 @@ module.exports = {
   rWork,
   finishedWork,
   cancelWork,
-  getStoppedWorks
+  getStoppedWorks,
 };
