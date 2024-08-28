@@ -100,8 +100,7 @@ const createNewLeave = async (
 
     return result;
   } catch (err) {
-    console.error(err);
-    throw err;
+    console.error({"hata":err});
   }
 };
 

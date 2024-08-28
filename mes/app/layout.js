@@ -13,7 +13,7 @@ import StopJobPopup from "@/components/popups/StopJobPopup";
 import CancelJobPopup from "@/components/popups/CancelJobPopup";
 import RepairJobPopup from "@/components/popups/RepairJobPopup";
 import FinishedWorkPopup from "@/components/popups/kalite/FinishedWorkPopup";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import HomeSidebars from "@/components/sideBars/HomeSidebars";
 import CurrentDate from "@/components/ui/Date";
 import OrderGroupManagement from "@/components/popups/OrderGroupManagement";
@@ -43,7 +43,7 @@ function Layout({ children }) {
     sendToMachinePopup,
     measurementEntryPopup,
     conditionalFinishPopup,
-    pastGroupOperationsPopup
+    pastGroupOperationsPopup,
   } = useSelector((state) => state.order);
 
   // useEffect(() => {
@@ -67,11 +67,11 @@ function Layout({ children }) {
       {cancelReasonPopup && <CancelJobPopup />}
       {repairJobPopup && <RepairJobPopup />}
       {finishedWorkPopup && <FinishedWorkPopup />}
-      {groupManagementPopup && <OrderGroupManagement/>}
-      {sendToMachinePopup && <SendToMachinePopup/>}
-      {measurementEntryPopup && <MeasurementDataEntry/>}
-      {conditionalFinishPopup && <ConditionalFinish/>}
-      {pastGroupOperationsPopup && <PastGroupsOperationsPopup/>}
+      {groupManagementPopup && <OrderGroupManagement />}
+      {sendToMachinePopup && <SendToMachinePopup />}
+      {measurementEntryPopup && <MeasurementDataEntry />}
+      {conditionalFinishPopup && <ConditionalFinish />}
+      {pastGroupOperationsPopup && <PastGroupsOperationsPopup />}
       <ToastContainer />
     </>
   );
@@ -80,15 +80,27 @@ function Layout({ children }) {
 function HomeLayout({ children }) {
   const pathName = usePathname();
   const project = pathName.split("/")[1];
+  const returnUrl = localStorage.getItem("returnUrl") || "/";
+console.log(returnUrl);
   return (
     <>
       {project === "home" && (
         <div className="w-screen h-screen flex">
           <HomeSidebars />
           <div className="flex-1 w-full flex flex-col">
+            {/* header */}
             <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
               <div></div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-10">
+                <div className=" text-white  ">
+                  <a
+                    href={returnUrl}
+                    className="text-[20px] underline flex  gap-x-2 justify-center items-center"
+                  >
+                    <span className="underline uppercase">{`${returnUrl.split("/")[5]} ekranına geri dön`}</span>
+                  </a>
+                  
+                </div>
                 <div className="text-green-500 font-semibold text-[30px]">
                   <CurrentDate addProps={"text-[30px]"} />
                 </div>

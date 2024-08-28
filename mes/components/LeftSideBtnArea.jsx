@@ -99,7 +99,11 @@ function LeftSideBtnArea() {
       className: "bg-[#E67E22]",
     },
     {
-      onClick: "",
+      onClick: () => {
+        const currentUrl = window.location.href;
+        localStorage.setItem("returnUrl", currentUrl); // LocalStorage'a kaydet
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur?returnUrl=${currentUrl}`;
+      },
       children: "İzin Girişi",
       type: "button",
       disabled: isCurrentBreak,
