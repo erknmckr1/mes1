@@ -86,7 +86,7 @@ function FinishedWorkPopup() {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/finishedWork`,
           {
-            uniq_id: selectedOrder.uniq_id,
+            uniq_id: selectedOrder[0].uniq_id,
             work_finished_op_dec: userInfo.id_dec,
             produced_amount: finishedAmount,
             repair_amount: repairAmount,

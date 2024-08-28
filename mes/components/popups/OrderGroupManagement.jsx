@@ -120,36 +120,43 @@ function OrderGroupManagement() {
   };
 
   // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
-  const handleOrderFilteredByGroup = (group_no) => {
-    let updatedSelectedGroupNo = [];
-    if (selectedGroupNo?.includes(group_no)) {
-      // Grup zaten seçiliyse, kaldır
-      updatedSelectedGroupNo = selectedGroupNo.filter((no) => no !== group_no);
-    } else {
-      // Grup seçili değilse, ekle
-      updatedSelectedGroupNo = [...selectedGroupNo, group_no];
-    }
+const handleOrderFilteredByGroup = (group_record_id) => {
+  let updatedSelectedGroupRecordIds = [];
+  
+  if (selectedGroupNo?.includes(group_record_id)) {
+    // Grup zaten seçiliyse, kaldır
+    updatedSelectedGroupRecordIds = selectedGroupNo.filter(
+      (id) => id !== group_record_id
+    );
+  } else {
+    // Grup seçili değilse, ekle
+    updatedSelectedGroupRecordIds = [
+      ...selectedGroupNo,
+      group_record_id
+    ];
+  }
 
-    // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
-    let newFilteredGroup = [];
+  // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
+  let newFilteredGroup = [];
 
-    updatedSelectedGroupNo.forEach((no) => {
-      const ordersForGroup = buzlamaWork.filter(
-        (order) => order.group_no === no
-      );
-      newFilteredGroup = [
-        ...newFilteredGroup,
-        ...ordersForGroup.map((order) => ({
-          order_no: order.order_no,
-          uniq_id: order.uniq_id,
-        })),
-      ];
-    });
-    // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
-    console.log(newFilteredGroup);
-    dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
-    dispatch(setFilteredGroup(newFilteredGroup));
-  };
+  updatedSelectedGroupRecordIds.forEach((id) => {
+    const ordersForGroup = buzlamaWork.filter(
+      (order) => order.group_record_id === id
+    );
+    newFilteredGroup = [
+      ...newFilteredGroup,
+      ...ordersForGroup.map((order) => ({
+        order_no: order.order_no,
+        uniq_id: order.uniq_id,
+      })),
+    ];
+  });
+
+  // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
+  console.log(newFilteredGroup);
+  dispatch(setSelectedGroupNos(updatedSelectedGroupRecordIds));
+  dispatch(setFilteredGroup(newFilteredGroup));
+};
 
   //! Grub olusturacak query...
   const handleCreateOrderGroup = async () => {
@@ -230,7 +237,7 @@ function OrderGroupManagement() {
     }
   };
 
-  // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak...
+  // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak... order no ya gore ıslem yapmıyoruz. 
   const handleSelectOrderId = (selectedOrder) => {
     let updatedSelectedOrderIds;
 
@@ -495,10 +502,10 @@ function OrderGroupManagement() {
                             {groupList?.map((item, index) => (
                               <ol
                                 onClick={() =>
-                                  handleOrderFilteredByGroup(item.group_no)
+                                  handleOrderFilteredByGroup(item.group_record_id)
                                 }
                                 className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                                  selectedGroupNo?.includes(item.group_no)
+                                  selectedGroupNo?.includes(item.group_record_id)
                                     ? "bg-slate-300"
                                     : ""
                                 }`}
@@ -584,7 +591,7 @@ function OrderGroupManagement() {
             </div>
             {/* grup listesini gosterecek komponent... */}
             {groupListPopup && (
-              <GroupNos fetchBuzlamaWorks={fetchBuzlamaWorks} />
+              <GroupNos fetchBuzlamaWorks={fetchBuzlamaWorks} handleGetGroupList={handleGetGroupList} />
             )}
             {/* grup listesini gosterecek komponent end... */}
           </div>

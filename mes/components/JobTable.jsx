@@ -58,7 +58,6 @@ function JobTable() {
     }
   };
 
-  console.log(selectedOrder)
   const columns = [
     {
       field: "id",

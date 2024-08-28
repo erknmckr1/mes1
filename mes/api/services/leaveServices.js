@@ -343,6 +343,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     const permissions = user.Role.Permissions.map(
       (permission) => permission.name
     );
+
     const isIK =
       permissions.includes("Görme") &&
       permissions.includes("1. Onay") &&
@@ -376,12 +377,37 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       (leaveRecord.auth1 === id_dec || isIK) &&
       leaveRecord.leave_status === "1"
     ) {
-      leaveRecord.leave_status = "2";
-      leaveRecord.first_approver_approval_time = currentDateTimeOffset;
+      if (!leaveRecord.auth2) {
+        leaveRecord.leave_status = "3";
+        leaveRecord.first_approver_approval_time = currentDateTimeOffset;
+        leaveRecord.second_approver_approval_time = currentDateTimeOffset;
 
-      const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
-      const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
-      const emailContent = `
+        const güvenlikEmailContent = `
+        <p>Yeni bir izin talebi oluşturuldu:</p>
+        <ul>
+          <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
+          <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
+          <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
+          <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+          <li>İzin Sebebi:${leaveRecord.leave_reason}</li>
+          <li>Açıklama: ${leaveRecord.leave_description}</li>
+        </ul>
+      `;
+
+        if (guvenlik_email) {
+          await sendMail(
+            guvenlik_email.e_mail,
+            "Çikis Yapacak Personel (İZİN)",
+            güvenlikEmailContent
+          );
+        };
+      } else {
+        leaveRecord.leave_status = "2";
+        leaveRecord.first_approver_approval_time = currentDateTimeOffset;
+
+        const approvalLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/approveLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
+        const cancelLink = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave?leave_uniq_id=${leave_uniq_id}&id_dec=${leaveRecord.auth2}`;
+        const emailContent = `
         <p>Yeni bir izin talebi oluşturuldu:</p>
         <ul>
           <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
@@ -398,13 +424,14 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     <a href="${cancelLink}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none;">İptal Et</a>
     </div>
       `;
-      // Mail gönderim işlemi
-      if(auth2Email){
-        await sendMail(
-          auth2Email.e_mail,
-          "Yeni İzin Talebi 2. Onay",
-          emailContent
-        );
+        // Mail gönderim işlemi
+        if (auth2Email) {
+          await sendMail(
+            auth2Email.e_mail,
+            "Yeni İzin Talebi 2. Onay",
+            emailContent
+          );
+        }
       }
     } else if (
       (leaveRecord.auth2 === id_dec || isIK) &&

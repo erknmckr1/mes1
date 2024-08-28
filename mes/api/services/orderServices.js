@@ -288,6 +288,19 @@ const mergeGroups = async (params) => {
       newGroupNo = "00001";
     }
 
+    // Benzersiz group_record_id oluşturma
+    const latestRecordId = await GroupRecords.findOne({
+      order: [["group_record_id", "DESC"]],
+    });
+
+    let newUniqId;
+    if (latestRecordId) {
+      const latestId = parseInt(latestRecordId.group_record_id, 10);
+      newUniqId = String(latestId + 1).padStart(6, "0");
+    } else {
+      newUniqId = "000001";
+    }
+
     // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
     let allOrderIds = [];
     for (const groupId of parsedGroupIds) {
@@ -326,13 +339,16 @@ const mergeGroups = async (params) => {
         group_status: "1",
         section,
         area_name: areaName,
+        group_record_id:newUniqId
       });
 
       console.log(allOrderIds);
       // WorkLog tablosundaki her siparişin group_no sütununu güncelle
       for (const orderId of allOrderIds) {
         await WorkLog.update(
-          { group_no: newGroupNo },
+          { group_no: newGroupNo,
+            group_record_id:newUniqId
+           },
           { where: { uniq_id: orderId } }
         );
       }
@@ -557,53 +573,81 @@ const closeSelectedGroup = async (params) => {
 
 //! Gruba sipariş ekleyecek servis
 const addToGroup = async (params) => {
-  const { group_no, selectedOrderId } = params;
+  const { group_record_id, selectedOrderId } = params;
   let parsedOrdersId = JSON.parse(selectedOrderId);
-  console.log(parsedOrdersId);
+
   try {
-    // yollayacagımız grubu bul...
+    // Eklemeye çalıştığınız grubu bulun
     const group = await GroupRecords.findOne({
       where: {
-        group_no,
+        group_record_id,
       },
     });
 
     if (!group) {
       return {
         status: 400,
-        message: `Eklemeye calıstıgınız ${group_no} grup numarası bulunamadı...`,
+        message: `Eklemeye çalıştığınız ${group_record_id} grup numarası bulunamadı...`,
       };
     } else {
-      // yollanacak orderları al
+      // Eklenmesi gereken siparişleri alın
       const orders = await WorkLog.findAll({
         where: {
-          uniq_id: parsedOrdersId[0].uniq_id,
+          uniq_id: parsedOrdersId.map((order) => order.uniq_id), // Tüm uniq_id değerlerini kontrol eder
           area_name: "buzlama",
           work_status: "0",
         },
       });
-      // Yollanacak orderların status u 0 mı ?
+
+      // Siparişlerin tümü uygun mu? (area_name: "buzlama" ve work_status: "0")
       const allOrdersValid = orders.every(
         (order) => order.area_name === "buzlama" && order.work_status === "0"
       );
+
       if (allOrdersValid) {
         for (const order of orders) {
           await WorkLog.update(
-            { group_no: group_no },
+            { group_record_id: group_record_id, group_no: group.group_no },
             { where: { uniq_id: order.uniq_id, area_name: "buzlama" } }
           );
         }
-        return { status: 200, message: "Siparişler başarıyla gruba eklendi." };
       } else {
         return {
           status: 400,
           message: "Siparişler arasında uygun olmayanlar var.",
         };
       }
+
+      const oldOrderGroupId = orders[0].group_record_id;
+      console.log({ order: oldOrderGroupId, group_record_id });
+      // Gruba ait kalan siparişleri kontrol et
+      const remainingOrdersInGroup = await WorkLog.findAll({
+        where: { group_record_id: oldOrderGroupId, area_name: "buzlama" },
+      });
+
+      // Eğer grupta kalan sipariş yoksa, grubu sil
+      if (remainingOrdersInGroup.length === 0) {
+        await GroupRecords.destroy({
+          where: { group_record_id: oldOrderGroupId },
+        });
+        return {
+          status: 200,
+          message:
+            "Siparişler başarıyla gruba eklendi ve grup boş olduğu için silindi.",
+        };
+      } else {
+        return {
+          status: 200,
+          message: "Siparişler başarıyla gruba eklendi.",
+        };
+      }
     }
   } catch (err) {
     console.error("Internal server error", err);
-    return { status: 500, message: "Internal server error" };
+    return {
+      status: 500,
+      message: "Sunucu hatası, lütfen daha sonra tekrar deneyin.",
+    };
   }
 };
 
@@ -1126,7 +1170,7 @@ async function restartGroupProcess(
       };
     }
 
-    console.log({orders:orders})
+    console.log({ orders: orders });
     // Benzersiz group_record_id oluşturma
     const latestRecordId = await GroupRecords.findOne({
       order: [["group_record_id", "DESC"]],
@@ -1145,7 +1189,7 @@ async function restartGroupProcess(
       group_no: group_no,
       who_started_group: id_dec,
       group_creation_date: new Date().toISOString(),
-      group_start_date:new Date().toISOString(),
+      group_start_date: new Date().toISOString(),
       group_status: "1",
       section,
       area_name: areaName,
@@ -1159,7 +1203,7 @@ async function restartGroupProcess(
       for (const order of orders) {
         const sorder = await WorkLog.findOne({
           where: {
-            order_no:order.order_no
+            order_no: order.order_no,
           },
         });
 
@@ -1178,11 +1222,11 @@ async function restartGroupProcess(
           process_id,
           user_id_dec: id_dec,
           group_record_id: newUniqId,
-      group_no: group_no,
+          group_no: group_no,
         };
 
         await createWork({ work_info, currentDateTimeOffset });
-      };
+      }
 
       return {
         status: 200,
@@ -1217,5 +1261,5 @@ module.exports = {
   conditionalFinish,
   getClosedGroups,
   getFinishedOrders,
-  restartGroupProcess
+  restartGroupProcess,
 };

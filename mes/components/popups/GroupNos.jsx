@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 
-function GroupNos({ fetchBuzlamaWorks }) {
+function GroupNos({ fetchBuzlamaWorks,handleGetGroupList }) {
   const [selectedSendGroup, setSelectedSendGroup] = useState("");
   const { groupList, selectedOrderId, selectedGroupNo } = useSelector(
     (state) => state.order
@@ -35,7 +35,7 @@ function GroupNos({ fetchBuzlamaWorks }) {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/addToGroup`,
         {
-          group_no: selectedSendGroup,
+          group_record_id: selectedSendGroup,
           selectedOrderId: soId,
         }
       );
@@ -46,6 +46,7 @@ function GroupNos({ fetchBuzlamaWorks }) {
         dispatch(setSelectedGroupNos([]));
         dispatch(setFilteredGroup([]));
         dispatch(setGroupListPopup(false));
+        handleGetGroupList();
         dispatch(fetchBuzlamaWorks({ areaName }));
       }
     } catch (err) {
@@ -56,7 +57,7 @@ function GroupNos({ fetchBuzlamaWorks }) {
     }
   };
 
-  console.log(selectedGroupNo);
+  console.log(selectedSendGroup);
   return (
     <div className="absolute w-full h-full top-0 left-0">
       <div className="w-full h-full flex items-center justify-center">
@@ -70,11 +71,11 @@ function GroupNos({ fetchBuzlamaWorks }) {
                 groupList.map((item, index) => (
                   <ol
                     className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                      selectedSendGroup === item.group_no ? "bg-slate-300" : ""
+                      selectedSendGroup === item.group_record_id ? "bg-slate-300" : ""
                     } `}
                     key={index}
                     onClick={() => {
-                      handleSelectedSendGroup(item.group_no);
+                      handleSelectedSendGroup(item.group_record_id);
                     }}
                   >
                     {item.group_no}

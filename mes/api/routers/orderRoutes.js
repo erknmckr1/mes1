@@ -100,8 +100,8 @@ router.post("/closeSelectedGroup", async (req, res) => {
 
 //! Bir siparişi farklı bır gruba ekleyecek route...
 router.post("/addToGroup", async (req, res) => {
-  const { group_no, selectedOrderId } = req.body;
-  const result = await addToGroup({ group_no, selectedOrderId });
+  const { group_record_id, selectedOrderId } = req.body;
+  const result = await addToGroup({ group_record_id, selectedOrderId });
   return res.status(result.status).json(result.message);
 });
 
