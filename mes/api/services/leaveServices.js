@@ -76,8 +76,25 @@ const createNewLeave = async (
       <ul>
         <li>Kullanıcı ID: ${id_dec}</li>
         <li>Kullanıcı Adı: ${op_username}</li>
-        <li>Başlangıç Tarihi: ${baslangicTarihi}</li>
-        <li>Dönüş Tarihi: ${donusTarihi}</li>
+        <li>Başlangıç Tarihi: ${new Date(baslangicTarihi).toLocaleDateString(
+          "tr-TR",
+          {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        )}</li>
+        <li>Dönüş Tarihi: ${new Date(donusTarihi).toLocaleDateString("tr-TR", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</li>
         <li>İzin Türü: ${izinTuru}</li>
         <li>İzin Sebebi: ${selectedReason}</li>
         <li>Açıklama: ${aciklama}</li>
@@ -100,7 +117,7 @@ const createNewLeave = async (
 
     return result;
   } catch (err) {
-    console.error({"hata":err});
+    console.error({ hata: err });
   }
 };
 
@@ -350,7 +367,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
 
     const auth2Email = await User.findOne({
       where: {
-        id_dec,
+        auth2:leaveRecord.auth2,
       },
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
@@ -386,9 +403,27 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         <ul>
           <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
           <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
-          <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
-          <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
-          <li>İzin Sebebi:${leaveRecord.leave_reason}</li>
+          <li>Başlangıç Tarihi: ${new Date(
+            leaveRecord.leave_start_date
+          ).toLocaleDateString("tr-TR", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</li>
+          <li>Dönüş Tarihi: ${new Date(
+            leaveRecord.leave_end_date
+          ).toLocaleDateString("tr-TR", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</li>
+          <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
           <li>Açıklama: ${leaveRecord.leave_description}</li>
         </ul>
       `;
@@ -399,7 +434,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
             "Çikis Yapacak Personel (İZİN)",
             güvenlikEmailContent
           );
-        };
+        }
       } else {
         leaveRecord.leave_status = "2";
         leaveRecord.first_approver_approval_time = currentDateTimeOffset;
@@ -411,8 +446,26 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         <ul>
           <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
           <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
-          <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
-          <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
+         <li>Başlangıç Tarihi: ${new Date(
+           leaveRecord.leave_start_date
+         ).toLocaleDateString("tr-TR", {
+           weekday: "long",
+           year: "numeric",
+           month: "long",
+           day: "numeric",
+           hour: "2-digit",
+           minute: "2-digit",
+         })}</li>
+        <li>Dönüş Tarihi: ${new Date(
+          leaveRecord.leave_end_date
+        ).toLocaleDateString("tr-TR", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</li>
           <li>İzin Türü: ${leaveRecord.leave_type}</li>
           <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
           <li>Açıklama: ${leaveRecord.leave_description}</li>
@@ -444,12 +497,29 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
       <ul>
         <li>Kullanıcı ID: ${leaveRecord.id_dec}</li>
         <li>Kullanıcı Adı: ${leaveRecord.op_username}</li>
-        <li>Başlangıç Tarihi: ${leaveRecord.leave_start_date}</li>
-        <li>Dönüş Tarihi: ${leaveRecord.leave_end_date}</li>
-        <li>İzin Sebebi:${leaveRecord.leave_reason}</li>
+        <li>Başlangıç Tarihi: ${new Date(
+          leaveRecord.leave_start_date
+        ).toLocaleDateString("tr-TR", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</li>
+        <li>Dönüş Tarihi: ${new Date(
+          leaveRecord.leave_end_date
+        ).toLocaleDateString("tr-TR", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</li>
+        <li>İzin Sebebi: ${leaveRecord.leave_reason}</li>
         <li>Açıklama: ${leaveRecord.leave_description}</li>
       </ul>
-      <p>İzin talebini onaylamak için aşağıdaki butona tıklayın:</p>
     `;
 
       if (guvenlik_email) {

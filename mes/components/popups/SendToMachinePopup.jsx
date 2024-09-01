@@ -1,6 +1,11 @@
 import React, { useEffect } from "react";
 import Button from "../ui/Button";
-import { handleGetGroupList, fetchBuzlamaWorks, setSelectedProcess, setSelectedMachine } from "@/redux/orderSlice";
+import {
+  handleGetGroupList,
+  fetchBuzlamaWorks,
+  setSelectedProcess,
+  setSelectedMachine,
+} from "@/redux/orderSlice";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setSelectedGroupNos,
@@ -21,32 +26,42 @@ function SendToMachinePopup() {
     filteredGroup,
     selectedProcess,
     selectedMachine,
-    actionType
+    actionType,
   } = useSelector((state) => state.order);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
-  
+
+  //! grupları ve bolumdekı işleri çek...
   useEffect(() => {
     dispatch(handleGetGroupList());
     dispatch(fetchBuzlamaWorks({ areaName }));
   }, [dispatch]);
 
-  const handleOrderFilteredByGroup = (group_no) => {
+  // Seçilen grup zaten mevcutsa listeden çıkar, değilse listeye ekle Güncellenmiş grup ve sipariş listesini state'e kaydet
+  const handleOrderFilteredByGroup = ({ group_record_id, group_status }) => {
     let updatedSelectedGroupNo = [];
-    if (selectedGroupNo.includes(group_no)) {
-      // Grup zaten seçiliyse, kaldır
-      updatedSelectedGroupNo = selectedGroupNo.filter((no) => no !== group_no);
+
+    // Eğer grup zaten seçiliyse, onu kaldırıyoruz
+    if (
+      selectedGroupNo.some((group) => group.group_record_id === group_record_id)
+    ) {
+      updatedSelectedGroupNo = selectedGroupNo.filter(
+        (group) => group.group_record_id !== group_record_id
+      );
     } else {
-      // Grup seçili değilse, ekle
-      updatedSelectedGroupNo = [...selectedGroupNo, group_no];
+      // Grup seçili değilse, onu ekliyoruz
+      updatedSelectedGroupNo = [
+        ...selectedGroupNo,
+        { group_record_id, group_status },
+      ];
     }
 
     // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
     let newFilteredGroup = [];
-    updatedSelectedGroupNo.forEach((no) => {
+    updatedSelectedGroupNo.forEach((group) => {
       const ordersForGroup = buzlamaWork.filter(
-        (order) => order.group_no === no
+        (order) => order.group_record_id === group.group_record_id
       );
       newFilteredGroup = [
         ...newFilteredGroup,
@@ -56,25 +71,32 @@ function SendToMachinePopup() {
         })),
       ];
     });
-    // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
+
+    // newFilteredGroup şimdi hem order_no, uniq_id hem de group_status içerecek
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
 
+  console.log({
+    selectedGroupNo: selectedGroupNo,
+    filteredGroup: filteredGroup,
+    groupList: groupList,
+  });
+
   //! Makineye sipariş gönderme (başlatma) fonksiyonu...
   const handleSendToMachine = async () => {
-    const groupNo = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
+    const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
     const id_dec = userInfo && userInfo.id_dec;
     try {
-      if (selectedGroupNo.length > 1 ||selectedGroupNo.length === 0) {
+      if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
         toast.error("Makineye göndermek için sadece bir grup seçiniz");
       } else {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/sendToMachine`,
           {
-            group_no: groupNo, // Artık JSON değil direkt string
-            machine_name:selectedMachine.machine_name,
-            process_name:selectedProcess?.process_name,
+            group_record_id: group.group_record_id, // Artık JSON değil direkt string
+            machine_name: selectedMachine.machine_name,
+            process_name: selectedProcess?.process_name,
             process_id: selectedProcess?.process_id,
             id_dec,
           }
@@ -92,7 +114,6 @@ function SendToMachinePopup() {
           dispatch(setSendToMachinePopup(false));
           dispatch(setSelectedProcess(""));
           dispatch(setSelectedMachine(""));
-
         } else {
           toast.error(
             response.data.message || "İşlem sırasında bir hata oluştu."
@@ -101,22 +122,26 @@ function SendToMachinePopup() {
       }
     } catch (err) {
       console.log(err);
-      if(err.response.status === 404){
+      if (err.response.status === 404) {
         toast.error(err.response.data);
       }
     }
   };
 
-  console.log(selectedGroupNo);
   //! Seçili grubtaki işleri bitirme fonksiyonu...
   const handleFinishGroup = async () => {
-    const orders = JSON.stringify(filteredGroup)
-    const groups = JSON.stringify(selectedGroupNo)
+    const orders = JSON.stringify(filteredGroup);
+    const groups = JSON.stringify(selectedGroupNo);
     const id_dec = userInfo && userInfo.id_dec;
     try {
-      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishTheGroup`,{
-        orders,groups,id_dec
-      });
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishTheGroup`,
+        {
+          orders,
+          groups,
+          id_dec,
+        }
+      );
 
       if (response.status === 200) {
         toast.success(response.data);
@@ -134,14 +159,14 @@ function SendToMachinePopup() {
         toast.error(
           response.data.message || "İşlem sırasında bir hata oluştu."
         );
-      } 
+      }
     } catch (err) {
-      if(err){
+      if (err) {
         toast.error(err.response?.data);
         console.log(err);
       }
     }
-  }
+  };
 
   const handleAction = () => {
     if (actionType === "send") {
@@ -151,23 +176,30 @@ function SendToMachinePopup() {
     }
   };
 
+  // popup ı kapat...
+  const handleClosedPopup = () => {
+    dispatch(setSendToMachinePopup({ visible: false, actionType: "" })); // Popup'ı kapatıyoruz
+    dispatch(setSelectedGroupNos([]));
+    dispatch(setSelectedMachine(""));
+    dispatch(setSelectedProcess(""));
+  };
+
   const buttons = [
     {
       children: "Kapat",
       type: "button",
       className:
         "w-[150px] h-[100px] bg-red-500 hover:bg-red-600 sm:py-2 text-md",
-      onClick: () => dispatch(setSendToMachinePopup({ visible: false, actionType: "" })), // Popup'ı kapatıyoruz
+      onClick: handleClosedPopup,
     },
     {
-      children:
-        actionType === "send" ? "Makineye Gönder" : "Grubu Bitir",
+      children: actionType === "send" ? "Makineye Gönder" : "Grubu Bitir",
       type: "button",
       className: "w-[150px] h-[100px] sm:py-2 text-md",
       onClick: handleAction,
     },
   ];
- return (
+  return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
         <div className="md:w-[1000px] w-[800px] h-[600px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
@@ -194,10 +226,20 @@ function SendToMachinePopup() {
                       {groupList?.map((item, index) => (
                         <ol
                           onClick={() =>
-                            handleOrderFilteredByGroup(item.group_no)
+                            handleOrderFilteredByGroup({
+                              group_record_id: item.group_record_id,
+                              group_status: item.group_status,
+                            })
                           }
                           className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                            selectedGroupNo.includes(item.group_no)
+                            item.group_status === "2"
+                              ? "bg-red-100 hover:bg-red-100"
+                              : ""
+                          } ${
+                            selectedGroupNo.some(
+                              (sgroup) =>
+                                sgroup.group_record_id === item.group_record_id
+                            )
                               ? "bg-slate-300"
                               : ""
                           }`}
@@ -247,7 +289,7 @@ function SendToMachinePopup() {
       </div>
       <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
-  )
+  );
 }
 
 export default SendToMachinePopup;

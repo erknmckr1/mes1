@@ -10,13 +10,6 @@ import {
   setMachineList,
 } from "@/redux/orderSlice";
 
-const filteredMachine = [
-  { machine_name: "Machine A" },
-  { machine_name: "Machine B" },
-  { machine_name: "Machine C" },
-  { machine_name: "Machine D" },
-];
-
 function ProcessArea() {
   const [onMachine, setOnMachine] = useState(null);
   const pathname = usePathname();

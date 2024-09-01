@@ -24,7 +24,7 @@ function OrderGroupManagement() {
     groupListPopup,
     groupList,
     filteredGroup,
-    selectedGroupNo,
+    selectedGroupNo, // grubun unıq ıd sını tutacak... group nosunu degıl
     selectedOrderId,
     buzlamaWork,
   } = useSelector((state) => state.order);
@@ -46,7 +46,6 @@ function OrderGroupManagement() {
           },
         }
       );
-
       if (response.status === 200) {
         // orderList içinde aynı ORDER_ID'ye sahip bir öğe olup olmadığını kontrol et
         const isOrderAlreadyInList = orderList.some(
@@ -93,14 +92,12 @@ function OrderGroupManagement() {
     handleGetGroupList();
   }, []);
 
-
   console.log({
-    orderIds: selectedOrderId,
-    groupNos: selectedGroupNo,
+    selectedOrderId: selectedOrderId,
+    selectedGroupNo: selectedGroupNo,
     filteredGroup: filteredGroup,
-    gruplist: groupList,
+    groupList: groupList,
   });
-
 
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
@@ -117,46 +114,43 @@ function OrderGroupManagement() {
     setOrderId("");
     dispatch(setSelectedOrderIds([]));
     dispatch(setSelectedGroupNos([]));
+    dispatch(setFilteredGroup([]));
   };
 
   // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
-const handleOrderFilteredByGroup = (group_record_id) => {
-  let updatedSelectedGroupRecordIds = [];
-  
-  if (selectedGroupNo?.includes(group_record_id)) {
-    // Grup zaten seçiliyse, kaldır
-    updatedSelectedGroupRecordIds = selectedGroupNo.filter(
-      (id) => id !== group_record_id
-    );
-  } else {
-    // Grup seçili değilse, ekle
-    updatedSelectedGroupRecordIds = [
-      ...selectedGroupNo,
-      group_record_id
-    ];
-  }
+  const handleOrderFilteredByGroup = ({ group_record_id, group_status,group_no }) => {
+    let updatedSelectedGroupNo = [];
 
-  // Seçili gruplara ait order_id'leri ve uniq_id'leri yeniden hesapla
-  let newFilteredGroup = [];
+    if (
+      selectedGroupNo.some((group) => group.group_record_id === group_record_id)
+    ) {
+      updatedSelectedGroupNo = selectedGroupNo.filter(
+        (group) => group.group_record_id !== group_record_id
+      );
+    } else {
+      updatedSelectedGroupNo = [
+        ...selectedGroupNo,
+        { group_record_id, group_status,group_no },
+      ];
+    }
 
-  updatedSelectedGroupRecordIds.forEach((id) => {
-    const ordersForGroup = buzlamaWork.filter(
-      (order) => order.group_record_id === id
-    );
-    newFilteredGroup = [
-      ...newFilteredGroup,
-      ...ordersForGroup.map((order) => ({
-        order_no: order.order_no,
-        uniq_id: order.uniq_id,
-      })),
-    ];
-  });
+    let newFilteredGroup = [];
+    updatedSelectedGroupNo.forEach((group) => {
+      const ordersForGroup = buzlamaWork.filter(
+        (order) => order.group_record_id === group.group_record_id
+      );
+      newFilteredGroup = [
+        ...newFilteredGroup,
+        ...ordersForGroup.map((order) => ({
+          order_no: order.order_no,
+          uniq_id: order.uniq_id,
+        })),
+      ];
+    });
 
-  // newFilteredGroup şimdi hem order_no hem de uniq_id içerecek
-  console.log(newFilteredGroup);
-  dispatch(setSelectedGroupNos(updatedSelectedGroupRecordIds));
-  dispatch(setFilteredGroup(newFilteredGroup));
-};
+    dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
+    dispatch(setFilteredGroup(newFilteredGroup));
+  };
 
   //! Grub olusturacak query...
   const handleCreateOrderGroup = async () => {
@@ -231,13 +225,13 @@ const handleOrderFilteredByGroup = (group_record_id) => {
       console.log(err);
       if (err.response.status === 400) {
         toast.error(err.response.data);
-      }else if(err.response.status === 500){
+      } else if (err.response.status === 500) {
         toast.error(err.response.data);
       }
     }
   };
 
-  // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak... order no ya gore ıslem yapmıyoruz. 
+  // birden fazla uniq id secıp dızıde tutacak fonksıyon. Sec Bırak... order no ya gore ıslem yapmıyoruz.
   const handleSelectOrderId = (selectedOrder) => {
     let updatedSelectedOrderIds;
 
@@ -267,12 +261,8 @@ const handleOrderFilteredByGroup = (group_record_id) => {
   //! Seçili order ı gruptan cıkarak query gruptan cıkar ve worklog tablosundan ılgılı order ı sıl (status 0 ise);
   const handleRemoveOrderFromGroup = async () => {
     //her satırın bır unıq ıd sı var onu yolluyoruz...
-    const orderUniqIds = JSON.stringify(
-      selectedOrderId
-    );
-    const groupNo = JSON.stringify(
-      selectedGroupNo
-    )
+    const orderUniqIds = JSON.stringify(selectedOrderId);
+    const groupNo = JSON.stringify(selectedGroupNo);
     try {
       if (selectedOrderId.length > 0 && selectedGroupNo.length < 2) {
         const response = await axios.post(
@@ -280,7 +270,7 @@ const handleOrderFilteredByGroup = (group_record_id) => {
           {
             orderUniqIds,
             groupNo,
-            operatorId
+            operatorId,
           }
         );
 
@@ -289,21 +279,22 @@ const handleOrderFilteredByGroup = (group_record_id) => {
             toast.success(response.data);
             dispatch(setFilteredGroup([]));
             handleGetGroupList(); // grup listesini guncellemek ıcın tekrardan servise istek attık
-            dispatch(setSelectedGroupNos()); // seçili grubu bırak cunku grup db sılındı yada kapatıldı... 
+            dispatch(setSelectedGroupNos([])); // seçili grubu bırak cunku grup db sılındı yada kapatıldı...
           } else {
             toast.success(response.data);
             const updatedOrderList = filteredGroup.filter(
-              (order) => !selectedOrderId.some(
-                (selected) => selected.uniq_id === order.uniq_id
-              )
+              (order) =>
+                !selectedOrderId.some(
+                  (selected) => selected.uniq_id === order.uniq_id
+                )
             );
             dispatch(setFilteredGroup(updatedOrderList));
+            dispatch(fetchBuzlamaWorks({ areaName }));
             dispatch(setSelectedOrderIds([]));
           }
         } else {
           toast.error(response.data);
         }
-
       } else {
         toast.error(
           "Gruptan Çıkarmak istediğiniz siparişi seçiniz. Yada sadece 1 grup üzerinden işlem yapın."
@@ -311,15 +302,15 @@ const handleOrderFilteredByGroup = (group_record_id) => {
       }
     } catch (err) {
       console.log(err);
+      toast.error(err.response.data);
     }
   };
-
   //! Gruptaki işler baslamadıysa grubu kapatacak istek...
   const handleCloseGroup = async () => {
     const groupNos = JSON.stringify(selectedGroupNo);
     try {
       let response;
-      if (selectedGroupNo && selectedGroupNo.length < 2) {
+      if (selectedGroupNo && selectedGroupNo.length < 2 && (selectedGroupNo[0].group_status === "1" || selectedGroupNo[0].group_status === "2") ) {
         response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/closeSelectedGroup`,
           {
@@ -342,9 +333,6 @@ const handleOrderFilteredByGroup = (group_record_id) => {
       }
     } catch (err) {
       console.log(err);
-      if (err.response.status === 400) {
-        toast.error(err.response.data);
-      }
     }
   };
 
@@ -385,9 +373,9 @@ const handleOrderFilteredByGroup = (group_record_id) => {
       }
     } catch (err) {
       console.log(err);
-      if(err.response.status === 400){
+      if (err.response.status === 400) {
         toast.error(err.response.data);
-      }else if (err.response.status === 500){
+      } else if (err.response.status === 500) {
         toast.error(err.response.data);
       }
     }
@@ -395,13 +383,13 @@ const handleOrderFilteredByGroup = (group_record_id) => {
 
   // gruba ekleme popup ını acacak fonksıyon
   const handleOpenGroupNos = () => {
-    if (selectedOrderId.length > 0 && selectedGroupNo.length === 1) {
+    if ((selectedGroupNo[0].group_status === "1" || selectedGroupNo[0].group_status === "2") && selectedGroupNo.length === 1) {
       dispatch(setGroupListPopup(true));
-    } else {
-      toast.error(
-        "Farklı gruba atayacağınız siparişleri seçiniz. Yada sadece bir grubu işaretleyin"
-      );
-    }
+    } else if((selectedGroupNo[0].group_status !== "1" || selectedGroupNo[0].group_status !== "2")){
+      toast.error("Başlamış prosese sipariş ekleyemezsiniz.");
+    }else{
+      toast.error("Sadece bir sipariş seçin");
+    };
   };
 
   const buttons = [
@@ -416,7 +404,7 @@ const handleOrderFilteredByGroup = (group_record_id) => {
       type: "button",
       className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
       onClick: handleRemoveOrderFromGroup,
-    },
+    },  
     {
       children: "Siparişi Teslim Et",
       type: "button",
@@ -502,10 +490,14 @@ const handleOrderFilteredByGroup = (group_record_id) => {
                             {groupList?.map((item, index) => (
                               <ol
                                 onClick={() =>
-                                  handleOrderFilteredByGroup(item.group_record_id)
+                                  handleOrderFilteredByGroup(
+                                    { group_record_id:item.group_record_id, group_status:item.group_status,group_no:item.group_no }
+                                  )
                                 }
                                 className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                                  selectedGroupNo?.includes(item.group_record_id)
+                                  selectedGroupNo?.some(
+                                    group => group.group_record_id === item.group_record_id
+                                  )
                                     ? "bg-slate-300"
                                     : ""
                                 }`}
@@ -591,7 +583,10 @@ const handleOrderFilteredByGroup = (group_record_id) => {
             </div>
             {/* grup listesini gosterecek komponent... */}
             {groupListPopup && (
-              <GroupNos fetchBuzlamaWorks={fetchBuzlamaWorks} handleGetGroupList={handleGetGroupList} />
+              <GroupNos
+                fetchBuzlamaWorks={fetchBuzlamaWorks}
+                handleGetGroupList={handleGetGroupList}
+              />
             )}
             {/* grup listesini gosterecek komponent end... */}
           </div>

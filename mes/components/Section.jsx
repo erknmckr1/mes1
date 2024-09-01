@@ -6,11 +6,17 @@ import BreakTable from "./BreakTable";
 import JobTable from "./JobTable";
 import ProcessArea from "./ProcessTable";
 import Date from "./ui/Date";
+import GroupArea from "./GroupArea";
 import { useSelector } from "react-redux";
+import { usePathname } from "next/navigation";
 function Section() {
-  const { theme } = useSelector(theme => theme.global)
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[3];
+  const { theme } = useSelector((theme) => theme.global);
   return (
-    <div className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}>
+    <div
+      className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}
+    >
       <div className="flex w-full h-full p-3">
         {/* left side Image vs. %20 */}
         <div className="w-[15%] h-full ">
@@ -33,7 +39,15 @@ function Section() {
             <div className=" w-[80%] h-full  flex justify-between ">
               {/* left side mola area w-1/2  */}
               <div className="w-1/2 h-full p-1 ">
-                  <BreakTable />
+                {areaName !== "buzlama" && <BreakTable />}
+                <div className="w-full h-full flex">
+                  <div className="w-1/2 h-full">
+                    <GroupArea />
+                  </div>
+                  <div className="w-1/2 h-full overflow-x-auto">
+                    <BreakTable />
+                  </div>
+                </div>
               </div>
               {/* w-1/2 Process area... */}
               <div className="w-1/2 h-full p-1">

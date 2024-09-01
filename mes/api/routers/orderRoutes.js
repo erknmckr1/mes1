@@ -20,6 +20,7 @@ const {
   getClosedGroups,
   getFinishedOrders,
   restartGroupProcess,
+  startToProcess
 } = require("../services/orderServices");
 
 //!
@@ -113,13 +114,23 @@ router.get("/getWorkToBuzlama", async (req, res) => {
 
 //! Grubu makineye yollayacak route
 router.post("/sendToMachine", async (req, res) => {
-  const { id_dec, machine_name, process_name, process_id, group_no } = req.body;
+  const { id_dec, machine_name, process_name, process_id, group_record_id } = req.body;
   const result = await sendToMachine({
     id_dec,
     machine_name,
     process_name,
     process_id,
-    group_no,
+    group_record_id,
+  });
+  return res.status(result.status).json(result.message);
+});
+
+//! Makineye gönderilen prosesi baslatacak route
+router.put("/startToProcess",async(req,res)=>{
+  const { id_dec, group_record_id } = req.body;
+  const result = await startToProcess({
+    id_dec,
+    group_record_id,
   });
   return res.status(result.status).json(result.message);
 });

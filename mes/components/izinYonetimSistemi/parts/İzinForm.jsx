@@ -8,7 +8,7 @@ function IzinForm() {
   const [leaveResons, setLeaveReasons] = useState();
   const [selectedReason, setSelectedReason] = useState("");
   const [formData, setFormData] = useState({
-    kullanici:"",
+    kullanici: "",
     izinTipi: "",
     izinTuru: "",
     baslangicTarihi: "",
@@ -63,51 +63,56 @@ function IzinForm() {
   const handleCreateLeave = async () => {
     const { id_dec, op_username, auth1, auth2 } = userInfo;
     try {
-      if (formData.donusTarihi !== "" && formData.baslangicTarihi !== "") {
-        const baslangicDate = new Date(formData.baslangicTarihi);
-        const donusDate = new Date(formData.donusTarihi);
-        if (baslangicDate >= donusDate) {
-          toast.error("Başlangıç zamanı bitiş zamanından küçük olmalı.");
-          return;
-        }
+      if (
+        formData.baslangicTarihi === "" ||
+        formData.donusTarihi === "" ||
+        selectedReason === ""
+      ) {
+        toast.error("Lütfen tüm alanları doldurunuz. (İzin Nedeni-Başlangıç-Bitiş Tarihleri)");
+        return;
+      }
 
-        if (
-          confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")
-        ) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
-            { formData, selectedReason, id_dec, op_username, auth1, auth2 }
-          );
-          if (response.status === 200) {
-            toast.success("İzin talebi başarıyla oluşturuldu.");
-            setFormData({
-              kullanici:"",
-              izinTipi: "",
-              izinTuru: "",
-              baslangicTarihi: "",
-              donusTarihi: "",
-              tel: "",
-              adres: "",
-              aciklama: "",
-              izinSebebi: "",
-            })
-          } else {
-            toast.error("İzin talebi oluşturulamadı...");
-          }
+      const baslangicDate = new Date(formData.baslangicTarihi);
+      const donusDate = new Date(formData.donusTarihi);
+
+      if (baslangicDate >= donusDate) {
+        toast.error("Başlangıç zamanı bitiş zamanından küçük olmalı.");
+        return;
+      }
+
+      if (confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")) {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
+          { formData, selectedReason, id_dec, op_username, auth1, auth2 }
+        );
+
+        if (response.status === 200) {
+          toast.success("İzin talebi başarıyla oluşturuldu.");
+          setFormData({
+            kullanici: "",
+            izinTipi: "",
+            izinTuru: "",
+            baslangicTarihi: "",
+            donusTarihi: "",
+            tel: "",
+            adres: "",
+            aciklama: "",
+            izinSebebi: "",
+          });
+        } else {
+          toast.error("İzin talebi oluşturulamadı...");
         }
-      } else {
-        toast.error("İzin için ilgili yerleri doldurup tekrar deneyin");
       }
     } catch (err) {
       console.log(err);
-      toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+      toast.error(err.response.data.message);
     }
   };
 
   // Formu sıfırlayacak fonksıyon
-  function handleResetForm (){
+  function handleResetForm() {
     setFormData({
-      kullanici:"",
+      kullanici: "",
       izinTipi: "",
       izinTuru: "",
       baslangicTarihi: "",
@@ -116,7 +121,7 @@ function IzinForm() {
       adres: "",
       aciklama: "",
       izinSebebi: "",
-    })
+    });
   }
 
   console.log(selectedReason);
