@@ -20,7 +20,9 @@ const {
   getClosedGroups,
   getFinishedOrders,
   restartGroupProcess,
-  startToProcess
+  startToProcess,
+  stopToSelectedMachine,
+  restartToMachine
 } = require("../services/orderServices");
 
 //!
@@ -224,6 +226,20 @@ router.post("/restartGroupProcess", async (req, res) => {
     process_id,
     process_name
   );
+  return res.status(result.status).json(result.message);
+});
+
+//! Makineyi durduracak route...
+router.put("/stopToSelectedMachine",async(req,res)=>{
+  const {selectedGroup,id_dec,stop_reason_id,area_name} = req.body;
+  const result = await stopToSelectedMachine(selectedGroup,id_dec,stop_reason_id,area_name);
+  return res.status(result.status).json(result.message);
+});
+
+//! Makineyi tekrardan baslataca router...
+router.put("/restartToMachine",async(req,res)=>{
+  const {selectedGroup,id_dec,area_name} = req.body;
+  const result = await restartToMachine(selectedGroup,id_dec,area_name);
   return res.status(result.status).json(result.message);
 });
 module.exports = router;

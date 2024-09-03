@@ -2,10 +2,13 @@ const OrderTable = require("../../models/OrderTable");
 const WorkLog = require("../../models/WorkLog");
 const GroupRecords = require("../../models/GroupRecords");
 const User = require("../../models/User");
+const StoppedWorksLogs = require("../../models/StoppedWorksLog");
 const { Op, json } = require("sequelize");
-const { createWork } = require("../orderOperations");
+const { createWork, stopWork, rWork } = require("../orderOperations");
 const MeasureData = require("../../models/MeasureData");
 const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
+const sequelize = require("../../lib/dbConnect");
+
 //! id ye gore sıparısı getırecek servis...
 async function getOrderById(orderId) {
   try {
@@ -373,7 +376,7 @@ const mergeGroups = async (params) => {
       // Eski grupları sil
       await GroupRecords.destroy({
         where: {
-          group_record_id: parsedGroupIds.map(item => item.group_record_id),
+          group_record_id: parsedGroupIds.map((item) => item.group_record_id),
         },
       });
 
@@ -814,6 +817,164 @@ async function startToProcess({ id_dec, group_record_id }) {
 
     return { status: 200, message: "Proses başlatıldı." };
   } catch (err) {
+    console.error("Internal server error", err);
+    return {
+      status: 500,
+      message: "Sunucu hatası, lütfen daha sonra tekrar deneyin.",
+    };
+  }
+}
+
+//! Makineyi durduracak servis gs-4 ws-2
+async function stopToSelectedMachine(
+  selectedGroup,
+  id_dec,
+  stop_reason_id,
+  area_name
+) {
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const group = await GroupRecords.findOne({
+      where: {
+        group_record_id: selectedGroup.group_record_id,
+        group_status: "3",
+      },
+    });
+
+    if (!group) {
+      return {
+        status: 404,
+        message:
+          "Durdurmak istediğiniz makinede aktif bir iş yok yada durdurulmus.",
+      };
+    }
+
+    const orders = await WorkLog.findAll({
+      where: {
+        group_record_id: selectedGroup.group_record_id,
+        work_status: "1",
+      },
+    });
+
+    // şartları sağlayan tum sıparıslerı guncelle
+    if (!orders || orders.length === 0) {
+      return { status: 400, message: "Grupta aktif sipariş yok" };
+    } else {
+      for (const order of orders) {
+        await stopWork({
+          work_log_uniq_id: order.uniq_id,
+          currentDateTimeOffset,
+          order_id: order.order_no,
+          stop_reason_id,
+          user_who_stopped: id_dec,
+          group_record_id: order.group_record_id,
+          area_name,
+        });
+      }
+    }
+
+    // şartları sağlayan tüm siparişleri de güncelle
+    await GroupRecords.update(
+      { group_status: "4" },
+      {
+        where: {
+          group_record_id: selectedGroup.group_record_id,
+          group_status: "3",
+        },
+      }
+    );
+
+    return { status: 200, message: `Makibe başarıyla durduruldu ${group.machine_name}` };
+  } catch (err) {
+    console.error("Internal server error", err);
+    return {
+      status: 500,
+      message: "Sunucu hatası, lütfen daha sonra tekrar deneyin.",
+    };
+  }
+}
+
+//! Durdurulan makineyi yeniden başlatacak servis.. TRACSACTİON kullandık
+async function restartToMachine(selectedGroup, id_dec, area_name) {
+  const currentDateTimeOffset = new Date().toISOString();
+  const transaction = await sequelize.transaction(); // Transaction başlatıyoruz
+
+  try {
+    // Seçilen grubu veritabanından buluyoruz
+    const group = await GroupRecords.findOne({
+      where: {
+        group_record_id: selectedGroup.group_record_id,
+      },
+      transaction, // İşlemi transaction içinde yapıyoruz
+    });
+
+    // Eğer grup bulunamazsa, işlem başarısız olur
+    if (!group) {
+      await transaction.rollback(); // İşlemi geri alıyoruz
+      return {
+        status: 400,
+        message: `Durdurulacak grup bulunamadı ${selectedGroup?.group_no}...`,
+      };
+    }
+
+    // Gruba ait durdurulmuş işleri buluyoruz
+    const orders = await WorkLog.findAll({
+      where: {
+        group_record_id: selectedGroup.group_record_id,
+        work_status: "2", // Sadece durdurulmuş işleri seçiyoruz
+      },
+      transaction, // İşlemi transaction içinde yapıyoruz
+    });
+
+    // Eğer durdurulmuş iş yoksa, işlem başarısız olur
+    if (!orders || orders.length === 0) {
+      await transaction.rollback(); // İşlemi geri alıyoruz
+      return { status: 400, message: "Grubun içinde durdurulmuş sipariş yok " };
+    } else {
+      // Durdurulmuş işler için gerekli güncellemeleri yapıyoruz
+      for (const order of orders) {
+        // Durdurulmuş işlerin sonlanma tarihini ve başlatan kullanıcıyı güncelliyoruz
+        await StoppedWorksLogs.update(
+          {
+            stop_end_date: currentDateTimeOffset,
+            user_who_started: id_dec,
+          },
+          {
+            where: {
+              work_log_uniq_id: order.uniq_id,
+              stop_end_date: null, // Sadece durdurulmuş (bitmemiş) işleri seçiyoruz
+            },
+            transaction, // İşlemi transaction içinde yapıyoruz
+          }
+        );
+
+        // İş durumunu '1' olarak güncelliyoruz, yani aktif hale getiriyoruz
+        await WorkLog.update(
+          {
+            work_status: "1", // İş yeniden başlatıldığı için durum '1' oluyor
+          },
+          { where: { uniq_id: order.uniq_id }, transaction }
+        );
+      }
+
+      // Grup durumunu '3' (aktif) olarak güncelliyoruz
+      await GroupRecords.update(
+        {
+          group_status: "3",
+        },
+        {
+          where: {
+            group_record_id: selectedGroup.group_record_id,
+          },
+          transaction, // İşlemi transaction içinde yapıyoruz
+        }
+      );
+
+      await transaction.commit(); // Tüm işlemler başarılı olduğunda transaction'ı tamamlıyoruz
+      return { status: 200, message: "İşler başarıyla yeniden başlatıldı." };
+    }
+  } catch (err) {
+    await transaction.rollback(); // Hata durumunda tüm işlemleri geri alıyoruz
     console.error("Internal server error", err);
     return {
       status: 500,
@@ -1367,4 +1528,6 @@ module.exports = {
   getFinishedOrders,
   restartGroupProcess,
   startToProcess,
+  stopToSelectedMachine,
+  restartToMachine,
 };

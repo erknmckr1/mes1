@@ -565,7 +565,7 @@ function OrderGroupManagement() {
                       </div>
                     </div>
                     <div className="w-full h-1/3 flex justify-center">
-                      <div className="w-full h-auto grid grid-cols-2 place-items-center">
+                      <div className="w-full h-auto grid grid-cols-2 place-items-center gap-y-1">
                         {buttons.map((button, index) => (
                           <Button
                             key={index}

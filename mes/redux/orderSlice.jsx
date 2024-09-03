@@ -71,7 +71,10 @@
         state.workList = action.payload;
       },
       setStopReasonPopup: (state, action) => {
-        state.stopReasonPopup = action.payload;
+        state.stopReasonPopup = {
+          visible: action.payload.visible,
+          actionType: action.payload.actionType || "",
+        };
       },
       setCancelReasonPopup: (state, action) => {
         state.cancelReasonPopup = action.payload;

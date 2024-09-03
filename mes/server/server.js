@@ -32,7 +32,7 @@ const {
   rWork,
   finishedWork,
   cancelWork,
-  getStoppedWorks
+  getStoppedWorks,
 } = require("../api/orderOperations");
 const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
@@ -44,7 +44,13 @@ const currentDate = new Date();
 const currentDateTimeOffset = new Date().toISOString();
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://192.168.3.5:3000","http://localhost:3002","http://192.168.0.78:3000","http://192.168.1.246:3000"], // Burada uygun origin'i belirleyin
+  origin: [
+    "http://localhost:3000",
+    "http://192.168.3.5:3000",
+    "http://localhost:3002",
+    "http://192.168.0.78:3000",
+    "http://192.168.1.246:3000",
+  ], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
   methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
 };
@@ -134,7 +140,7 @@ app.get("/breakReason", async (req, res) => {
 app.post("/createBreak", async (req, res) => {
   try {
     const startLog = req.body;
-    const currentDateTimeOffset = new Date().toISOString(); // Bu değeri her istekte belirliyoruz Global olarak verınce her sey degısıyor. 
+    const currentDateTimeOffset = new Date().toISOString(); // Bu değeri her istekte belirliyoruz Global olarak verınce her sey degısıyor.
     const breakLog = await getIsUserOnBreak(startLog, currentDateTimeOffset);
     res.status(200).json(breakLog);
   } catch (err) {
@@ -145,7 +151,7 @@ app.post("/createBreak", async (req, res) => {
 
 //! Moladaki kullanıcıları dönen metot...
 app.get("/getBreakOnUsers", async (req, res) => {
-  const {areaName} = req.query;
+  const { areaName } = req.query;
   try {
     const result = await onBreakUsers(areaName);
     res.status(200).json(result);
@@ -160,7 +166,11 @@ app.post("/returnToBreak", async (req, res) => {
   const { operator_id, end_time } = req.body;
   console.log("Received request to return from break:", operator_id, end_time);
   try {
-    const result = await returnToBreak({ operator_id, end_time, currentDateTimeOffset });
+    const result = await returnToBreak({
+      operator_id,
+      end_time,
+      currentDateTimeOffset,
+    });
     console.log("Update result:", result); // Güncellenen kayıt sayısını kontrol etmek için
     if (result === 0) {
       res.status(404).json({ message: "Moladan donus işlemi başarisiz" });
@@ -177,7 +187,7 @@ app.post("/returnToBreak", async (req, res) => {
 app.post("/getStopReason", async (req, res) => {
   const { area_name } = req.body;
   try {
-    const result = await getStopReason({ area_name, });
+    const result = await getStopReason({ area_name });
     res.status(200).json(result);
   } catch (err) {
     console.error("Error getting stop reasons:", err);
@@ -201,7 +211,11 @@ app.get("/getCancelReason", async (req, res) => {
 app.post("/cancelWork", async (req, res) => {
   const { uniq_id, currentUser } = req.body;
   try {
-    const result = await cancelWork({ uniq_id, currentDateTimeOffset, currentUser });
+    const result = await cancelWork({
+      uniq_id,
+      currentDateTimeOffset,
+      currentUser,
+    });
     if (result) {
       res.status(200).json({ message: "İş silme işlemi başarılı..." });
     } else {
@@ -284,7 +298,7 @@ app.post("/createWorkLog", async (req, res) => {
 //! Mevcut işleri getirecek metot...
 app.get("/getWorks", async (req, res) => {
   const { area_name, user_id_dec } = req.query;
-  console.log(area_name)
+  console.log(area_name);
   try {
     // Kullanıcının kendi işleri (aktif)
     const userWorks = await getWorks({ area_name, user_id_dec });
@@ -304,16 +318,17 @@ app.get("/getWorks", async (req, res) => {
 
 //! Aktif bir işi durduracak metot
 app.post("/stopSelectedWork", async (req, res) => {
-  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped } = req.body;
+  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped } =
+    req.body;
   const currentDateTimeOffset = new Date().toISOString();
-  console.log(currentDateTimeOffset)
+  console.log(req.body);
   try {
     const result = await stopWork({
       work_log_uniq_id,
       currentDateTimeOffset,
       order_id,
       stop_reason_id,
-      user_who_stopped
+      user_who_stopped,
     });
     return res.status(200).json(result);
   } catch (err) {
@@ -324,10 +339,17 @@ app.post("/stopSelectedWork", async (req, res) => {
 
 //! Durdurulan bir işi tekrardan baslatacak metot...
 app.post("/restartWork", async (req, res) => {
-  const { work_log_uniq_id, currentUser, startedUser, selectedOrder } = req.body;
+  const { work_log_uniq_id, currentUser, startedUser, selectedOrder } =
+    req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    const result = await rWork({ currentDateTimeOffset, work_log_uniq_id, currentUser, startedUser, selectedOrder });
+    const result = await rWork({
+      currentDateTimeOffset,
+      work_log_uniq_id,
+      currentUser,
+      startedUser,
+      selectedOrder,
+    });
     res.status(200).json(result);
   } catch (err) {
     console.log(err);
@@ -350,7 +372,7 @@ app.post("/finishedWork", async (req, res) => {
     repair_reason_3,
     repair_reason_4,
     repair_section,
-    end_desc
+    end_desc,
   } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -368,7 +390,7 @@ app.post("/finishedWork", async (req, res) => {
       repair_reason_3,
       repair_reason_4,
       repair_section,
-      end_desc
+      end_desc,
     });
     res.status(200).json(result);
   } catch (err) {
@@ -377,12 +399,11 @@ app.post("/finishedWork", async (req, res) => {
   }
 });
 
-
 //? Süreçler ile ilgili servisler aşağıda......................................................................
-app.use('/api/leave',leaveRoutes);
+app.use("/api/leave", leaveRoutes);
 
 //? Kullanıcılar ile ilgili servisler
-app.use('/api/user',userRoutes);
+app.use("/api/user", userRoutes);
 
 //? Order ıslemlerı ıle ılgılı rotalar (sipariş olustur iptal güncelle vs. bütün iş birimlerinin servislerini içerebilir.)
-app.use("/api/order",orderRoutes);
+app.use("/api/order", orderRoutes);

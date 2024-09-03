@@ -63,7 +63,7 @@ function Layout({ children }) {
       <main className="relative">{children}</main>
       {isMolaPopup && <MolaPopup />}
       {foodPopupState && <FoodPopup />}
-      {stopReasonPopup && <StopJobPopup />}
+      {stopReasonPopup?.visible && <StopJobPopup />}
       {cancelReasonPopup && <CancelJobPopup />}
       {repairJobPopup && <RepairJobPopup />}
       {finishedWorkPopup && <FinishedWorkPopup />}
@@ -81,7 +81,7 @@ function HomeLayout({ children }) {
   const pathName = usePathname();
   const project = pathName.split("/")[1];
   const returnUrl = localStorage.getItem("returnUrl") || "/";
-console.log(returnUrl);
+
   return (
     <>
       {project === "home" && (

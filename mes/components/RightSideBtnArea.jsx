@@ -42,13 +42,28 @@ function RightSideBtnArea() {
   const areaName = pathName.split("/")[3];
 
   // stop popup'ı aç
-  const handleOpenStopPopup = () => {
-    if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
-      dispatch(setStopReasonPopup(true));
-    } else if (selectedOrder.length > 1) {
-      toast.error("Durdurmak için sadece bir sipariş seçin.");
+  const handleOpenStopPopup = (actionType) => {
+    if (actionType === "group") {
+      if (
+        selectedGroupNo.length === 1 &&
+        selectedGroupNo[0].group_status === "3"
+      ) {
+        dispatch(setStopReasonPopup({ visible: true, actionType }));
+      } else if (selectedGroupNo.length > 1) {
+        toast.error("Durdurmak için sadece bir grup seçin.");
+      } else {
+        toast.error("Aktif bir grup seçin.");
+      }
+    } else if (actionType === "order") {
+      if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
+        dispatch(setStopReasonPopup({ visible: true, actionType }));
+      } else if (selectedOrder.length > 1) {
+        toast.error("Durdurmak için sadece bir sipariş seçin.");
+      } else {
+        toast.error("Aktif bir sipariş seçin.");
+      }
     } else {
-      toast.error("İşleme devam etmek için aktif bir iş seçin");
+      toast.error("Geçersiz işlem.");
     }
   };
 
@@ -95,15 +110,55 @@ function RightSideBtnArea() {
     }
   };
 
+  //! Seçili ve durdurulmus MAKİNEYİ yeniden başlat
+  async function restartToMachine() {
+    try {
+      if (confirm("Makine tekrardan başlatılsın mı ?")) {
+        let response;
+        if (
+          selectedGroupNo &&
+          selectedGroupNo.length === 1 &&
+          selectedGroupNo[0].group_status === "4"
+        ) {
+          response = await axios.put(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartToMachine`,
+            {
+              selectedGroup: selectedGroupNo[0],
+              id_dec: userInfo?.id_dec,
+              area_name: areaName,
+            }
+          );
+        } else {
+          toast.error("Sadece 1 durmuş makine seçin.");
+          return;
+        }
+
+        if (response && response.status === 200) {
+          toast.success(response.data);
+          getWorkList({
+            areaName,
+            dispatch,
+            userId: userInfo.id_dec,
+          });
+        }
+        dispatch(handleGetGroupList());
+        dispatch(setSelectedGroupNos([]));
+        dispatch(setFilteredGroup([]));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   // iş bitirme popını acacak...
   const handleOpenFinishedPopup = () => {
     if (
       (selectedOrder.length === 1 && selectedOrder[0]?.work_status === "1") ||
-      selectedOrder?.work_status === "2"
+      selectedOrder[0]?.work_status === "2"
     ) {
       dispatch(setFinishedWorkPopup(true));
     } else {
-      toast.error("Durduracağiniz prosesi seçiniz.");
+      toast.error("Bitireceğiniz siparişi seçiniz.");
     }
   };
 
@@ -144,7 +199,7 @@ function RightSideBtnArea() {
       toast.error("Sipariş iptal edilemedi. Lütfen tekrar deneyin.");
     }
   };
-  console.log(selectedOrder);
+
   //! Seçilenleri bitirme isteği...
   const finishSelectedOrder = async () => {
     const onGoingOrder = selectedOrder.every(
@@ -288,7 +343,7 @@ function RightSideBtnArea() {
   // Kalite buttons
   const buttons_r = [
     {
-      onClick: handleOpenStopPopup,
+      onClick: () => handleOpenStopPopup("order"),
       children: "Siparişi Durdur",
       type: "button",
       className: "w-[200px]",
@@ -350,15 +405,23 @@ function RightSideBtnArea() {
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",
       disabled: isCurrentBreak,
     },
+    // {
+    //   onClick: handleOpenStopPopup,
+    //   children: "Siparişi Durdur",
+    //   type: "button",
+    //   className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+    //   disabled: isCurrentBreak,
+    // },
     {
-      onClick: handleOpenStopPopup,
-      children: "Siparişi Durdur",
+      onClick: () => handleOpenStopPopup("group"),
+      children: "Makineyi Durdur",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className:
+        "w-[150px] sm:px-1 sm:py-5 text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     {
-      onClick: restartWork,
+      onClick: restartToMachine,
       children: "Yeniden Başlat",
       type: "button",
       className: "w-[150px] sm:px-1 sm:py-5  text-sm",
@@ -368,14 +431,16 @@ function RightSideBtnArea() {
       onClick: handleOpenConditionalFinishPopup,
       children: "Seçilenleri Ş. Bitir",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm ",
+      className:
+        "w-[150px] sm:px-1 sm:py-5  text-sm bg-red-600 hover:bg-red-500 ",
       disabled: isCurrentBreak,
     },
     {
       onClick: finishSelectedOrder,
       children: "Seçilenleri Bitir",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className:
+        "w-[150px] sm:px-1 sm:py-5  text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     {

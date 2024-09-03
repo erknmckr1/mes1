@@ -227,6 +227,8 @@ const stopWork = async ({
   stop_reason_id,
   order_id,
   user_who_stopped,
+  group_record_id,
+  area_name,
 }) => {
   try {
     // İlgili uniq id ile olusturulmus bir stop işlemi var mı?
@@ -242,13 +244,25 @@ const stopWork = async ({
     }
 
     // İlgili uniq id ile durdurma kaydı olustur...
-    await StoppedWorksLogs.create({
-      order_id,
-      stop_start_date: currentDateTimeOffset,
-      work_log_uniq_id,
-      stop_reason_id,
-      user_who_stopped,
-    });
+    if (group_record_id) {
+      await StoppedWorksLogs.create({
+        order_id,
+        stop_start_date: currentDateTimeOffset,
+        work_log_uniq_id,
+        stop_reason_id,
+        user_who_stopped,
+        group_record_id,
+        area_name,
+      });
+    } else {
+      await StoppedWorksLogs.create({
+        order_id,
+        stop_start_date: currentDateTimeOffset,
+        work_log_uniq_id,
+        stop_reason_id,
+        user_who_stopped,
+      });
+    }
 
     // stop kaydını olusturduktan sonra durdurulan işin work_status degerını guncelle...
     await WorkLog.update(
@@ -268,7 +282,7 @@ const stopWork = async ({
   }
 };
 
-//! Seçili işi yeniden baslatacak query...
+//! Seçili işi yeniden baslatacak query grup mantıgı bu metotda yok...
 const rWork = async ({
   currentDateTimeOffset,
   work_log_uniq_id,
@@ -426,4 +440,5 @@ module.exports = {
   finishedWork,
   cancelWork,
   getStoppedWorks,
+  
 };

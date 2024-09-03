@@ -38,16 +38,19 @@ function Section() {
           <div className="w-full h-[40%] flex">
             <div className=" w-[80%] h-full  flex justify-between ">
               {/* left side mola area w-1/2  */}
-              <div className="w-1/2 h-full p-1 ">
-                {areaName !== "buzlama" && <BreakTable />}
-                <div className="w-full h-full flex">
-                  <div className="w-1/2 h-full">
-                    <GroupArea />
+              <div className="w-1/2 h-full p-1">
+                {areaName !== "buzlama" ? (
+                  <BreakTable />
+                ) : (
+                  <div className="w-full h-full flex">
+                    <div className="w-1/2 h-full">
+                      <GroupArea />
+                    </div>
+                    <div className="w-1/2 h-full overflow-x-auto">
+                      <BreakTable />
+                    </div>
                   </div>
-                  <div className="w-1/2 h-full overflow-x-auto">
-                    <BreakTable />
-                  </div>
-                </div>
+                )}
               </div>
               {/* w-1/2 Process area... */}
               <div className="w-1/2 h-full p-1">

@@ -35,6 +35,14 @@ const StoppedWorksLogs = sequelize.define(
     user_who_started:{
       type:DataTypes.STRING,
       allowNull:true
+    },
+    group_record_id:{
+      type:DataTypes.STRING,
+      allowNull:true
+    },
+    area_name:{
+      type:DataTypes.STRING,
+      allowNull:true
     }
   },
   {

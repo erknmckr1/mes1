@@ -1,7 +1,13 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { setStopReasonPopup, setSelectedOrder, } from "@/redux/orderSlice";
+import {
+  setStopReasonPopup,
+  setSelectedOrder,
+  handleGetGroupList,
+  setSelectedGroupNos,
+  setFilteredGroup,
+} from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -17,14 +23,16 @@ function StopJobPopup() {
   const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
   const [molaSebebi, setMolaSebebii] = useState("");
-  const { selectedOrder } = useSelector((state) => state.order);
+  const { selectedOrder, selectedGroupNo } = useSelector(
+    (state) => state.order
+  );
 
   //! Durdurma sebeplerini çekecek metot...
   const getBreakReason = async () => {
     try {
       const result = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/getStopReason`,
-        { area_name: areaName, }
+        { area_name: areaName }
       );
       setStopReason(result.data);
       return result.data; // Veriyi döndürelim ki çağıran fonksiyon kullanabilsin
@@ -33,46 +41,100 @@ function StopJobPopup() {
     }
   };
 
- //! Seçilen işi durdurmak için gerekli istek...
-const stopSelectedWork = async () => {
-  try {
-    if (selectedOrder.length === 1) {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
-        {
-          order_id: selectedOrder[0].order_no,
-          stop_reason_id: molaSebebi.stop_reason_id,
-          work_log_uniq_id: selectedOrder[0].uniq_id,
-          user_who_stopped: userInfo?.id_dec,
+  //! Seçilen işi durdurmak için gerekli istek...
+  const stopSelectedWork = async () => {
+    try {
+      if (selectedOrder.length === 1) {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
+          {
+            order_id: selectedOrder[0].order_no,
+            stop_reason_id: molaSebebi.stop_reason_id,
+            work_log_uniq_id: selectedOrder[0].uniq_id,
+            user_who_stopped: userInfo?.id_dec,
+          }
+        );
+
+        if (response.status === 200) {
+          toast.success(`Siparişi durdurma işlemi başarılı...`);
+          dispatch(setStopReasonPopup(false));
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
+          dispatch(setSelectedOrder([])); // Seçimi temizle
+        } else {
+          toast.error("Sipariş durdurulamadı...");
         }
-      );
-
-      if (response.status === 200) {
-        toast.success(`Siparişi durdurma işlemi başarılı...`);
-        dispatch(setStopReasonPopup(false));
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
-        dispatch(setSelectedOrder([])); // Seçimi temizle
       } else {
-        toast.error("Sipariş durdurulamadı...");
+        toast.error("Durdurmak için sadece bir sipariş seçiniz.");
       }
-    } else {
-      toast.error("Durdurmak için sadece bir sipariş seçiniz.");
+    } catch (err) {
+      console.log(err);
+      toast.error(
+        "Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
+      );
     }
-  } catch (err) {
-    console.log(err);
-    toast.error("Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin.");
-  }
-};
+  };
+  //! Makineyi durduracak query (grup işlemi)...
+  async function stopToSelectedMachine() {
+    try {
+      if (confirm("Seçili makine durdurulsun mu ? ")) {
+        let response;
+        if (
+          selectedGroupNo &&
+          selectedGroupNo.length === 1 &&
+          selectedGroupNo[0].group_status === "3"
+        ) {
+          response = await axios.put(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/stopToSelectedMachine`,
+            {
+              selectedGroup: selectedGroupNo[0],
+              id_dec: userInfo?.id_dec,
+              stop_reason_id: molaSebebi.stop_reason_id,
+              area_name: areaName,
+            }
+          );
+        } else {
+          toast.error("Sadece 1 aktif makine seçin.");
+          return;
+        }
 
+        if (response.status === 200) {
+          toast.success(response.data);
+          dispatch(handleGetGroupList());
+          getWorkList({
+            areaName,
+            userId: userInfo.id_dec,
+            dispatch,
+          });
+          dispatch(setStopReasonPopup({ visible: false, actionType: "" }));
+          dispatch(setSelectedGroupNos([]));
+          dispatch(setFilteredGroup([]));
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error(
+        "Makibe durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
+      );
+    }
+  }
+
+  const handleAction = () => {
+    if (stopReasonPopup.actionType === "order") {
+      stopSelectedWork();
+    } else if (stopReasonPopup.actionType === "group") {
+      stopToSelectedMachine();
+    }
+  };
+
+  console.log(stopReasonPopup);
 
   useEffect(() => {
     getBreakReason();
   }, []);
-  console.log(selectedOrder)
   const buttons = [
     {
       onClick: () => {
-        dispatch(setStopReasonPopup(false));
+        dispatch(setStopReasonPopup({ visible: false, actionType: "" }));
       },
       children: "Vazgeç",
       type: "button",
@@ -80,9 +142,12 @@ const stopSelectedWork = async () => {
     },
     {
       onClick: () => {
-        stopSelectedWork();
+        handleAction();
       },
-      children: "Siparişi Durdur",
+      children:
+        stopReasonPopup.actionType === "order"
+          ? "Siparişi Durdur"
+          : "Grubu Durdur",
       type: "button",
       className: "bg-red-600 hover:bg-red-500",
     },
@@ -104,7 +169,6 @@ const stopSelectedWork = async () => {
     minute: "2-digit",
     second: "2-digit",
   });
-  console.log(molaSebebi)
   return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
@@ -118,7 +182,9 @@ const stopSelectedWork = async () => {
               <div className="w-[30%] h-full border relative p-2">
                 <div className="w-full h-full flex flex-col ">
                   <span className="absolute bg-secondary text-center w-full border-b border-black py-4 font-bold text-[25px]">
-                    Siparişi Durdurma Sebepleri
+                    {stopReasonPopup.actionType === "order"
+                      ? " Siparişi Durdurma Sebepleri"
+                      : "Grup Durdurma Sebepleri"}
                   </span>
                   <div className="w-full h-full flex flex-col overflow-x-scroll mt-16">
                     {stopReason &&
@@ -126,10 +192,12 @@ const stopSelectedWork = async () => {
                         <span
                           key={item.stop_reason_name}
                           className={`py-[15px] text-[20px] cursor-pointer hover:text-white hover:bg-gray-600  text-center border-b border-black 
-                           ${molaSebebi.stop_reason_name === item.stop_reason_name
-                              ? "bg-green-600 text-white"
-                              : ""
-                            }`}
+                           ${
+                             molaSebebi.stop_reason_name ===
+                             item.stop_reason_name
+                               ? "bg-green-600 text-white"
+                               : ""
+                           }`}
                           onClick={() => setMolaSebebii(item)}
                         >
                           {item.stop_reason_name}

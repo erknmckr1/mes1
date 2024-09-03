@@ -21,7 +21,8 @@ function GroupArea() {
     dispatch(fetchBuzlamaWorks({ areaName }));
   }, [dispatch, areaName]);
 
-  const handleOrderFilteredByGroup = ({ group_record_id, group_status }) => {
+  // seçilen grubu ılgılı ozellıklerıyle bır dızıde tut ve bu grubua gore orderları fıltrele
+  const handleOrderFilteredByGroup = ({ group_record_id, group_status,group_no }) => {
     let updatedSelectedGroupNo = [];
 
     if (
@@ -33,7 +34,7 @@ function GroupArea() {
     } else {
       updatedSelectedGroupNo = [
         ...selectedGroupNo,
-        { group_record_id, group_status },
+        { group_record_id, group_status,group_no },
       ];
     }
 
@@ -54,7 +55,7 @@ function GroupArea() {
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
-
+  console.log(selectedGroupNo);
   return (
     <div
       className={`w-full h-full transition-all p-1 tablearea ${theme} border-secondary border-2`}
@@ -69,21 +70,34 @@ function GroupArea() {
             {groupList.map((item, index) => (
               <div key={index} className="text-black pt-1">
                 <div
+                // status e ve secılı olup olmama durumuna göre css ekledık...
                   className={`p-2 border rounded cursor-pointer ${
+                    item.group_status === "3" &&
+                    !selectedGroupNo.some(
+                      (group) => group.group_record_id === item.group_record_id
+                    )  ? "bg-green-500" : ""
+                  } ${
+                    item.group_status === "4" &&
+                    !selectedGroupNo.some(
+                      (group) => group.group_record_id === item.group_record_id
+                    )
+                      ? "bg-red-500"
+                      : ""
+                  } ${item.group_status === "5" &&
+                    !selectedGroupNo.some(
+                      (group) => group.group_record_id === item.group_record_id
+                    ) ? "bg-gray-500" : ""} ${
                     selectedGroupNo.some(
                       (group) => group.group_record_id === item.group_record_id
                     )
                       ? "bg-blue-200"
                       : "bg-gray-100"
-                  } ${
-                    item.group_status === "3" ? "bg-green-500" : ""
-                  }  ${
-                    item.group_status === "5" ? "bg-gray-500" : ""
-                  } `}
+                  }`}
                   onClick={() =>
                     handleOrderFilteredByGroup({
                       group_record_id: item.group_record_id,
                       group_status: item.group_status,
+                      group_no:item.group_no
                     })
                   }
                 >
