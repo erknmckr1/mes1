@@ -24,9 +24,7 @@ import { usePathname } from "next/navigation";
 import { fetchBuzlamaWorks } from "@/redux/orderSlice";
 
 function RightSideBtnArea() {
-  const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
-    (state) => state.break
-  );
+  const { isCurrentBreak } = useSelector((state) => state.break);
   const {
     selectedOrder,
     selectedProcess,
@@ -39,6 +37,7 @@ function RightSideBtnArea() {
   const { userInfo } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const pathName = usePathname();
+  const section = pathName.split("/")[2];
   const areaName = pathName.split("/")[3];
 
   // stop popup'ı aç
@@ -200,6 +199,37 @@ function RightSideBtnArea() {
     }
   };
 
+  //! Seçili orderı ıptal edecek fonksıyon SADECE GRUPLU EKRANLARDA...
+  async function cancelOrdersInGroup() {
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/cancelOrderInGroup`,
+        {
+          orders: selectedOrder,
+          id_dec: userInfo.id_dec,
+        }
+      );
+
+      if (response.status === 200) {
+        // Başarı mesajı dönerse bildirim göster
+        toast.success(response.data);
+        dispatch(setSelectedOrder([]));
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+        dispatch(handleGetGroupList());
+        dispatch(fetchBuzlamaWorks({ areaName }));
+      }
+    } catch (error) {
+      console.error("Sipariş iptali sırasında hata oluştu:", error);
+
+      // Hata mesajını daha detaylı gösterebiliriz
+      const errorMessage =
+        error.response?.data || "Sipariş iptali sırasında hata oluştu.";
+      toast.error(errorMessage);
+      dispatch(setSelectedOrder([]));
+      getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+    }
+  }
+
   //! Seçilenleri bitirme isteği...
   const finishSelectedOrder = async () => {
     const onGoingOrder = selectedOrder.every(
@@ -242,40 +272,42 @@ function RightSideBtnArea() {
     const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
     const id_dec = userInfo && userInfo.id_dec;
     try {
-      if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
-        toast.error("Makineye göndermek için sadece bir grup seçiniz");
-      } else if (selectedMachine && selectedProcess) {
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/sendToMachine`,
-          {
-            group_record_id: group.group_record_id, // Artık JSON değil direkt string
-            machine_name: selectedMachine.machine_name,
-            process_name: selectedProcess?.process_name,
-            process_id: selectedProcess?.process_id,
-            id_dec,
-          }
-        );
-
-        if (response.status === 200) {
-          toast.success("Gruba gönderme işlemi başarılı...");
-          getWorkList({
-            areaName,
-            userId: userInfo.id_dec,
-            dispatch,
-          });
-          dispatch(handleGetGroupList());
-          dispatch(fetchBuzlamaWorks({ areaName }));
-          dispatch(setSelectedGroupNos([]));
-          dispatch(setFilteredGroup([]));
-          dispatch(setSelectedProcess(""));
-          dispatch(setSelectedMachine(""));
-        } else {
-          toast.error(
-            response.data.message || "İşlem sırasında bir hata oluştu."
+      if (confirm("Grup makineye gönderilsin mi ?")) {
+        if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
+          toast.error("Makineye göndermek için sadece bir grup seçiniz");
+        } else if (selectedMachine && selectedProcess) {
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/sendToMachine`,
+            {
+              group_record_id: group.group_record_id, // Artık JSON değil direkt string
+              machine_name: selectedMachine.machine_name,
+              process_name: selectedProcess?.process_name,
+              process_id: selectedProcess?.process_id,
+              id_dec,
+            }
           );
+
+          if (response.status === 200) {
+            toast.success("Gruba gönderme işlemi başarılı...");
+            getWorkList({
+              areaName,
+              userId: userInfo.id_dec,
+              dispatch,
+            });
+            dispatch(handleGetGroupList());
+            dispatch(fetchBuzlamaWorks({ areaName }));
+            dispatch(setSelectedGroupNos([]));
+            dispatch(setFilteredGroup([]));
+            dispatch(setSelectedProcess(""));
+            dispatch(setSelectedMachine(""));
+          } else {
+            toast.error(
+              response.data.message || "İşlem sırasında bir hata oluştu."
+            );
+          }
+        } else {
+          toast.error("Makine ve Proses seçiniz.");
         }
-      } else {
-        toast.error("Makine ve Proses seçiniz.");
       }
     } catch (err) {
       console.log(err);
@@ -288,7 +320,7 @@ function RightSideBtnArea() {
     const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
     try {
       if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
-        toast.error("Başlatmak için sadece bir sipariş seçin...");
+        toast.error("Başlatmak için sadece bir makine seçin...");
       } else {
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/startToProcess`,
@@ -317,28 +349,166 @@ function RightSideBtnArea() {
     }
   }
 
+  //! Seçili grubu tekrardan makineye yollayacak fonksiyon...
+  const handleSendRepeatMachine = async () => {
+    const { id_dec } = userInfo;
+
+    // Eğer birden fazla grup seçildiyse hata verelim ve fonksiyonu sonlandıralım
+    if (selectedGroupNo.length !== 1) {
+      toast.error("Sadece bir grup seçmelisiniz.");
+      return;
+    }
+
+    if (selectedGroupNo[0].group_status !== "5") {
+      toast.error("Bitmiş bir proses seçiniz.");
+      return;
+    }
+    const { group_no, group_record_id } = selectedGroupNo[0];
+    const { process_name, process_id } = selectedProcess;
+    const { machine_name, machine_id } = selectedMachine;
+
+    try {
+      let response;
+      if (selectedMachine && selectedProcess) {
+        response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartGroupProcess`,
+          {
+            areaName,
+            section,
+            id_dec,
+            process_id,
+            machine_name,
+            process_name,
+            group_no,
+            group_record_id,
+          }
+        );
+      } else {
+        toast.error("İşi başlatacağınız proses ve makineyi seçiniz.");
+        return;
+      }
+
+      if (response.status === 200) {
+        toast.success(response.data);
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+        dispatch(setSelectedProcess(""));
+        dispatch(setSelectedMachine(""));
+        dispatch(setSelectedGroupNos([]));
+        dispatch(fetchBuzlamaWorks({ areaName }));
+        dispatch(handleGetGroupList());
+      } else {
+        toast.error(response.data);
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error(err.response.data);
+    }
+  };
+
+  //! Seçili grubu teslim et...
+  const handleFinishGroup = async () => {
+    const orders = filteredGroup;
+    const groups = selectedGroupNo;
+    const id_dec = userInfo && userInfo.id_dec;
+
+    try {
+      if (groups.length === 1 && groups[0].group_status !== "5") {
+        if (confirm("Grup bitirlsin mi?")) {
+          const response = await axios.put(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishTheGroup`,
+            {
+              orders,
+              groups,
+              id_dec,
+            }
+          );
+
+          if (response.status === 200) {
+            toast.success(response.data);
+            getWorkList({
+              areaName,
+              userId: userInfo.id_dec,
+              dispatch,
+            });
+            dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
+            dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
+            dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
+            dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
+            dispatch(handleGetGroupList());
+          } else {
+            toast.error(
+              response.data.message || "İşlem sırasında bir hata oluştu."
+            );
+          }
+        }
+      } else {
+        toast.error("Bitirmek istediğiniz sadece aktif 1 grubu seçiniz.");
+      }
+    } catch (err) {
+      console.error("Teslim işlemi sırasında hata oluştu:", err);
+      toast.error(
+        err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
+      );
+    }
+  };
+
+  //! seçili grubu teslim edecek istek...
+  const handleDeliverGroup = async () => {
+    const id_dec = userInfo && userInfo.id_dec;
+
+    try {
+      if (selectedGroupNo.length === 1) {
+        if (confirm("Grup teslim edilsin mi ?")) {
+          const response = await axios.put(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/deliverTheGroup`,
+            {
+              group: selectedGroupNo[0],
+              id_dec,
+            }
+          );
+
+          if (response.status === 200) {
+            toast.success(response.data);
+            getWorkList({
+              areaName,
+              userId: userInfo.id_dec,
+              dispatch,
+            });
+            dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
+            dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
+            dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
+            dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
+            dispatch(handleGetGroupList());
+          } else {
+            toast.error(
+              response.data.message || "İşlem sırasında bir hata oluştu."
+            );
+          }
+        }
+      } else {
+        toast.error("Teslim etmek istediğiniz sadece aktif 1 grubu seçiniz.");
+      }
+    } catch (err) {
+      console.error("Teslim işlemi sırasında hata oluştu:", err);
+      toast.error(
+        err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
+      );
+    }
+  };
+
   console.log({
     selectedGroupNo: selectedGroupNo,
     filteredGroup: filteredGroup,
     groupList: groupList,
     selectedProcess: selectedProcess,
     selectedMachine: selectedMachine,
+    selectedOrder: selectedOrder,
   });
 
   // ölçüm veri girişi popup ını açacak fonksıyon...
   const handleOpenMeasurementPopup = () => {
     dispatch(setMeasurementPopup(true));
   };
-
-  // send machine popup ını acacak fonksıyon...
-  // const handleOpenSendMachinePopup = () => {
-  //   if (selectedMachine && selectedProcess) {
-  //     dispatch(setSendToMachinePopup({ visible: true, actionType: "send" }));
-  //     dispatch(handleGetGroupList());
-  //   } else {
-  //     toast.error("Proses ve Makine seçiniz.");
-  //   }
-  // };
 
   // Kalite buttons
   const buttons_r = [
@@ -377,14 +547,14 @@ function RightSideBtnArea() {
       onClick: handleOpenGroupManagementPopup,
       children: "Grup Yönetimi",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       disabled: isCurrentBreak,
     },
     {
       onClick: handleSendToMachine, // Gönderme işlemi
       children: "Makineye Gönder",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       disabled: isCurrentBreak,
     },
     {
@@ -392,17 +562,23 @@ function RightSideBtnArea() {
       children: "Prosese Başla",
       type: "button",
       className:
-        "w-[150px] bg-green-500 hover:bg-green-600 sm:px-1 sm:py-5  text-sm",
+        "w-[140px] bg-green-500 hover:bg-green-600 sm:px-1 sm:py-4  text-sm",
       disabled: isCurrentBreak,
     },
     {
-      onClick: () =>
-        dispatch(
-          setSendToMachinePopup({ visible: true, actionType: "finish" })
-        ), // Bitirme işlemi
+      onClick: handleFinishGroup,
+      children: "Prosesi Bitir",
+      type: "button",
+      className:
+        "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: handleDeliverGroup,
       children: "Grubu Teslim Et",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className:
+        "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     // {
@@ -417,14 +593,14 @@ function RightSideBtnArea() {
       children: "Makineyi Durdur",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5 text-sm bg-red-600 hover:bg-red-500",
+        "w-[140px] sm:px-1 sm:py-4 text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     {
       onClick: restartToMachine,
       children: "Yeniden Başlat",
       type: "button",
-      className: "w-[150px] sm:px-1 sm:py-5  text-sm",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       disabled: isCurrentBreak,
     },
     {
@@ -432,7 +608,7 @@ function RightSideBtnArea() {
       children: "Seçilenleri Ş. Bitir",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5  text-sm bg-red-600 hover:bg-red-500 ",
+        "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500 ",
       disabled: isCurrentBreak,
     },
     {
@@ -440,22 +616,30 @@ function RightSideBtnArea() {
       children: "Seçilenleri Bitir",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5  text-sm bg-red-600 hover:bg-red-500",
+        "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleCancelWork,
+      onClick: cancelOrdersInGroup,
       children: "Sipariş İptal",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-red-600 hover:bg-red-500",
+        "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-red-600 hover:bg-red-500",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: handleSendRepeatMachine,
+      children: "Yeni Makine",
+      type: "button",
+      className:
+        "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-green-600 hover:bg-green-500",
       disabled: isCurrentBreak,
     },
     {
       children: "Ölçüm V. Girişi",
       type: "button",
       className:
-        "w-[150px] sm:px-1 sm:py-5  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
+        "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
       disabled: isCurrentBreak,
       onClick: handleOpenMeasurementPopup,
     },

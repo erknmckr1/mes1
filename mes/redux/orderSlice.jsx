@@ -51,7 +51,7 @@
       groupManagementPopup:false,
       groupListPopup:false,
       groupList:[],
-      selectedOrderId:[],
+      selectedOrderId:[], // grup yonetımınde mı kullanıyorduk ? 
       selectedGroupNo:[],
       filteredGroup:[],
       buzlamaWork:[],

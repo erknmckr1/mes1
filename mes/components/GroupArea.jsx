@@ -55,7 +55,7 @@ function GroupArea() {
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
-  console.log(selectedGroupNo);
+  
   return (
     <div
       className={`w-full h-full transition-all p-1 tablearea ${theme} border-secondary border-2`}

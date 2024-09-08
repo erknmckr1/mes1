@@ -143,6 +143,7 @@ function JobTable() {
             work_status: item.work_status,
             uniq_id: item.uniq_id,
             group_no: item.group_no,
+            group_record_id:item.group_record_id
           };
         });
     } else {

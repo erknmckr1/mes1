@@ -97,6 +97,7 @@ function OrderGroupManagement() {
     selectedGroupNo: selectedGroupNo,
     filteredGroup: filteredGroup,
     groupList: groupList,
+    selectedOrderId: selectedOrderId,
   });
 
   const handleChangeOrder = (e) => {
@@ -118,7 +119,11 @@ function OrderGroupManagement() {
   };
 
   // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
-  const handleOrderFilteredByGroup = ({ group_record_id, group_status,group_no }) => {
+  const handleOrderFilteredByGroup = ({
+    group_record_id,
+    group_status,
+    group_no,
+  }) => {
     let updatedSelectedGroupNo = [];
 
     if (
@@ -130,7 +135,7 @@ function OrderGroupManagement() {
     } else {
       updatedSelectedGroupNo = [
         ...selectedGroupNo,
-        { group_record_id, group_status,group_no },
+        { group_record_id, group_status, group_no },
       ];
     }
 
@@ -280,6 +285,7 @@ function OrderGroupManagement() {
             dispatch(setFilteredGroup([]));
             handleGetGroupList(); // grup listesini guncellemek ıcın tekrardan servise istek attık
             dispatch(setSelectedGroupNos([])); // seçili grubu bırak cunku grup db sılındı yada kapatıldı...
+            dispatch(setSelectedOrderIds([]));
           } else {
             toast.success(response.data);
             const updatedOrderList = filteredGroup.filter(
@@ -310,7 +316,12 @@ function OrderGroupManagement() {
     const groupNos = JSON.stringify(selectedGroupNo);
     try {
       let response;
-      if (selectedGroupNo && selectedGroupNo.length < 2 && (selectedGroupNo[0].group_status === "1" || selectedGroupNo[0].group_status === "2") ) {
+      if (
+        selectedGroupNo &&
+        selectedGroupNo.length < 2 &&
+        (selectedGroupNo[0].group_status === "1" ||
+          selectedGroupNo[0].group_status === "2")
+      ) {
         response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/closeSelectedGroup`,
           {
@@ -383,13 +394,20 @@ function OrderGroupManagement() {
 
   // gruba ekleme popup ını acacak fonksıyon
   const handleOpenGroupNos = () => {
-    if ((selectedGroupNo[0].group_status === "1" || selectedGroupNo[0].group_status === "2") && selectedGroupNo.length === 1) {
+    if (
+      (selectedGroupNo[0].group_status === "1" ||
+        selectedGroupNo[0].group_status === "2") &&
+      selectedGroupNo.length === 1
+    ) {
       dispatch(setGroupListPopup(true));
-    } else if((selectedGroupNo[0].group_status !== "1" || selectedGroupNo[0].group_status !== "2")){
+    } else if (
+      selectedGroupNo[0].group_status !== "1" ||
+      selectedGroupNo[0].group_status !== "2"
+    ) {
       toast.error("Başlamış prosese sipariş ekleyemezsiniz.");
-    }else{
+    } else {
       toast.error("Sadece bir sipariş seçin");
-    };
+    }
   };
 
   const buttons = [
@@ -404,7 +422,7 @@ function OrderGroupManagement() {
       type: "button",
       className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
       onClick: handleRemoveOrderFromGroup,
-    },  
+    },
     {
       children: "Siparişi Teslim Et",
       type: "button",
@@ -490,13 +508,17 @@ function OrderGroupManagement() {
                             {groupList?.map((item, index) => (
                               <ol
                                 onClick={() =>
-                                  handleOrderFilteredByGroup(
-                                    { group_record_id:item.group_record_id, group_status:item.group_status,group_no:item.group_no }
-                                  )
+                                  handleOrderFilteredByGroup({
+                                    group_record_id: item.group_record_id,
+                                    group_status: item.group_status,
+                                    group_no: item.group_no,
+                                  })
                                 }
                                 className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
                                   selectedGroupNo?.some(
-                                    group => group.group_record_id === item.group_record_id
+                                    (group) =>
+                                      group.group_record_id ===
+                                      item.group_record_id
                                   )
                                     ? "bg-slate-300"
                                     : ""

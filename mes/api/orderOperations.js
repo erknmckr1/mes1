@@ -18,6 +18,7 @@ const getCancelReason = async ({ area_name }) => {
   }
 };
 
+//! Seçili siparişi iptal edecek servis grup olayı bu serviste yok... 
 const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser }) => {
   try {
     const result = await WorkLog.update(

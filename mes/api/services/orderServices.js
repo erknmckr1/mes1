@@ -884,7 +884,10 @@ async function stopToSelectedMachine(
       }
     );
 
-    return { status: 200, message: `Makibe başarıyla durduruldu ${group.machine_name}` };
+    return {
+      status: 200,
+      message: `Makibe başarıyla durduruldu ${group.machine_name}`,
+    };
   } catch (err) {
     console.error("Internal server error", err);
     return {
@@ -1135,18 +1138,19 @@ async function deliverSelectedOrder(order, id_dec, op_username, group_no) {
   }
 }
 
-//! Gruptaki işleri bitirip grubu guncelleyecek servis
-async function finishTheGroup({ orders, groups, id_dec }) {
-  const gruopsIds = JSON.parse(groups);
+//! Gruptaki işleri bitirip grubu güncelleyecek servis
+async function finishTheGroup({ groups, id_dec }) {
+  const groupIds = groups;
   try {
     // Grup ID'lerine ait tüm order'ları WorkLog'dan topla
     let allOrderUniqId = [];
-    for (const groupId of gruopsIds) {
+
+    for (const groupId of groupIds) {
       const orders = await WorkLog.findAll({
-        where: { group_no: groupId },
+        where: { group_record_id: groupId.group_record_id },
       });
 
-      // Eğer group_no'ya bağlı order'lar varsa, bunları allOrderIds dizisine ekle
+      // Eğer group_no'ya bağlı order'lar varsa, bunları allOrderUniqId dizisine ekle
       if (orders && orders.length > 0) {
         // work_status'u 1 olan bir order varsa, hata döndür
         const stoppedOrder = orders.find((order) => order.work_status === "2");
@@ -1156,12 +1160,12 @@ async function finishTheGroup({ orders, groups, id_dec }) {
         if (stoppedOrder) {
           return {
             status: 400,
-            message: `Bu grupta durdurulmus bir sipariş var. Öncelikle onu iptal edin yada işi bitirin: ${groupId}`,
+            message: `Bu grupta durdurulmuş bir sipariş var. Öncelikle onu iptal edin ya da işi bitirin: ${groupId.group_no}`,
           };
         } else if (emptyOrder) {
           return {
             status: 400,
-            message: `Bu grupta başlamamış bir iş var grup teslim edilmedi. Yanlıs grupta işlem yapmıs olabilirsiniz.: ${groupId}`,
+            message: `Bu grupta başlamamış bir iş var. Grup teslim edilmedi. Yanlış grupta işlem yapmış olabilirsiniz: ${groupId.group_no}`,
           };
         } else if (ongoingOrder) {
           allOrderUniqId = allOrderUniqId.concat(
@@ -1171,7 +1175,7 @@ async function finishTheGroup({ orders, groups, id_dec }) {
       } else {
         return {
           status: 400,
-          message: `Grup bulunamadı veya içinde sipariş yok: ${groupId}`,
+          message: `Grup bulunamadı veya içinde sipariş yok: ${groupId.group_no}`,
         };
       }
     }
@@ -1195,14 +1199,17 @@ async function finishTheGroup({ orders, groups, id_dec }) {
     // Güncellemeden sonra grubu tekrar kontrol etmek için siparişleri yeniden topla
     let allGroupsCompleted = true;
 
-    for (const groupId of gruopsIds) {
+    for (const groupId of groupIds) {
       const updatedOrders = await WorkLog.findAll({
-        where: { group_no: groupId },
+        where: { group_record_id: groupId.group_record_id },
       });
 
       if (updatedOrders && updatedOrders.length > 0) {
         const incompleteOrder = updatedOrders.find(
-          (order) => order.work_status !== "3" && order.work_status !== "4"
+          (order) =>
+            order.work_status !== "3" &&
+            order.work_status !== "4" &&
+            order.work_status !== "5"
         );
         if (incompleteOrder) {
           allGroupsCompleted = false;
@@ -1211,22 +1218,21 @@ async function finishTheGroup({ orders, groups, id_dec }) {
       } else {
         return {
           status: 400,
-          message: `Güncelleme sonrası grup bulunamadı veya içinde sipariş yok: ${groupId}`,
+          message: `Güncelleme sonrası grup bulunamadı veya içinde sipariş yok: ${groupId.group_no}`,
         };
       }
     }
 
-    // Eğer tüm siparişler "3" veya "4" ise grubu güncelle
-
+    // Eğer tüm siparişler "3" veya "4" "5" ise grubu güncelle
     if (allGroupsCompleted) {
       const [updatedRows] = await GroupRecords.update(
         {
-          group_status: "2", // Grubun yeni durumu
+          group_status: "5", // Grubun yeni durumu
           group_end_date: new Date().toISOString(),
         },
         {
           where: {
-            group_no: gruopsIds,
+            group_record_id: groupIds.map((group) => group.group_record_id),
           },
         }
       );
@@ -1234,11 +1240,11 @@ async function finishTheGroup({ orders, groups, id_dec }) {
       console.log(`Güncellenen satır sayısı: ${updatedRows}`);
     }
 
-    console.log(allGroupsCompleted, gruopsIds);
-
     return {
       status: 200,
-      message: `Grup(lar) kapatıldı siparişler teslim edildi: ${gruopsIds}`,
+      message: `Siparişler bitirldi, gruplar kapatıldı: ${groupIds.map(
+        (group) => group.group_no
+      )}`,
     };
   } catch (err) {
     console.log(err);
@@ -1249,6 +1255,57 @@ async function finishTheGroup({ orders, groups, id_dec }) {
   }
 }
 
+//! Grubu teslim edecek servis gs-6 ws-4
+async function deliverTheGroup(group, id_dec) {
+  try {
+    // Group status "5" değilse işlem yapılmayacak
+    if (group.group_status !== "5") {
+      return {
+        status: 400,
+        message:
+          "Grup teslim edilmeye uygun değil. Lütfen bitmiş bir grubu teslim edin.",
+      };
+    }
+
+    // grupta bulunan siparişleri al...
+    // const orders = await WorkLog.findAll({
+    //   where: {
+    //     group_record_id: group.group_record_id,
+    //     work_status: {
+    //       [Op.in]: ["4", "5"],
+    //     },
+    //   },
+    // });
+
+    // for(const order of orders){
+    //   const measureData = await MeasureData.findOne({
+    //     where:{
+    //       order_no:order.order_no
+    //     }
+    //   });
+    // };
+
+    // Group status "6" yapılıyor (teslim edilmiş)
+    await GroupRecords.update(
+      {
+        group_status: "6",
+      },
+      {
+        where: {
+          group_record_id: group.group_record_id,
+        },
+      }
+    );
+
+    return { status: 200, message: "Grup başarıyla teslim edildi." };
+  } catch (err) {
+    console.error("Grup teslimi sırasında hata oluştu:", err);
+    return {
+      status: 500,
+      message: "Sunucu hatası. Lütfen daha sonra tekrar deneyin.",
+    };
+  }
+}
 //! Seçili siparişleri bitirecek servis
 async function finishSelectedOrders(params) {
   const { orders, id_dec } = params;
@@ -1288,7 +1345,7 @@ async function finishSelectedOrders(params) {
     // Gruba ait tüm siparişleri kontrol et
     const groupOrder = await WorkLog.findAll({
       where: {
-        group_no: orders[0].group_record_id,
+        group_record_id: orders[0].group_record_id,
       },
     });
 
@@ -1390,11 +1447,11 @@ async function conditionalFinish(orders, id_dec, conditional_finish, end_desc) {
       await GroupRecords.update(
         {
           group_end_date: new Date().toISOString(),
-          group_status: "2",
+          group_status: "5",
         },
         {
           where: {
-            group_no: orders[0].group_no,
+            group_record_id: orders[0].group_record_id,
           },
         }
       );
@@ -1411,7 +1468,95 @@ async function conditionalFinish(orders, id_dec, conditional_finish, end_desc) {
   }
 }
 
-//! Kapatılan gruplar ve siparişleri ile aynı yada farklı proseslerde tekrardan iş baslatacak servis
+//! GRUPLU EKRANLARDA siparişi iptal edecek fonksiyon
+async function cancelOrderInGroup(orders, id_dec) {
+  try {
+    const areGroupsSimilar = (orders) => {
+      if (orders.length === 0) {
+        return { status: 400, message: "Sipariş listesi boş olamaz." };
+      }
+      const groupNo = orders[0].group_no;
+      const allSameGroup = orders.every((order) => order.group_no === groupNo);
+      if (!allSameGroup) {
+        return {
+          status: 400,
+          message: "Tüm siparişler aynı grup içinde olmalı.",
+        };
+      }
+      return { status: 200 };
+    };
+
+    const groupsSimilarResult = areGroupsSimilar(orders);
+
+    if (groupsSimilarResult.status !== 200) {
+      return groupsSimilarResult; // Eğer gruplar aynı değilse hata mesajını döner
+    }
+
+    for (const order of orders) {
+      await WorkLog.update(
+        {
+          work_status: "3", // Sipariş iptal ediliyor
+        },
+        {
+          where: {
+            group_record_id: order.group_record_id,
+            uniq_id: order.uniq_id,
+          },
+        }
+      );
+    }
+
+    const allOrdersInGroup = await WorkLog.findAll({
+      where: {
+        group_record_id: orders[0].group_record_id,
+      },
+    });
+
+    // Gruptaki tüm siparişler iptal edilmiş mi?
+    const allOrdersCancelled = allOrdersInGroup.every(
+      (order) => order.work_status === "3"
+    );
+
+    // Grupta hiçbir siparişin durumu "0", "1" veya "2" değil mi?
+    const noPendingOrders = allOrdersInGroup.every(
+      (order) =>
+        order.work_status !== "0" &&
+        order.work_status !== "1" &&
+        order.work_status !== "2"
+    );
+
+    // Eğer tüm siparişler iptal edilmişse, grup statüsü 7 yapılacak
+    if (allOrdersCancelled) {
+      await GroupRecords.update(
+        { group_status: "7" },
+        {
+          where: { group_record_id: orders[0].group_record_id },
+        }
+      );
+      return {
+        status: 200,
+        message: "Gruptaki tüm siparişler iptal edildi...",
+      };
+    }
+
+    // Eğer hiç "0", "1" veya "2" statüsünde sipariş yoksa, grup statüsü 5 yapılacak
+    if (noPendingOrders) {
+      await GroupRecords.update(
+        { group_status: "5" },
+        {
+          where: { group_record_id: orders[0].group_record_id },
+        }
+      );
+    }
+
+    return { status: 200, message: "Sipariş başarıyla iptal edildi." };
+  } catch (err) {
+    console.error("Sunucu hatası:", err);
+    return { status: 500, message: "Sunucu hatası, lütfen tekrar deneyin." };
+  }
+}
+
+//! Kapatılan gruplar ve siparişleri ile aynı yada farklı proseslerde tekrardan iş başlatacak servis
 async function restartGroupProcess(
   areaName,
   section,
@@ -1422,23 +1567,32 @@ async function restartGroupProcess(
   process_id,
   process_name
 ) {
+  const transaction = await sequelize.transaction(); // Transaction başlatıyoruz
+
   try {
+    // Grubun orderlarını bul...
     const orders = await WorkLog.findAll({
       where: {
         group_record_id,
       },
+      transaction, // İşlemi transaction içinde yapıyoruz
     });
+
+    // Eğer grupta sipariş yoksa
     if (orders.length === 0) {
+      await transaction.rollback(); // İşlemi geri alıyoruz
       return {
         status: 404,
-        message: `${group_record_id} idsine ait geçmiş sipariş bulunamadı.`,
+        message: `${group_no} nosuna ait geçmiş sipariş bulunamadı.`,
       };
     }
 
     console.log({ orders: orders });
+
     // Benzersiz group_record_id oluşturma
     const latestRecordId = await GroupRecords.findOne({
       order: [["group_record_id", "DESC"]],
+      transaction, // İşlemi transaction içinde yapıyoruz
     });
 
     let newUniqId;
@@ -1449,18 +1603,21 @@ async function restartGroupProcess(
       newUniqId = "000001";
     }
 
-    const groupRecord = await GroupRecords.create({
-      group_record_id: newUniqId,
-      group_no: group_no,
-      who_started_group: id_dec,
-      group_creation_date: new Date().toISOString(),
-      group_start_date: new Date().toISOString(),
-      group_status: "1",
-      section,
-      area_name: areaName,
-      process_name,
-      machine_name,
-    });
+    // Aynı grup no ile grup kaydı oluştur...
+    const groupRecord = await GroupRecords.create(
+      {
+        group_record_id: newUniqId,
+        group_no: group_no,
+        who_started_group: id_dec,
+        group_creation_date: new Date().toISOString(),
+        group_status: "2", // Yeni grup aktif
+        section,
+        area_name: areaName,
+        process_name,
+        machine_name,
+      },
+      { transaction }
+    );
 
     const currentDateTimeOffset = new Date().toISOString();
 
@@ -1470,6 +1627,7 @@ async function restartGroupProcess(
           where: {
             order_no: order.order_no,
           },
+          transaction, // İşlemi transaction içinde yapıyoruz
         });
 
         if (!sorder) {
@@ -1479,7 +1637,7 @@ async function restartGroupProcess(
         const work_info = {
           section,
           area_name: areaName,
-          work_status: "1",
+          work_status: "0", // İş henüz başlamadı
           process_name,
           machine_name,
           production_amount: sorder.production_amount,
@@ -1490,15 +1648,17 @@ async function restartGroupProcess(
           group_no: group_no,
         };
 
-        await createWork({ work_info, currentDateTimeOffset });
+        await createWork({ work_info, currentDateTimeOffset, transaction });
       }
 
+      await transaction.commit(); // Tüm işlemler başarılı olduysa transaction'ı tamamla
       return {
         status: 200,
         message: "Grup ve siparişler başarıyla yeniden başlatıldı.",
       };
     }
   } catch (err) {
+    await transaction.rollback(); // Hata durumunda tüm işlemleri geri alıyoruz
     console.log(err);
     return {
       status: 500,
@@ -1506,7 +1666,6 @@ async function restartGroupProcess(
     };
   }
 }
-
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -1530,4 +1689,6 @@ module.exports = {
   startToProcess,
   stopToSelectedMachine,
   restartToMachine,
+  cancelOrderInGroup,
+  deliverTheGroup,
 };

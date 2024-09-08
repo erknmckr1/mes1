@@ -22,7 +22,9 @@ const {
   restartGroupProcess,
   startToProcess,
   stopToSelectedMachine,
-  restartToMachine
+  restartToMachine,
+  cancelOrderInGroup,
+  deliverTheGroup
 } = require("../services/orderServices");
 
 //!
@@ -167,6 +169,7 @@ router.put("/deliverSelectedOrder", async (req, res) => {
 //! Gruptaki siparişleri bitirecek route
 router.put("/finishTheGroup", async (req, res) => {
   const { orders, groups, id_dec } = req.body;
+  console.log(groups);
   const result = await finishTheGroup({ groups, id_dec });
   return res.status(result.status).json(result.message);
 });
@@ -240,6 +243,21 @@ router.put("/stopToSelectedMachine",async(req,res)=>{
 router.put("/restartToMachine",async(req,res)=>{
   const {selectedGroup,id_dec,area_name} = req.body;
   const result = await restartToMachine(selectedGroup,id_dec,area_name);
+  return res.status(result.status).json(result.message);
+});
+
+//! GRUPLU EKRANLARDA siparişi iptal edecek route...
+router.put("/cancelOrderInGroup", async (req, res) => {
+  const { orders, id_dec } = req.body;
+  const result = await cancelOrderInGroup(orders, id_dec);
+  return res.status(result.status).json(result.message);
+});
+
+//! GRUPLU EKRANLARDA grubu teslim edece route... gs
+router.put("/deliverTheGroup", async (req, res) => {
+  const { group, id_dec } = req.body;
+  console.log(group)
+  const result = await deliverTheGroup(group, id_dec);
   return res.status(result.status).json(result.message);
 });
 module.exports = router;
