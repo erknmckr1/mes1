@@ -96,21 +96,10 @@ function LeaveTable({ status }) {
   });
 
   const columns = [
-    { field: "name", headerName: "Kullanici İsmi", width: 150 },
-    {
-      field: "leave_start_date",
-      headerName: "İzin Başlangıc Tarihi",
-      width: 180,
-    },
-    { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180 },
-    { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
-    { field: "leave_status", headerName: "İzin Durumu", width: 150 },
-    { field: "onayci1", headerName: "1. Onaylayici", width: 150 },
-    { field: "onayci2", headerName: "2. Onaylayici", width: 150 },
     {
       field: "operation",
       headerName: "Operasyon",
-      width: 100,
+      width: 120,
       renderCell: (params) => {
         const row = params.row;
 
@@ -125,7 +114,7 @@ function LeaveTable({ status }) {
                   row.leave_status === "2. Onaycı bekleniyor"))) &&
               (hasFirstApprovalPermission || hasSecondApprovalPermission) && (
                 <button onClick={() => approveLeave(row)}>
-                  <GiConfirmed className="text-green-600 hover:text-green-400 text-[25px]" />
+                  <GiConfirmed className="text-green-600 hover:text-green-400 text-[45px]" />
                 </button>
               )}
             {((status === "alltimeoff" &&
@@ -136,13 +125,24 @@ function LeaveTable({ status }) {
               status === "pending") &&
               hasCancelPermission && (
                 <button onClick={() => cancelPendingApprovalLeave(row)}>
-                  <GiCancel className="text-center text-red-600 hover:text-red-400 text-[25px]" />
+                  <GiCancel className="text-center text-red-600 hover:text-red-400 text-[45px]" />
                 </button>
               )}
           </>
         );
       },
     },
+    { field: "name", headerName: "Kullanici İsmi", width: 150 },
+    {
+      field: "leave_start_date",
+      headerName: "İzin Başlangıc Tarihi",
+      width: 180,
+    },
+    { field: "leave_end_date", headerName: "İşe Dönüş Tarihi", width: 180 },
+    { field: "leave_reason", headerName: "İzin Nedeni", width: 200 },
+    { field: "leave_status", headerName: "İzin Durumu", width: 150 },
+    { field: "onayci1", headerName: "1. Onaylayici", width: 150 },
+    { field: "onayci2", headerName: "2. Onaylayici", width: 150 },
   ];
 
   // Tıklanan satırın bıglılerını tutacak fonksıyon...

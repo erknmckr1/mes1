@@ -68,6 +68,6 @@ function LoginPopUp({ setIsLoggedIn }) {
       <div className="w-screen h-screen  absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
   );
-}
+};
 
 export default LoginPopUp;

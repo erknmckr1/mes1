@@ -9,6 +9,8 @@ export const userSlice = createSlice({
     onBreak_users:[], // moladaki kullanıcıları tutacak state
     allUser:[],
     permissions: [], // Kullanıcı izin bilgileri
+    user: null ,// Buzlama gıbı ekranlarda bazı operasyonlardan once kullanıcıdan ıd ıstıyoruz...
+    userIdPopup:false
   },
   reducers: {
     setUserInfo: (state, action) => {
@@ -26,12 +28,18 @@ export const userSlice = createSlice({
     setPermissions: (state, action) => {
       state.permissions = action.payload;
     },
+    setUser: (state,action) => {
+      state.user = action.payload;
+    },
+    setUserIdPopup: (state, action) => {
+      state.userIdPopup = action.payload;
+    },    
   },
 });
 
 
 
-export const { setUserInfo,setOperatorid,setOnBreakUsers,setAllUser,setPermissions, } = userSlice.actions;
+export const { setUserInfo,setOperatorid,setOnBreakUsers,setAllUser,setPermissions,setUser,setUserIdPopup } = userSlice.actions;
 
 //! Kullanıcının sahıp oldugu ızınlerı al...
 export const fetchUserPermissions = (userId) => async (dispatch) => {

@@ -142,7 +142,7 @@ router.get("/approveLeave", async (req, res) => {
     leave_uniq_id,
     currentDateTimeOffset
   );
-  res.status(result.status).json({ message: result.message });
+  res.status(result.status).send(result.message);
 });
 
 router.get("/getManagerApprovedLeaves", async (req, res) => {

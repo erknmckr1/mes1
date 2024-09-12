@@ -1,6 +1,9 @@
 import React from "react";
 import Button from "../ui/Button";
-import { setConditionalFinishPopup, setSelectedOrder } from "@/redux/orderSlice";
+import {
+  setConditionalFinishPopup,
+  setSelectedOrder,
+} from "@/redux/orderSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -12,10 +15,10 @@ function ConditionalFinish() {
   const [conditionReason, setConditionReason] = useState([]);
   const [selectedConditionReason, setSelectedConditionReason] = useState([]);
   const { selectedOrder } = useSelector((state) => state.order);
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
   const [desc, setDesc] = useState("");
   const pathName = usePathname();
-  const areaName = pathName.split("/")[3]
+  const areaName = pathName.split("/")[3];
   const handleClosePopup = () => {
     dispatch(setConditionalFinishPopup(false));
   };
@@ -50,9 +53,9 @@ function ConditionalFinish() {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/conditionalFinish`,
         {
           orders: selectedOrder,
-          id_dec,
+          id_dec: user.id_dec,
           conditional_finish: selectedConditionReason,
-          end_desc:desc
+          end_desc: desc,
         }
       );
 
@@ -62,7 +65,7 @@ function ConditionalFinish() {
         setSelectedConditionReason("");
         dispatch(setSelectedOrder([]));
         dispatch(setConditionalFinishPopup(false));
-      }else {
+      } else {
         toast.error(response.data || "Şartlı bitirme işlemi başarısız oldu.");
       }
     } catch (err) {
@@ -82,7 +85,7 @@ function ConditionalFinish() {
       children: "Şartlı Bitir",
       type: "button",
       className: "w-[150px] h-[100px] sm:py-2 text-md",
-      onClick:handleConditionalFinish
+      onClick: handleConditionalFinish,
     },
   ];
 

@@ -43,5 +43,6 @@ router.get('/:userId/getuserinfo',async(req,res)=> {
     console.log(userId)
     const result = await getUserWithId(userId);
     return res.status(result.status).json(result.message);
-})
+});
+
 module.exports = router;

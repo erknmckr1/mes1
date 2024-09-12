@@ -22,14 +22,15 @@ function MeasurementDataEntry() {
     quantity: 0.0,
   });
   const [orderData, setOrderData] = useState(null);
-  const [allMeasurement,setAllMeasurement] = useState([]);
+  const [allMeasurement, setAllMeasurement] = useState([]);
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
-  const {userInfo} = useSelector(state => state.user)
+  const { userInfo } = useSelector((state) => state.user);
   const handleClosePopup = () => {
     dispatch(setMeasurementPopup(false));
   };
+  const { selectedGroupNo } = useSelector((state) => state.order);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,24 +43,26 @@ function MeasurementDataEntry() {
   //! Ilgılı bolumdeki olcumlerı cekecek query...
   const getAllMeasurement = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasurements`,{
-            params:{
-                areaName
-            }
-        });
-
-        if(response.status === 200){
-            setAllMeasurement(response.data);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasurements`,
+        {
+          params: {
+            areaName,
+          },
         }
+      );
 
+      if (response.status === 200) {
+        setAllMeasurement(response.data);
+      }
     } catch (err) {
-        console.log(err);
+      console.log(err);
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     getAllMeasurement();
-  },[])
+  }, []);
 
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
@@ -85,28 +88,32 @@ function MeasurementDataEntry() {
   //! Verı kaydı isteği...
   const handleSumbit = async () => {
     const measurementsInfo = {
-          order_no: orderData?.ORDER_ID,
-          material_no: orderData?.MATERIAL_NO,
-          operator: userInfo?.id_dec,
-          area_name: areaName,
-          entry_measurement: formState.entryMeasurement,
-          exit_measurement: formState.exitMeasurement,
-          entry_weight_50cm: formState.entryGramage,
-          exit_weight_50cm: formState.exitGramage,
-          data_entry_date:"" ,
-          description: orderData?.ITEM_DESCRIPTION,
-          measurement_package: formState.quantity,
-    }
+      order_no: orderData?.ORDER_ID,
+      material_no: orderData?.MATERIAL_NO,
+      operator: userInfo?.id_dec,
+      area_name: areaName,
+      entry_measurement: formState.entryMeasurement,
+      exit_measurement: formState.exitMeasurement,
+      entry_weight_50cm: formState.entryGramage,
+      exit_weight_50cm: formState.exitGramage,
+      data_entry_date: "",
+      description: orderData?.ITEM_DESCRIPTION,
+      measurement_package: formState.quantity,
+      group_no:selectedGroupNo[0].group_no
+    };
     try {
-        let response;
-        if(measurementsInfo.entry_measurement && measurementsInfo.entry_weight_50cm){
-             response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/measurements`,
-                measurementsInfo
-              );
-        }else{
-            toast.error("İlgili yerleri doldurum sonra kaydet butonuna basın.")
-        }
+      let response;
+      if (
+        measurementsInfo.entry_measurement &&
+        measurementsInfo.entry_weight_50cm
+      ) {
+        response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/measurements`,
+          measurementsInfo
+        );
+      } else {
+        toast.error("İlgili yerleri doldurum sonra kaydet butonuna basın.");
+      }
       if (response.status === 200) {
         toast.success("Veriler başarıyla kaydedildi!");
         setFormState({
@@ -124,13 +131,13 @@ function MeasurementDataEntry() {
         });
         getAllMeasurement();
       }
-      
     } catch (err) {
       console.log(err);
+      toast.error(err.response.data)
     }
   };
 
-  // formu temızleyecek state... 
+  // formu temızleyecek state...
   const handleDeleteForm = () => {
     setFormState({
       order_no: "",
@@ -146,8 +153,8 @@ function MeasurementDataEntry() {
       measurement_package: 0.0,
     });
 
-    console.log(formState)
-  }
+    console.log(formState);
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -203,78 +210,78 @@ function MeasurementDataEntry() {
     },
   ];
 
-  const rows = allMeasurement?.map((item,index)=>{
+  const rows = allMeasurement?.map((item, index) => {
     const data_entry_date = item.data_entry_date
-        ? new Date(item.data_entry_date)
-        : null;
-    return  {
-        id: item.id,
-        order_no: item.order_no,
-        material_no: item.material_no,
-        operator: item.operator,
-        area_name: item.area_name,
-        entry_measurement: item.entry_measurement,
-        exit_measurement: item.exit_measurement,
-        entry_weight_50cm: item.entry_weight_50cm,
-        exit_weight_50cm: item.exit_weight_50cm,
-        data_entry_date: data_entry_date,
-        description: item.description,
-        measurement_package: item.measurement_package,
-      }
-  })
+      ? new Date(item.data_entry_date)
+      : null;
+    return {
+      id: item.id,
+      order_no: item.order_no,
+      material_no: item.material_no,
+      operator: item.operator,
+      area_name: item.area_name,
+      entry_measurement: item.entry_measurement,
+      exit_measurement: item.exit_measurement,
+      entry_weight_50cm: item.entry_weight_50cm,
+      exit_weight_50cm: item.exit_weight_50cm,
+      data_entry_date: data_entry_date,
+      description: item.description,
+      measurement_package: item.measurement_package,
+    };
+  });
 
   const inputFields = [
-  {
-    name: "orderId",
-    placeholder: "Sipariş Barkodunu Okutunuz",
-    type: "text",
-    value: formState.orderId || "",  // Eğer undefined ise "" kullan
-    onkeydown: handleKeyDown,
-  },
-  {
-    name: "entryMeasurement",
-    placeholder: "Giriş Ölçüsünü Giriniz",
-    type: "number",
-    value: formState.entryMeasurement || "",  
-  },
-  {
-    name: "exitMeasurement",
-    placeholder: "Çıkış Ölçüsünü Giriniz",
-    type: "number",
-    value: formState.exitMeasurement || "",  
-  },
-  {
-    name: "entryGramage",
-    placeholder: "50 cm İçin Giriş Gramajı",
-    type: "number",
-    value: formState.entryGramage || "",  
-  },
-  {
-    name: "exitGramage",
-    placeholder: "50 cm İçin Çıkış Gramajı",
-    type: "number",
-    value: formState.exitGramage || "",  
-  },
-  {
-    name: "gramage",
-    placeholder: "Gramaj",
-    type: "number",
-    value: formState.gramage || "", 
-  }, 
-  {
-    name: "quantity",
-    placeholder: "Adet",
-    type: "number",
-    value: formState.quantity || "",  
-  },
-];
+    {
+      name: "orderId",
+      placeholder: "Sipariş Barkodunu Okutunuz",
+      type: "text",
+      value: formState.orderId || "", // Eğer undefined ise "" kullan
+      onkeydown: handleKeyDown,
+    },
+    {
+      name: "entryMeasurement",
+      placeholder: "Giriş Ölçüsünü Giriniz",
+      type: "number",
+      value: formState.entryMeasurement || "",
+    },
+    {
+      name: "exitMeasurement",
+      placeholder: "Çıkış Ölçüsünü Giriniz",
+      type: "number",
+      value: formState.exitMeasurement || "",
+    },
+    {
+      name: "entryGramage",
+      placeholder: "50 cm İçin Giriş Gramajı",
+      type: "number",
+      value: formState.entryGramage || "",
+    },
+    {
+      name: "exitGramage",
+      placeholder: "50 cm İçin Çıkış Gramajı",
+      type: "number",
+      value: formState.exitGramage || "",
+    },
+    {
+      name: "gramage",
+      placeholder: "Gramaj",
+      type: "number",
+      value: formState.gramage || "",
+    },
+    {
+      name: "quantity",
+      placeholder: "Adet",
+      type: "number",
+      value: formState.quantity || "",
+    },
+  ];
 
   const buttons = [
     {
       children: "Kaydet",
       type: "button",
       className: "w-[150px] sm:py-2 text-sm",
-      onClick:handleSumbit
+      onClick: handleSumbit,
     },
     {
       children: "Güncelle",
@@ -285,7 +292,7 @@ function MeasurementDataEntry() {
       children: "Temizle",
       type: "button",
       className: "w-[150px] sm:py-2 text-sm",
-      onClick:handleDeleteForm
+      onClick: handleDeleteForm,
     },
     {
       children: "Kapat",
@@ -348,6 +355,7 @@ function MeasurementDataEntry() {
                     onKeyDown={field.onkeydown}
                   />
                 ))}
+                <span className="text-white font-semibold text-[25px]">Seçili Grup No: {selectedGroupNo[0].group_no}</span>
               </div>
             </div>
             {/* buttons */}

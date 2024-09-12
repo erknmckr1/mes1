@@ -24,7 +24,9 @@ const {
   stopToSelectedMachine,
   restartToMachine,
   cancelOrderInGroup,
-  deliverTheGroup
+  deliverTheGroup,
+  addReadOrderToGroup,
+  getWorksWithoutId,
 } = require("../services/orderServices");
 
 //!
@@ -118,7 +120,8 @@ router.get("/getWorkToBuzlama", async (req, res) => {
 
 //! Grubu makineye yollayacak route
 router.post("/sendToMachine", async (req, res) => {
-  const { id_dec, machine_name, process_name, process_id, group_record_id } = req.body;
+  const { id_dec, machine_name, process_name, process_id, group_record_id } =
+    req.body;
   const result = await sendToMachine({
     id_dec,
     machine_name,
@@ -130,7 +133,7 @@ router.post("/sendToMachine", async (req, res) => {
 });
 
 //! Makineye gönderilen prosesi baslatacak route
-router.put("/startToProcess",async(req,res)=>{
+router.put("/startToProcess", async (req, res) => {
   const { id_dec, group_record_id } = req.body;
   const result = await startToProcess({
     id_dec,
@@ -216,7 +219,7 @@ router.post("/restartGroupProcess", async (req, res) => {
     group_no,
     group_record_id,
     process_id,
-    process_name
+    process_name,
   } = req.body;
   console.log(req.body);
   const result = await restartGroupProcess(
@@ -233,16 +236,21 @@ router.post("/restartGroupProcess", async (req, res) => {
 });
 
 //! Makineyi durduracak route...
-router.put("/stopToSelectedMachine",async(req,res)=>{
-  const {selectedGroup,id_dec,stop_reason_id,area_name} = req.body;
-  const result = await stopToSelectedMachine(selectedGroup,id_dec,stop_reason_id,area_name);
+router.put("/stopToSelectedMachine", async (req, res) => {
+  const { selectedGroup, id_dec, stop_reason_id, area_name } = req.body;
+  const result = await stopToSelectedMachine(
+    selectedGroup,
+    id_dec,
+    stop_reason_id,
+    area_name
+  );
   return res.status(result.status).json(result.message);
 });
 
 //! Makineyi tekrardan baslataca router...
-router.put("/restartToMachine",async(req,res)=>{
-  const {selectedGroup,id_dec,area_name} = req.body;
-  const result = await restartToMachine(selectedGroup,id_dec,area_name);
+router.put("/restartToMachine", async (req, res) => {
+  const { selectedGroup, id_dec, area_name } = req.body;
+  const result = await restartToMachine(selectedGroup, id_dec, area_name);
   return res.status(result.status).json(result.message);
 });
 
@@ -256,8 +264,32 @@ router.put("/cancelOrderInGroup", async (req, res) => {
 //! GRUPLU EKRANLARDA grubu teslim edece route... gs
 router.put("/deliverTheGroup", async (req, res) => {
   const { group, id_dec } = req.body;
-  console.log(group)
   const result = await deliverTheGroup(group, id_dec);
   return res.status(result.status).json(result.message);
 });
+
+//! Okutulan siparişleri bir gruba ekleyecek route...
+router.put("/addReadOrderToGroup", async (req, res) => {
+  const { group, orderList, user, areaName, section } = req.body;
+  const result = await addReadOrderToGroup(
+    group,
+    orderList,
+    user,
+    areaName,
+    section
+  );
+  return res.status(result.status).json(result.message);
+});
+
+router.get("/getWorksWithoutId", async (req, res) => {
+  const { areaName } = req.query;
+  try {
+    const result = await getWorksWithoutId(areaName);
+    return res.status(result.status).json(result.message);
+  } catch (error) {
+    console.error("Error fetching works without ID:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 module.exports = router;

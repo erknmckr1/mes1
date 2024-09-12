@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 
-function GroupNos({ fetchBuzlamaWorks,handleGetGroupList }) {
+function GroupNos({ fetchBuzlamaWorks, handleGetGroupList }) {
   const [selectedSendGroup, setSelectedSendGroup] = useState("");
   const { groupList, selectedOrderId, selectedGroupNo } = useSelector(
     (state) => state.order
@@ -68,19 +68,26 @@ function GroupNos({ fetchBuzlamaWorks,handleGetGroupList }) {
           <div className="h-[60%] w-full text-black">
             <ul className="w-full h-full">
               {groupList &&
-                groupList.map((item, index) => (
-                  <ol
-                    className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                      selectedSendGroup === item.group_record_id ? "bg-slate-300" : ""
-                    } `}
-                    key={index}
-                    onClick={() => {
-                      handleSelectedSendGroup(item.group_record_id);
-                    }}
-                  >
-                    {item.group_no}
-                  </ol>
-                ))}
+                groupList
+                  ?.filter(
+                    (item) =>
+                      item.group_status === "1" || item.group_status === "2"
+                  )
+                  .map((item, index) => (
+                    <ol
+                      className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
+                        selectedSendGroup === item.group_record_id
+                          ? "bg-slate-300"
+                          : ""
+                      } `}
+                      key={index}
+                      onClick={() => {
+                        handleSelectedSendGroup(item.group_record_id);
+                      }}
+                    >
+                      {item.group_no}
+                    </ol>
+                  ))}
             </ul>
           </div>
           <div className="h-[30%] grid grid-cols-2 place-content-center place-items-center">

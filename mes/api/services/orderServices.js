@@ -9,6 +9,42 @@ const MeasureData = require("../../models/MeasureData");
 const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
 const sequelize = require("../../lib/dbConnect");
 
+//! Bölümdeki tüm durmuş ve aktif işleri çekecek query...
+async function getWorksWithoutId(areaName) {
+  try {
+    const result = await WorkLog.findAll({
+      where: {
+        area_name: areaName,
+        work_status: {
+          [Op.in]: ["1", "2"], // '1' veya '2' durumundaki işleri getir
+        },
+      },
+    });
+
+    // Eğer sonuç varsa 200 status ve sonuçları dön
+    if (result.length > 0) {
+      return {
+        status: 200,
+        message: result,
+      };
+    } 
+    // Eğer sonuç yoksa 404 status ve mesaj dön
+    else {
+      return {
+        status: 404,
+        message: "No works found" ,
+      };
+    }
+  } catch (err) {
+    console.error("Database error:", err);
+    // Hata oluşursa 500 status ve hata mesajı döndür
+    return {
+      status: 500,
+      message:  "Database query failed" ,
+    };
+  }
+}
+
 //! id ye gore sıparısı getırecek servis...
 async function getOrderById(orderId) {
   try {
@@ -32,7 +68,7 @@ async function getOrderById(orderId) {
   }
 }
 
-//! Buzlama işlerini çekecek fonksiyon
+//! Buzlama işlerini çekecek fonksiyon 6 ve 7 harıc  tum statu dekı ıslerı cekecek servis
 const getWorksToBuzlama = async () => {
   try {
     const result = await WorkLog.findAll({
@@ -226,6 +262,7 @@ const getGroupList = async () => {
           [Op.in]: ["1", "2", "3", "4", "5"], // Hem "1" hem de "2" olan grupları getirir
         },
       },
+      order: [["group_creation_date", "DESC"]], // En yeni tarih en başta olacak şekilde sıralar
     });
 
     if (result.length === 0) {
@@ -990,6 +1027,57 @@ async function restartToMachine(selectedGroup, id_dec, area_name) {
 async function createMeasurementData(measurementsInfo) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
+    const group = await GroupRecords.findAll({
+      where: {
+        group_no: measurementsInfo.group_no,
+      },
+    });
+
+    console.log(group);
+
+    // Grup statüsü 5 ya da 7 olanların kontrolünü yap
+    const areTheGroupsValid = group.every(
+      (item) => item.group_status === "5" || item.group_status === "7"
+    );
+
+    if (!areTheGroupsValid) {
+      return {
+        status: 404,
+        message:
+          "Grubun diğer prosesleri bitirilmemiş öncelikle o grupları bitirin.",
+      };
+    }
+
+    const measure = await MeasureData.findOne({
+      where: {
+        order_no: measurementsInfo.order_no,
+        group_no: measurementsInfo.group_no,
+      },
+    });
+
+    if (measure) {
+      return {
+        status: 400,
+        message: `${measure.order_no} numaralı siparişin daha önce ölçümü alınmış.`,
+      };
+    }
+
+    // const allOrderNo = [];
+
+    // for (const grp of group) {
+    //   const orders = await WorkLog.findAll({
+    //     where: {
+    //       group_no: grp.group_no,
+    //     },
+    //   });
+
+    //   orders.forEach((item) => {
+    //     if (!allOrderNo.includes(item.order_no)) {
+    //       allOrderNo.push(item.order_no);
+    //     }
+    //   });
+    // };
+
     // Yeni ölçüm verisini oluştur
     const newMeasurement = await MeasureData.create({
       order_no: measurementsInfo.order_no,
@@ -1003,6 +1091,7 @@ async function createMeasurementData(measurementsInfo) {
       data_entry_date: currentDateTimeOffset,
       description: measurementsInfo.description,
       measurement_package: measurementsInfo.measurement_package,
+      group_no: measurementsInfo.group_no,
     });
 
     // Başarılı yanıt döndür
@@ -1032,6 +1121,7 @@ async function getAllMeasurements(areaName) {
       where: {
         area_name: areaName,
       },
+      order: [["data_entry_date", "DESC"]],
     });
 
     // Başarılı yanıt döndür
@@ -1169,7 +1259,9 @@ async function finishTheGroup({ groups, id_dec }) {
           };
         } else if (ongoingOrder) {
           allOrderUniqId = allOrderUniqId.concat(
-            orders.map((order) => order.uniq_id)
+            orders
+              .filter((order) => order.work_status === "1") // Sadece work_status === "1" olan siparişleri dahil et
+              .map((order) => order.uniq_id) // Bu siparişlerin uniq_id'sini al
           );
         }
       } else {
@@ -1266,24 +1358,45 @@ async function deliverTheGroup(group, id_dec) {
           "Grup teslim edilmeye uygun değil. Lütfen bitmiş bir grubu teslim edin.",
       };
     }
+    // teslim edilecek grupları al
+    const groups = await GroupRecords.findAll({
+      where: {
+        group_no: group.group_no,
+        group_status: "5",
+      },
+    });
 
-    // grupta bulunan siparişleri al...
-    // const orders = await WorkLog.findAll({
-    //   where: {
-    //     group_record_id: group.group_record_id,
-    //     work_status: {
-    //       [Op.in]: ["4", "5"],
-    //     },
-    //   },
-    // });
+    const allOrders = [];
 
-    // for(const order of orders){
-    //   const measureData = await MeasureData.findOne({
-    //     where:{
-    //       order_no:order.order_no
-    //     }
-    //   });
-    // };
+    for (const grp of groups) {
+      const orders = await WorkLog.findAll({
+        where: {
+          group_no: grp.group_no,
+        },
+      });
+
+      orders.forEach((item) => {
+        if (!allOrders.includes(item.order_no)) {
+          allOrders.push(item);
+        }
+      });
+    }
+
+    for (const order of allOrders) {
+      const orderMeasure = await MeasureData.findOne({
+        where: {
+          order_no: order.order_no,
+          group_no: order.group_no,
+        },
+      });
+
+      if (!orderMeasure) {
+        return {
+          status: 404,
+          message: `Prosesi teslim edebilmek için eksik ölçümleri yapınız: order no: ${order.order_no} grup no: ${order.group_no}`,
+        };
+      }
+    }
 
     // Group status "6" yapılıyor (teslim edilmiş)
     await GroupRecords.update(
@@ -1496,6 +1609,7 @@ async function cancelOrderInGroup(orders, id_dec) {
       await WorkLog.update(
         {
           work_status: "3", // Sipariş iptal ediliyor
+          group_no: "",
         },
         {
           where: {
@@ -1666,6 +1780,42 @@ async function restartGroupProcess(
     };
   }
 }
+
+//! okutulan siparişi seçili gruba ekleyecek servis...
+async function addReadOrderToGroup(group, orderList, user, areaName, section) {
+  if (!orderList || !user) {
+    return { status: 400, message: "Missing required parameters." };
+  }
+
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    for (const order of orderList) {
+      const work_info = {
+        section,
+        area_name: areaName,
+        work_status: "0",
+        production_amount: order.PRODUCTION_AMOUNT,
+        order_id: order.ORDER_ID,
+        user_id_dec: user.id_dec,
+        op_username: user.op_username,
+        group_no: group.group_no,
+        group_record_id: group.group_record_id,
+      };
+
+      await createWork({ work_info, currentDateTimeOffset });
+    }
+
+    return {
+      status: 200,
+      message: `Okutulan siparişler başarıyla ${group.group_no}'lu gruba eklendi...`,
+    };
+  } catch (err) {
+    return {
+      status: 500,
+      message: "Internal server error",
+    };
+  }
+}
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -1691,4 +1841,6 @@ module.exports = {
   restartToMachine,
   cancelOrderInGroup,
   deliverTheGroup,
+  addReadOrderToGroup,
+  getWorksWithoutId,
 };

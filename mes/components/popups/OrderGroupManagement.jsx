@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { setOrderGroupManagement, fetchBuzlamaWorks } from "@/redux/orderSlice";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import GroupNos from "./GroupNos";
+import { setUser, setUserIdPopup } from "@/redux/userSlice";
 import {
   setGroupListPopup,
   setGetGroupList,
@@ -28,7 +29,7 @@ function OrderGroupManagement() {
     selectedOrderId,
     buzlamaWork,
   } = useSelector((state) => state.order);
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
   const [operatorId, setOperatorId] = useState("222222222");
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
@@ -88,6 +89,52 @@ function OrderGroupManagement() {
     dispatch(fetchBuzlamaWorks({ areaName }));
   }, [dispatch, areaName]);
 
+  //! okutulmus siparişi seçili gruba ekleyecek query...
+  const addReadOrderToGroup = async () => {
+    if (orderList.length === 0) {
+      toast.error("Gruba eklemek istediğiniz siparişleri okutunuz.");
+      return;
+    }
+
+    if (!user || !user.id_dec) {
+      // Eğer kullanıcı ID yoksa, pop-up aç
+      dispatch(setUserIdPopup(true));
+      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
+    }
+
+    // kullanıcı sadece bir grup seçsin...
+    if (selectedGroupNo.length === 0 || selectedGroupNo.length > 1) {
+      toast.error("Sadece siparişleri ekleyeceğiniz grubu seçin...");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/addReadOrderToGroup`,
+        {
+          orderList,
+          user,
+          group: selectedGroupNo[0],
+          areaName,
+          section,
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(response.data);
+        handleGetGroupList();
+        dispatch(fetchBuzlamaWorks({ areaName }));
+        setOrderId("");
+        setOrderList([]);
+        dispatch(setSelectedOrderIds([]));
+        dispatch(setSelectedGroupNos([]));
+        dispatch(setFilteredGroup([]));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
     handleGetGroupList();
   }, []);
@@ -116,6 +163,7 @@ function OrderGroupManagement() {
     dispatch(setSelectedOrderIds([]));
     dispatch(setSelectedGroupNos([]));
     dispatch(setFilteredGroup([]));
+    dispatch(setUser(null));
   };
 
   // grupları sec dızıde topla sonrasında orderları gruplara göre filtrele...
@@ -149,6 +197,7 @@ function OrderGroupManagement() {
         ...ordersForGroup.map((order) => ({
           order_no: order.order_no,
           uniq_id: order.uniq_id,
+          work_status: order.work_status,
         })),
       ];
     });
@@ -160,21 +209,32 @@ function OrderGroupManagement() {
   //! Grub olusturacak query...
   const handleCreateOrderGroup = async () => {
     try {
-      const orderListString = JSON.stringify(orderList); // orderList dizisini JSON string'e çeviriyoruz
+      if (orderList.length === 0) {
+        // Eğer orderList boşsa hata mesajı ver ve fonksiyondan çık
+        toast.error("Grup oluşturmak için siparişleri okutun.");
+        return;
+      }
 
+      const orderListString = JSON.stringify(orderList); // orderList dizisini JSON string'e çeviriyoruz
       let response;
 
-      if (operatorId && orderList.length > 0) {
-        response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createOrderGroup`,
-          {
-            orderList: orderListString,
-            operatorId,
-            section,
-            areaName,
-          }
-        );
+      if (!user || !user.id_dec) {
+        // Eğer kullanıcı ID yoksa, pop-up aç
+        dispatch(setUserIdPopup(true));
+        return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
       }
+
+      // Eğer kullanıcı ID mevcutsa ve orderList'te eleman varsa, API çağrısını yap
+      response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createOrderGroup`,
+        {
+          orderList: orderListString,
+          operatorId: user.id_dec, // ID buradan alınıyor
+          section,
+          areaName,
+        }
+      );
+
       if (response && response.status === 200) {
         toast.success("Sipariş grubu başarıyla oluşturuldu.");
         handleGetGroupList();
@@ -188,13 +248,11 @@ function OrderGroupManagement() {
       }
     } catch (err) {
       console.log(err);
-      if (err.request.status === 400) {
-        // Server bir yanıt döndürdüyse
+      if (err.response && err.response.status === 400) {
         toast.error(err.response.data || "Sipariş grubu oluşturulamadı.");
         setOrderId("");
         setOrderList([]);
       } else {
-        // İstek hazırlanırken bir hata oluştu
         toast.error("İstek hazırlanırken bir hata oluştu.");
       }
     }
@@ -477,16 +535,19 @@ function OrderGroupManagement() {
                         ))}
                       </div>
                     </div>
-                    <div className="w-full h-1/3 flex items-center justify-center">
+                    <div className="w-full h-1/3 flex items-center gap-x-2 justify-center">
                       <Button
                         children={"Grup Oluştur"}
                         type={"button"}
                         className={"w-[150px] sm:py-2 text-sm gap-2"}
                         onClick={handleCreateOrderGroup}
                       />
-                      <span
+                      <Button
+                        children={"Gruba Ekle"}
+                        type={"button"}
                         className={"w-[150px] sm:py-2 text-sm gap-2"}
-                      ></span>
+                        onClick={addReadOrderToGroup}
+                      />
                     </div>
                   </div>
                 </div>
@@ -503,31 +564,37 @@ function OrderGroupManagement() {
                         <span className="h-[10%] border-b text-center text-sm py-1">
                           Grup Listesi
                         </span>
-                        <div className=" h-[90%] w-full ">
+                        <div className="h-[90%] w-full">
                           <ul className="w-full h-full overflow-y-auto">
-                            {groupList?.map((item, index) => (
-                              <ol
-                                onClick={() =>
-                                  handleOrderFilteredByGroup({
-                                    group_record_id: item.group_record_id,
-                                    group_status: item.group_status,
-                                    group_no: item.group_no,
-                                  })
-                                }
-                                className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
-                                  selectedGroupNo?.some(
-                                    (group) =>
-                                      group.group_record_id ===
-                                      item.group_record_id
-                                  )
-                                    ? "bg-slate-300"
-                                    : ""
-                                }`}
-                                key={index}
-                              >
-                                {item.group_no}
-                              </ol>
-                            ))}
+                            {groupList
+                              ?.filter(
+                                (item) =>
+                                  item.group_status === "1" ||
+                                  item.group_status === "2"
+                              )
+                              .map((item, index) => (
+                                <ol
+                                  onClick={() =>
+                                    handleOrderFilteredByGroup({
+                                      group_record_id: item.group_record_id,
+                                      group_status: item.group_status,
+                                      group_no: item.group_no,
+                                    })
+                                  }
+                                  className={`w-full py-3 px-2 shadow-md border-b cursor-pointer hover:bg-slate-200 ${
+                                    selectedGroupNo?.some(
+                                      (group) =>
+                                        group.group_record_id ===
+                                        item.group_record_id
+                                    )
+                                      ? "bg-slate-300"
+                                      : ""
+                                  }`}
+                                  key={index}
+                                >
+                                  {item.group_no}
+                                </ol>
+                              ))}
                           </ul>
                         </div>
                       </div>

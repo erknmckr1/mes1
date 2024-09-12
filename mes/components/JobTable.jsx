@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSelectedOrder } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
-
+import { getWorksWithoutId } from "@/redux/orderSlice";
 const theme = createTheme({
   components: {
     MuiDataGrid: {
@@ -32,7 +32,9 @@ const theme = createTheme({
 
 function JobTable() {
   const dispatch = useDispatch();
-  const { selectedOrder, workList,selectedGroupNo } = useSelector((state) => state.order);
+  const { selectedOrder, workList, selectedGroupNo } = useSelector(
+    (state) => state.order
+  );
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
@@ -66,7 +68,7 @@ function JobTable() {
       sortable: false,
     },
     { field: "user_id_dec", headerName: "Operator ID", width: 130 },
-    { field: "op_username", headerName: "Operator Adi" , width:160 },
+    { field: "op_username", headerName: "Operator Adi", width: 160 },
     { field: "order_no", headerName: "Order ID", width: 130 },
     { field: "process_id", headerName: "Process ID", width: 130 },
     {
@@ -94,8 +96,12 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
-      if (userInfo?.id_dec) {
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+      if (areaName === "kalite") {
+        // ID ile siparişleri çek
+        getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
+      } else if (areaName === "buzlama") {
+        // ID olmadan tüm siparişleri çek
+        dispatch(getWorksWithoutId({ areaName }));
       }
       console.log("veri çekildi...");
     };
@@ -110,15 +116,16 @@ function JobTable() {
     return () => clearInterval(interval);
   }, [areaName, userInfo, dispatch]);
 
- 
   const getFilteredRows = () => {
     if (areaName === "buzlama" && selectedGroupNo.length > 0) {
       // Buzlama ekranında, seçili gruplara göre filtreleme
       return workList
-        .filter(
+        ?.filter(
           (item) =>
             item.work_status !== "4" &&
-            selectedGroupNo.some((group) => group.group_record_id === item.group_record_id)
+            selectedGroupNo.some(
+              (group) => group.group_record_id === item.group_record_id
+            )
         )
         .map((item, index) => {
           const workStartDate = item.work_start_date
@@ -143,13 +150,13 @@ function JobTable() {
             work_status: item.work_status,
             uniq_id: item.uniq_id,
             group_no: item.group_no,
-            group_record_id:item.group_record_id
+            group_record_id: item.group_record_id,
           };
         });
     } else {
       // Diğer ekranlarda, tüm işleri listeleme (bitmiş olanlar hariç)
       return workList
-        .filter((item) => item.work_status !== "4")
+        ?.filter((item) => item.work_status !== "4")
         .map((item, index) => {
           const workStartDate = item.work_start_date
             ? new Date(item.work_start_date)
@@ -173,7 +180,7 @@ function JobTable() {
             work_status: item.work_status,
             uniq_id: item.uniq_id,
             group_no: item.group_no,
-            group_record_id:item.group_record_id
+            group_record_id: item.group_record_id,
           };
         });
     }
@@ -181,21 +188,21 @@ function JobTable() {
 
   const rows = getFilteredRows();
 
-    const getRowClassName = (params) => {
-      const { row } = params;
-      // Seçili satırların stilini belirle
-      if (selectedOrder?.some((item) => item.id === row.id)) {
-        return "selected-row";
-      }
-      // İş durumuna göre stil ayarlama
-      if (row.work_status === "1") {
-        return "green-row";
-      } else if (row.work_status === "2") {
-        return "red-row";
-      }
-  
-      return "";
-    };
+  const getRowClassName = (params) => {
+    const { row } = params;
+    // Seçili satırların stilini belirle
+    if (selectedOrder?.some((item) => item.id === row.id)) {
+      return "selected-row";
+    }
+    // İş durumuna göre stil ayarlama
+    if (row.work_status === "1") {
+      return "green-row";
+    } else if (row.work_status === "2") {
+      return "red-row";
+    }
+
+    return "";
+  };
 
   return (
     <ThemeProvider theme={theme}>

@@ -336,7 +336,14 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     // kayıt bulunamadıysa
     if (!leaveRecord) {
       console.error("Leave record not found");
-      return { status: 404, message: "Leave record not found" };
+      return {
+        status: 200,
+        message: `
+          <div style="width: 300px; height: 100px; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0;">
+            <p style='color:yellow; text-align: center;'>İzin Kaydı Bulunamadı.</p>
+          </div>
+        `
+      };
     }
 
     const user = await User.findOne({
@@ -535,12 +542,19 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     }
 
     await leaveRecord.save();
-    return { status: 200, message: "Leave approved successfully" };
+    return {
+      status: 200,
+      message: `
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: green;">
+          <p style='color:#ffffff; font-family: "Times New Roman", Times, serif; font-weight: bold; font-size: 50px; text-align: center;'>${leaveRecord.op_username} için izin talebi onaylandı</p>
+        </div>
+      `
+    };
   } catch (error) {
     console.error("Error in approveLeave function:", error);
     return { status: 500, message: "Internal Server Error" };
   }
-}
+};
 
 //! Yöneticinin onayladıgı kayıtları cekecek query..
 async function getManagerApprovedLeaves({ id_dec }) {
