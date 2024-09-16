@@ -7,7 +7,8 @@ const globalSlice = createSlice({
     isMolaPopup: false,
     theme: "dark",
     selectedFlow: "İzin Talebi Oluştur", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
-    returnUrl:"sss"
+    returnUrl:"sss",
+    isSurveyPopup:false,
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -25,6 +26,9 @@ const globalSlice = createSlice({
     },
     setReturnUrl:(state,action) => {
       state.returnUrl = action.payload;
+    },
+    setSurveyPopup:(state,action)=>{
+      state.isSurveyPopup = action.payload
     }
   },
 });
@@ -36,6 +40,7 @@ export const {
   setMolaPopup,
   setTheme,
   setSelectedFlow,
-  setReturnUrl
+  setReturnUrl,
+  setSurveyPopup
 } = globalSlice.actions;
 export default globalSlice.reducer;

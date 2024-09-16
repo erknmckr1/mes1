@@ -21,6 +21,7 @@ function MeasurementDataEntry() {
     gramage: 0.0,
     quantity: 0.0,
   });
+  const [selectedRow, setSelectedRow] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [allMeasurement, setAllMeasurement] = useState([]);
   const dispatch = useDispatch();
@@ -85,8 +86,28 @@ function MeasurementDataEntry() {
       console.log(err);
     }
   };
+
+  // tablodan veri seç...
+  const handleRowSelection = (params) => {
+    // sipariş seçili mi ?
+    const isSelected = selectedRow?.some((item) => item.id === params.row.id);
+
+    if (isSelected) {
+      const updatedSelection = selectedRow.filter(
+        (item) => item.id !== params.row.id
+      );
+      setSelectedRow(updatedSelection);
+    } else {
+      setSelectedRow([params.row]);
+    }
+  };
   //! Verı kaydı isteği...
   const handleSumbit = async () => {
+    if (!orderData || orderData?.length === 0) {
+      toast.error("Okutulan sipariş hatalı, sipariş bulunamadı.");
+      return;
+    }
+
     const measurementsInfo = {
       order_no: orderData?.ORDER_ID,
       material_no: orderData?.MATERIAL_NO,
@@ -96,24 +117,29 @@ function MeasurementDataEntry() {
       exit_measurement: formState.exitMeasurement,
       entry_weight_50cm: formState.entryGramage,
       exit_weight_50cm: formState.exitGramage,
-      data_entry_date: "",
+      data_entry_date: "", // İsterseniz burada bir tarih atayabilirsiniz.
       description: orderData?.ITEM_DESCRIPTION,
       measurement_package: formState.quantity,
-      group_no:selectedGroupNo[0].group_no
+      group_no: selectedGroupNo[0].group_no,
     };
     try {
       let response;
-      if (
-        measurementsInfo.entry_measurement &&
-        measurementsInfo.entry_weight_50cm
-      ) {
-        response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/measurements`,
-          measurementsInfo
-        );
-      } else {
-        toast.error("İlgili yerleri doldurum sonra kaydet butonuna basın.");
+
+      if (!measurementsInfo.entry_measurement) {
+        toast.error("Giriş ölçümü alanı doldurulmalıdır.");
+        return;
       }
+
+      if (!measurementsInfo.entry_weight_50cm) {
+        toast.error("Giriş gramajı alanı doldurulmalıdır.");
+        return;
+      }
+
+      response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/measurements`,
+        measurementsInfo
+      );
+
       if (response.status === 200) {
         toast.success("Veriler başarıyla kaydedildi!");
         setFormState({
@@ -132,11 +158,24 @@ function MeasurementDataEntry() {
         getAllMeasurement();
       }
     } catch (err) {
+      toast.error("Veri kaydedilemedi: " + err.message);
       console.log(err);
-      toast.error(err.response.data)
     }
   };
 
+  // useEffect(() => {
+  //   if (selectedRow) {
+  //     setFormState({
+  //       orderId: "",
+  //       entryMeasurement: "",
+  //       exitMeasurement: "",
+  //       entryGramage: 0.0,
+  //       exitGramage: 0.0,
+  //       gramage: 0.0,
+  //       quantity: 0.0,
+  //     })
+  //   }
+  // }, [selectedRow]);
   // formu temızleyecek state...
   const handleDeleteForm = () => {
     setFormState({
@@ -185,28 +224,28 @@ function MeasurementDataEntry() {
   });
 
   const columns = [
-    { field: "order_no", headerName: "Sipariş No", width: 150 },
-    { field: "material_no", headerName: "Malzeme No", width: 150 },
+    { field: "order_no", headerName: "Sipariş No", width: 120 },
+    { field: "material_no", headerName: "Malzeme No", width: 120 },
     { field: "operator", headerName: "Operator", width: 150 },
     { field: "area_name", headerName: "Bölüm", width: 150 },
-    { field: "entry_measurement", headerName: "Giriş Ölçüsü", width: 130 },
-    { field: "exit_measurement", headerName: "Çıkış Ölçüsü", width: 130 },
+    { field: "entry_measurement", headerName: "Giriş Ölçüsü", width: 110 },
+    { field: "exit_measurement", headerName: "Çıkış Ölçüsü", width: 110 },
     {
       field: "entry_weight_50cm",
       headerName: "50cm İçin Giriş Gramajı",
-      width: 180,
+      width: 130,
     },
     {
       field: "exit_weight_50cm",
       headerName: "50cm İçin Çıkış Gramajı",
-      width: 180,
+      width: 130,
     },
     { field: "data_entry_date", headerName: "Veri Giriş Tarihi", width: 180 },
-    { field: "description", headerName: "Açıklama", width: 200 },
+    { field: "description", headerName: "Açıklama", width: 180 },
     {
       field: "measurement_package",
       headerName: "measurement_package",
-      width: 180,
+      width: 120,
     },
   ];
 
@@ -224,7 +263,16 @@ function MeasurementDataEntry() {
       exit_measurement: item.exit_measurement,
       entry_weight_50cm: item.entry_weight_50cm,
       exit_weight_50cm: item.exit_weight_50cm,
-      data_entry_date: data_entry_date,
+      data_entry_date: data_entry_date
+        ? data_entry_date.toLocaleDateString("tr-TR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        : "",
       description: item.description,
       measurement_package: item.measurement_package,
     };
@@ -289,18 +337,21 @@ function MeasurementDataEntry() {
       className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
     },
     {
-      children: "Temizle",
-      type: "button",
-      className: "w-[150px] sm:py-2 text-sm",
-      onClick: handleDeleteForm,
-    },
-    {
       children: "Kapat",
       type: "button",
       className: "w-[150px] sm:py-2 text-sm",
       onClick: handleClosePopup,
     },
   ];
+
+  const getRowClassName = (params) => {
+    const { row } = params;
+    // Seçili satırların stilini belirle
+    if (selectedRow?.some((item) => item.id === row.id)) {
+      return "selected-row";
+    }
+    return "";
+  };
   return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
@@ -318,14 +369,16 @@ function MeasurementDataEntry() {
                   rows={rows}
                   columns={columns}
                   pageSize={5}
-                  checkboxSelection={false}
+                  rowHeight={70}
                   disableRowSelectionOnClick // Seçimi devre dışı bırakır
+                  getRowClassName={getRowClassName}
+                  onRowClick={(params) => handleRowSelection(params)}
                   sx={{
                     "& .MuiDataGrid-row": {
                       color: "white", // Satır metinlerini beyaz yapar
                     },
                     "& .MuiDataGrid-cell": {
-                      borderColor: "#444", // Hücre sınır rengini koyu yapar
+                      borderColor: "#fff", // Hücre sınır rengini koyu yapar
                     },
                   }}
                 />
@@ -355,7 +408,9 @@ function MeasurementDataEntry() {
                     onKeyDown={field.onkeydown}
                   />
                 ))}
-                <span className="text-white font-semibold text-[25px]">Seçili Grup No: {selectedGroupNo[0].group_no}</span>
+                <span className="text-white font-semibold text-[25px]">
+                  Seçili Grup No: {selectedGroupNo[0].group_no}
+                </span>
               </div>
             </div>
             {/* buttons */}

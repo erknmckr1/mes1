@@ -10,7 +10,7 @@ import {
 import { BsCheckCircle } from "react-icons/bs";
 import { useSelector, useDispatch } from "react-redux";
 import { FaRegUser } from "react-icons/fa";
-import { setSelectedFlow } from "@/redux/globalSlice";
+import { setSelectedFlow, setSurveyPopup } from "@/redux/globalSlice";
 import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
 import Link from "next/link";
@@ -20,15 +20,14 @@ import { toast } from "react-toastify";
 
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
-  const [isMesaiOpen, setIsMesaiOpen] = useState(false); // mesai menusunu acılıp kapanmasını yonetecek state 
-  const [isIzinOpen, setIsIzinOpen] = useState(false);  // izin menusunu acılıp kapanmasını yonetecek state 
-  const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false);  // satın alma menusunu acılıp kapanmasını yonetecek state 
+  const [isMesaiOpen, setIsMesaiOpen] = useState(false); // mesai menusunu acılıp kapanmasını yonetecek state
+  const [isIzinOpen, setIsIzinOpen] = useState(false); // izin menusunu acılıp kapanmasını yonetecek state
+  const [İsSatinAlma, setIsSatinAlmaOpen] = useState(false); // satın alma menusunu acılıp kapanmasını yonetecek state
   const { selectedFlow } = useSelector((state) => state.global);
   const { selectedManagement } = useSelector((state) => state.flowmanagement);
   const dispatch = useDispatch();
   const { userInfo, permissions } = useSelector((state) => state.user);
   const pathName = usePathname();
-
 
   // Tıklanan menuye göre ilgili stateleri günceller.
   const toggleSection = (flow) => {
@@ -47,6 +46,9 @@ function HomeSidebars() {
         setIsMesaiOpen(false);
         setIsIzinOpen(false);
         setIsSatinAlmaOpen(!İsSatinAlma);
+        break;
+      case "anket":
+        dispatch(setSurveyPopup(true)); // anket popup ının durumunu tutacak state...
         break;
       default:
         break;
@@ -100,6 +102,11 @@ function HomeSidebars() {
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
+    {
+      label: "Midas 2024 Memnuniyet Anketi",
+      flow: "anket",    
+      href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
+    },
     // {
     //   label: "Mesai Yönetimi",
     //   icon: <FcOvertime />,
@@ -128,7 +135,6 @@ function HomeSidebars() {
     // { label: "Raporlar", icon: <TbChartInfographic /> },
   ];
 
-  console.log({selectedManagement:selectedManagement , selectedFlow:selectedFlow})
 
   const handleSelection = (item) => {
     dispatch(setSelectedFlow(item));
@@ -186,7 +192,7 @@ function HomeSidebars() {
                   >
                     <div className="flex gap-x-3 items-center">
                       {item.icon}
-                      <button>{item.label}</button>
+                      <Link href={`${item?.href}`} >{item.label}</Link>
                     </div>
                     {item.items &&
                       (item.isOpen ? (

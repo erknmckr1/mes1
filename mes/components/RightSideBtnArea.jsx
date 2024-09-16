@@ -885,6 +885,53 @@ function RightSideBtnArea() {
     },
   ];
 
+  const cekic_buttons = [
+    {
+      onClick: () => handleOpenStopPopup("order"),
+      children: "Siparişi Durdur",
+      type: "button",
+      className:
+        "w-[140px] hover:bg-red-500 bg-red-600 sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: restartWork,
+      children: "Yeniden Başlat",
+      type: "button",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: handleOpenFinishedPopup,
+      children: "Prosesi Bitir",
+      type: "button",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: handleCancelWork,
+      children: "Sipariş İptal",
+      type: "button",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: "",
+      children: "Bölüme Katıl",
+      type: "button",
+      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+    {
+      onClick: "",
+      children: "Bölümden Ayrıl",
+      type: "button",
+      className:
+        "w-[140px] hover:bg-red-500 bg-red-600 sm:px-1 sm:py-4  text-sm",
+      disabled: isCurrentBreak,
+    },
+  ];
+
   //? Route gore section un sağ tarafına farklı yapıda render edecegız.
   const renderButtons = () => {
     if (areaName === "kalite" || areaName === "kurutiras") {
@@ -900,6 +947,23 @@ function RightSideBtnArea() {
               disabled={isCurrentBreak}
             />
           ))}
+        </div>
+      );
+    } else if (areaName === "cekic") {
+      return (
+        <div className="">
+          <div className="w-full grid grid-cols-2 gap-1">
+            {cekic_buttons.map((button, index) => (
+              <Button
+                key={index}
+                className={button.className}
+                children={button.children}
+                type={button.type}
+                onClick={button.onClick}
+                disabled={isCurrentBreak}
+              />
+            ))}
+          </div>
         </div>
       );
     } else {
