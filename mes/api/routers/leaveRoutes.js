@@ -15,6 +15,7 @@ const {
   confirmSelections,
   cancelSelectionsLeave,
   createNewLeaveByIK,
+  leavesApprovedByTheInfirmary,
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -55,14 +56,14 @@ router.post("/createNewLeave", async (req, res) => {
 
 //! İK tarafından ızın olusturacak endpoint
 router.post("/createNewLeaveByIK", async (req, res) => {
-  const { formData, id_dec, op_username, auth1, auth2 } =
-    req.body;
+  const { formData, id_dec, op_username, auth1, auth2, userInfo } = req.body;
   const result = await createNewLeaveByIK(
     formData,
     id_dec,
     op_username,
     auth1,
-    auth2
+    auth2,
+    userInfo
   );
   res.status(result.status).json(result.message);
 });
@@ -200,6 +201,14 @@ router.get("/cancelSelectionsLeave", async (req, res) => {
   const selections = leaveIds.split(",");
   const result = await cancelSelectionsLeave(selections, id_dec);
   res.status(result.status).json(result.message);
+});
+
+//! Revir tarafından onaylanan izinleri çekecek route...
+router.get("/leavesApprovedByTheInfirmary", async (req, res) => {
+  const { id_dec, roleId } = req.query; // Query parametrelerini alıyoruz
+  console.log(req.query); // Kontrol amaçlı log
+  const result = await leavesApprovedByTheInfirmary(id_dec, roleId); // Servisi çağırıyoruz
+  res.status(result.status).json(result.message); // Sonucu döndürüyoruz
 });
 
 module.exports = router;

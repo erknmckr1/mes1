@@ -122,7 +122,14 @@ const createNewLeave = async (
 };
 
 //! Ik kullanıcı için yeni bir izin oluşturursa...
-async function createNewLeaveByIK(formData, id_dec, op_username, auth1, auth2) {
+async function createNewLeaveByIK(
+  formData,
+  id_dec,
+  op_username,
+  auth1,
+  auth2,
+  userInfo
+) {
   const { baslangicTarihi, donusTarihi, aciklama, izinSebebi } = formData;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -148,8 +155,10 @@ async function createNewLeaveByIK(formData, id_dec, op_username, auth1, auth2) {
       leave_reason: izinSebebi,
       leave_description: aciklama,
       leave_status: "3",
-      auth1,
-      auth2,
+      auth1: userInfo.id_dec,
+      auth2: userInfo.id_dec,
+      first_approver_approval_time: currentDateTimeOffset,
+      second_approver_approval_time: currentDateTimeOffset,
     });
 
     console.log(result);
@@ -263,7 +272,12 @@ async function cancelPendingApprovalLeave({
       permissions.includes("2. Onay") &&
       permissions.includes("İptal");
 
-    if (isIK) {
+    const isRevir =
+      permissions.includes("1. Onay") &&
+      permissions.includes("2. Onay") &&
+      permissions.includes("İptal");
+
+    if (isIK || isRevir) {
       const updatedRowsCount = await LeaveRecords.update(
         {
           // burada donen deger 1 yada 0 mıs
@@ -342,7 +356,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
           <div style="width: 300px; height: 100px; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0;">
             <p style='color:yellow; text-align: center;'>İzin Kaydı Bulunamadı.</p>
           </div>
-        `
+        `,
       };
     }
 
@@ -374,7 +388,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
 
     const auth2Email = await User.findOne({
       where: {
-        auth2:leaveRecord.auth2,
+        auth2: leaveRecord.auth2,
       },
       attributes: ["e_mail"], // Sadece e_mail alanını çekmek için
     });
@@ -548,13 +562,13 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: green;">
           <p style='color:#ffffff; font-family: "Times New Roman", Times, serif; font-weight: bold; font-size: 50px; text-align: center;'>${leaveRecord.op_username} için izin talebi onaylandı</p>
         </div>
-      `
+      `,
     };
   } catch (error) {
     console.error("Error in approveLeave function:", error);
     return { status: 500, message: "Internal Server Error" };
   }
-};
+}
 
 //! Yöneticinin onayladıgı kayıtları cekecek query..
 async function getManagerApprovedLeaves({ id_dec }) {
@@ -796,6 +810,34 @@ async function cancelSelectionsLeave(selections, id_dec) {
   }
 }
 
+//! Revirin onayladığı izinleri çekecek servis...
+async function leavesApprovedByTheInfirmary(id_dec, roleId) {
+  try {
+    let result = null;
+
+    // Sadece roleId 7 olanlar için sorgu çalışacak
+    if (roleId === "7") {
+      result = await LeaveRecords.findAll({
+        where: {
+          auth1: id_dec,
+          auth2: id_dec,
+        },
+        order: [["leave_creation_date", "DESC"]],
+      });
+    }
+
+    // Eğer sonuç varsa 200, yoksa 404 döndür
+    if (result && result.length > 0) {
+      return { status: 200, message: result };
+    } else {
+      return { status: 404, message: "Onaylanan izin bulunamadı." };
+    }
+  } catch (err) {
+    console.log(err); // Hata durumunu logla
+    return { status: 500, message: "İç sunucu hatası." }; // 500 Internal Server Error döndür
+  }
+}
+
 module.exports = {
   getLeaveReasons,
   createNewLeave,
@@ -811,4 +853,5 @@ module.exports = {
   confirmSelections,
   cancelSelectionsLeave,
   createNewLeaveByIK,
+  leavesApprovedByTheInfirmary,
 };

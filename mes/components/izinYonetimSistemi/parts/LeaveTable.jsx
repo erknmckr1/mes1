@@ -22,7 +22,7 @@ function LeaveTable({ status }) {
   console.log(permissions);
   //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
-    const { id_dec } = userInfo;
+    const { id_dec, roleId } = userInfo;
     try {
       const endpointMap = {
         pending: "/api/leave/getPendingLeaves",
@@ -31,6 +31,7 @@ function LeaveTable({ status }) {
         pendingApproval: "/api/leave/getPendingApprovalLeaves",
         managerApproved: "/api/leave/getManagerApprovedLeaves",
         alltimeoff: "/api/leave/alltimeoff",
+        leavesapprovedbytheinfirmary: "/api/leave/leavesApprovedByTheInfirmary",
       };
       const endpoint = endpointMap[status];
 
@@ -39,6 +40,11 @@ function LeaveTable({ status }) {
       if (endpoint === "/api/leave/alltimeof") {
         response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`
+        );
+      } else if (endpoint === "/api/leave/leavesApprovedByTheInfirmary") {
+        response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
+          { params: { id_dec, roleId } }
         );
       } else {
         response = await axios.get(
@@ -54,6 +60,7 @@ function LeaveTable({ status }) {
       }
     } catch (err) {
       console.log(err);
+      toast.error(err ? err.response.data : "");
       dispatch(setSelectedRecords([]));
     }
   };
@@ -117,7 +124,8 @@ function LeaveTable({ status }) {
                   <GiConfirmed className="text-green-600 hover:text-green-400 text-[45px]" />
                 </button>
               )}
-            {((status === "alltimeoff" &&
+            {(((status === "alltimeoff" ||
+              status === "leavesapprovedbytheinfirmary") &&
               (row.leave_status === "İzin Onaylandı" ||
                 row.leave_status === "1. Onaycı bekleniyor" ||
                 row.leave_status === "2. Onaycı bekleniyor")) ||
@@ -161,7 +169,15 @@ function LeaveTable({ status }) {
 
   //! İzni İptal Edecek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
-    if (confirm("Onay bekleyen izin talebi iptal edilsin mi ? ")) {
+    if (
+      confirm(
+        `${
+          userInfo?.roleId === 7
+            ? "İzin iptal edilsin mi ? "
+            : "Onay bekleyen izin talebi iptal edilsin mi ? "
+        }`
+      )
+    ) {
       try {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave`,

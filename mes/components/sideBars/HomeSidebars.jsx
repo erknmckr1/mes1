@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { TbNurse } from "react-icons/tb";
 
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
@@ -90,7 +91,7 @@ function HomeSidebars() {
           icon: <FaEdit />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur`,
         },
-        (onay1 || onay2) && {
+        (onay1 || onay2) && userInfo.roleId !== 7 && {
           label: "İzin Talebi Onayla",
           icon: <BsCheckCircle />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebionayla`,
@@ -99,6 +100,11 @@ function HomeSidebars() {
           label: "Tüm İzin Talepleri (İK)",
           icon: <MdDynamicFeed />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/tumizintalepleri`,
+        },
+        userInfo?.roleId === 7 && {
+          label: "Personel İzin Olustur",
+          icon: <TbNurse />,
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/personelizinolustur`,
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },

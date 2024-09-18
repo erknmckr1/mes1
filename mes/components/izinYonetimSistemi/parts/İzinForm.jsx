@@ -68,7 +68,9 @@ function IzinForm() {
         formData.donusTarihi === "" ||
         selectedReason === ""
       ) {
-        toast.error("Lütfen tüm alanları doldurunuz. (İzin Nedeni-Başlangıç-Bitiş Tarihleri)");
+        toast.error(
+          "Lütfen tüm alanları doldurunuz. (İzin Nedeni-Başlangıç-Bitiş Tarihleri)"
+        );
         return;
       }
 
@@ -165,15 +167,23 @@ function IzinForm() {
           >
             <option value="">Seçiniz:</option>
             {leaveResons &&
-              leaveResons.map((item, index) => (
-                <option
-                  className="text-[20px]"
-                  key={index}
-                  value={item.leave_reason}
-                >
-                  {item.leave_reason}
-                </option>
-              ))}
+              leaveResons.map((item, index) => {             
+                  if (
+                    item.leave_reason !== "Doktor Sevk" &&
+                    item.leave_reason !== "Doktor Istirahat"
+                  ) {
+                    return (
+                      <option
+                        className="text-[20px]"
+                        key={index}
+                        value={item.leave_reason}
+                      >
+                        {item.leave_reason}
+                      </option>
+                    );
+                  }
+                return null;
+              })}
           </select>
         </div>
         <div>

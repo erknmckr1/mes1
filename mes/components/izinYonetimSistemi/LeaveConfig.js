@@ -47,5 +47,15 @@ export const leaveConfig = {
       {id:"2",label:"Personel İzin Talebi Olustur"}
     ],
   },
+  "Personel İzin Olustur": {
+    tabs: {
+      1: { title: "", component: <HrLeaveForm status="personnelcreateleave" /> },
+      2: { title: "", component: <LeaveTable status="leavesapprovedbytheinfirmary" /> },
+    },
+    buttons: [
+      {id:"1",label:"Personel İzin Talebi Olustur"},
+      { id: "2", label: "Revir Tarafından Oluşturulan İzinler" },
+    ],
+  },
   // Diğer flowları gerektiği gibi ekleyin
 };

@@ -96,7 +96,7 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
-      if (areaName === "kalite") {
+      if (areaName === "kalite" && userInfo) {
         // ID ile siparişleri çek
         getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
       } else if (areaName === "buzlama") {

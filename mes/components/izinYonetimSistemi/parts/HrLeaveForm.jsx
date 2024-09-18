@@ -1,8 +1,8 @@
 import React from "react";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 
 function HrLeaveForm() {
   const [leaveResons, setLeaveReasons] = useState([]);
@@ -17,8 +17,7 @@ function HrLeaveForm() {
     aciklama: "",
     izinSebebi: "",
   });
-
-  console.log(formData);
+  const { userInfo } = useSelector((state) => state.user);
 
   useEffect(() => {
     const getLeaveReasons = async () => {
@@ -53,7 +52,7 @@ function HrLeaveForm() {
     } catch (err) {
       console.log(err);
       toast.error("Kullanıcı bilgileri çekilemedi. (Yanlış ID)");
-      setUser(null)
+      setUser(null);
     }
   };
 
@@ -88,7 +87,10 @@ function HrLeaveForm() {
             `${op_username}/${user?.id_dec} kullanıcısı için izin talebi olusturulsun mu ?`
           )
         ) {
-          if(formData.kullanici === user.id_dec || formData.kullanici === user.id_hex ){
+          if (
+            formData.kullanici === user.id_dec ||
+            formData.kullanici === user.id_hex
+          ) {
             const response = await axios.post(
               `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeaveByIK`,
               {
@@ -97,20 +99,33 @@ function HrLeaveForm() {
                 op_username,
                 auth1,
                 auth2,
+                userInfo
               }
             );
-  
+
             if (response.status === 200) {
               toast.success(
                 `${formData.kullanici}/${user?.op_username} kullanıcısı için başarıyla izin olusturuldu.`
               );
+              setFormData({
+                kullanici: "",
+                baslangicTarihi: "",
+                donusTarihi: "",
+                tel: "",
+                adres: "",
+                aciklama: "",
+                izinSebebi: "",
+              });
+              setUser(null);
             } else {
               toast.error(
                 `${formData.kullanici}/${user?.op_username} kullanıcısı için izin olusturulamadı.`
               );
             }
-          }else{
-            toast.error("Personel id'yi okuttuktan sonra 'Personel Ara' butonuna tıklamayı unutmayın. Girilen id ile izin olusturmaya calıstıgınız personelin id'si uyusmuyor.")
+          } else {
+            toast.error(
+              "Personel id'yi okuttuktan sonra 'Personel Ara' butonuna tıklamayı unutmayın. Girilen id ile izin olusturmaya calıstıgınız personelin id'si uyusmuyor."
+            );
           }
         }
       }
@@ -179,19 +194,46 @@ function HrLeaveForm() {
               className="text-black w-full h-full border rounded-md"
               value={selectedReason}
               onChange={handleSelectedReason}
-              required
             >
               <option value="">Seçiniz:</option>
               {leaveResons &&
-                leaveResons.map((item, index) => (
-                  <option
-                    className="text-[20px]"
-                    key={index}
-                    value={item.leave_reason}
-                  >
-                    {item.leave_reason}
-                  </option>
-                ))}
+                leaveResons.map((item, index) => {
+                  // roleId 7 ise "Doktor Sevk" VEYA "Doktor Istirahat" göster
+                  if (userInfo?.roleId === 7) {
+                    if (
+                      item.leave_reason === "Doktor Sevk" ||
+                      item.leave_reason === "Doktor Istirahat"
+                    ) {
+                      return (
+                        <option
+                          className="text-[20px]"
+                          key={index}
+                          value={item.leave_reason}
+                        >
+                          {item.leave_reason}
+                        </option>
+                      );
+                    }
+                  }
+                  // roleId 7 değilse, "Doktor Sevk" ve "Doktor Istirahat" haricini göster
+                  else {
+                    if (
+                      item.leave_reason !== "Doktor Sevk" &&
+                      item.leave_reason !== "Doktor Istirahat"
+                    ) {
+                      return (
+                        <option
+                          className="text-[20px]"
+                          key={index}
+                          value={item.leave_reason}
+                        >
+                          {item.leave_reason}
+                        </option>
+                      );
+                    }
+                  }
+                  return null;
+                })}
             </select>
           </div>
           <div>
@@ -241,39 +283,41 @@ function HrLeaveForm() {
           </button>
         </div>
       </form>
-      {user && <div className="py-4">
-        <h1 className="font-bold mb-4">İzin Alınacak Personel</h1>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <span className="font-semibold">Personel Ad Soyad:</span>
-            <span className="p-2">{user?.op_username}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Personel ID:</span>
-            <span className="p-2">{user?.id_dec}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Çalıştığı Bölüm:</span>
-            <span className="p-2">{user?.op_section}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Çalıştığı Birim:</span>
-            <span className="p-2">{user?.part}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Görev:</span>
-            <span className="p-2">{user?.title}</span>
-          </div>
-          <div>
-            <span className="font-semibold">1. Onaycı:</span>
-            <span className="p-2">{user?.auth1}</span>
-          </div>
-          <div>
-            <span className="font-semibold">2. Onaycı:</span>
-            <span className="p-2">{user?.auth2}</span>
+      {user && (
+        <div className="py-4">
+          <h1 className="font-bold mb-4">İzin Alınacak Personel</h1>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <span className="font-semibold">Personel Ad Soyad:</span>
+              <span className="p-2">{user?.op_username}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Personel ID:</span>
+              <span className="p-2">{user?.id_dec}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Çalıştığı Bölüm:</span>
+              <span className="p-2">{user?.op_section}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Çalıştığı Birim:</span>
+              <span className="p-2">{user?.part}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Görev:</span>
+              <span className="p-2">{user?.title}</span>
+            </div>
+            <div>
+              <span className="font-semibold">1. Onaycı:</span>
+              <span className="p-2">{user?.auth1}</span>
+            </div>
+            <div>
+              <span className="font-semibold">2. Onaycı:</span>
+              <span className="p-2">{user?.auth2}</span>
+            </div>
           </div>
         </div>
-      </div>}
+      )}
     </div>
   );
 }
