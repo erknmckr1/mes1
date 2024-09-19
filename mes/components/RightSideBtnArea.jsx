@@ -83,6 +83,9 @@ function RightSideBtnArea() {
         case "handleOpenStopPopup":
           handleOpenStopPopup("group");
           break;
+        case "openMeasurementPopup":
+          handleOpenMeasurementPopup();
+          break;
         default:
           break;
       }
@@ -276,9 +279,7 @@ function RightSideBtnArea() {
       setRetryAction("openConditionalFinishPopup");
       return;
     }
-
     dispatch(setConditionalFinishPopup(true));
-    dispatch(setUser(null));
   };
 
   //! Bir siparişi iptal edecek popup
@@ -735,6 +736,12 @@ function RightSideBtnArea() {
         err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
       );
       dispatch(setUser(null));
+      dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
+      dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
+      dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
+      dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
+      dispatch(handleGetGroupList());
+      dispatch(setUser(null));
     }
   };
 
@@ -749,10 +756,18 @@ function RightSideBtnArea() {
 
   // ölçüm veri girişi popup ını açacak fonksıyon...
   const handleOpenMeasurementPopup = () => {
+    if (!user || !user.id_dec) {
+      // Eğer kullanıcı ID yoksa, pop-up aç
+      dispatch(setUserIdPopup(true));
+      setRetryAction("openMeasurementPopup"); // İşlem türünü belirle
+      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
+    }
+
     if (selectedGroupNo && selectedGroupNo.length === 1) {
       dispatch(setMeasurementPopup(true));
     } else {
       toast.error("Veri girişi yapmak istediğiniz grubu seçin");
+      dispatch(setUser(null));
     }
   };
 

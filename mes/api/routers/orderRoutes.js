@@ -27,6 +27,9 @@ const {
   deliverTheGroup,
   addReadOrderToGroup,
   getWorksWithoutId,
+  getMetarialMeasureData,
+  getMeasureWithOrderId,
+  deleteMeasurement
 } = require("../services/orderServices");
 
 //!
@@ -145,7 +148,6 @@ router.put("/startToProcess", async (req, res) => {
 //! Ölçüm verilerini yollayacagımız route
 router.post("/measurements", async (req, res) => {
   const measurementsInfo = req.body;
-  console.log("x");
   const result = await createMeasurementData(measurementsInfo);
   return res.status(result.status).json(result.message);
 });
@@ -281,6 +283,7 @@ router.put("/addReadOrderToGroup", async (req, res) => {
   return res.status(result.status).json(result.message);
 });
 
+//! kullanıcı ıd olmadan ıs verılerını cekecek route
 router.get("/getWorksWithoutId", async (req, res) => {
   const { areaName } = req.query;
   try {
@@ -290,6 +293,26 @@ router.get("/getWorksWithoutId", async (req, res) => {
     console.error("Error fetching works without ID:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
+});
+
+//! okutulan siparişin ölçüm verisini getirecek route...
+router.get("/getMetarialMeasureData", async (req, res) => {
+  const { metarial_no } = req.query;
+  const result = await getMetarialMeasureData(metarial_no);
+  return res.status(result.status).json(result.message);
+});
+
+//! Order no ya gore ölçüm verisi çekecek route...
+router.get("/getMeasureWithOrderId", async (req, res) => {
+  const { material_no, areaName } = req.query;
+  const result = await getMeasureWithOrderId(material_no, areaName);
+  return res.status(result.status).json(result.message);
+});
+//! ılgılı olcumu sılecek (statusunu degıstırecek) route...
+router.put("/deleteMeasurement", async (req, res) => {
+  const { area_name, order_no, id,user } = req.body;
+  const result = await deleteMeasurement(area_name, order_no, id,user);
+  return res.status(result.status).json(result.message);
 });
 
 module.exports = router;

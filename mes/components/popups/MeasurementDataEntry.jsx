@@ -1,5 +1,9 @@
 import React from "react";
-import { setMeasurementPopup } from "@/redux/orderSlice";
+import {
+  setFilteredGroup,
+  setMeasurementPopup,
+  setSelectedGroupNos,
+} from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import Button from "../ui/Button";
 import { DataGrid } from "@mui/x-data-grid";
@@ -10,45 +14,105 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
+import { setUser } from "@/redux/userSlice";
 
 function MeasurementDataEntry() {
   const [formState, setFormState] = useState({
-    orderId: "",
-    entryMeasurement: "",
-    exitMeasurement: "",
-    entryGramage: 0.0,
-    exitGramage: 0.0,
-    gramage: 0.0,
-    quantity: 0.0,
+    orderId: "", // String olarak kalıyor
+    entryMeasurement: 0, // Sayısal başlangıç değeri
+    exitMeasurement: 0, // Sayısal başlangıç değeri
+    entryGramage: 0.0, // Sayısal başlangıç değeri
+    exitGramage: null, // Sayısal başlangıç değeri
+    gramage: 0.0, // Sayısal başlangıç değeri
+    quantity: 0.0, // Sayısal başlangıç değeri
   });
+
   const [selectedRow, setSelectedRow] = useState(null);
   const [orderData, setOrderData] = useState(null);
+  const [measure50Cm, setMeasure50Cm] = useState(null);
+  const [isOutOfRange, setIsOutOfRange] = useState(false); // rangeın durumunu tutacak state
   const [allMeasurement, setAllMeasurement] = useState([]);
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
+
   const handleClosePopup = () => {
     dispatch(setMeasurementPopup(false));
+    dispatch(setSelectedGroupNos([]));
+    dispatch(setFilteredGroup([]));
+    setOrderData(null);
+    dispatch(setUser(null));
   };
   const { selectedGroupNo } = useSelector((state) => state.order);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Eğer sayı beklenen bir alan ise değeri sayıya çeviriyoruz
+    const convertedValue =
+      name === "entryMeasurement" ||
+      name === "exitMeasurement" ||
+      name === "entryGramage" ||
+      name === "exitGramage" ||
+      name === "gramage" ||
+      name === "quantity"
+        ? parseFloat(value) || 0 // Eğer geçerli bir sayı değilse 0 yap
+        : value; // Diğer alanlar için olduğu gibi bırak
+
     setFormState({
       ...formState,
-      [name]: value,
+      [name]: convertedValue,
     });
   };
 
+  //olcu aralıgını render edecek...
+  useEffect(() => {
+    if (measure50Cm && formState.exitGramage !== null) {
+      if (
+        formState.exitGramage < measure50Cm.lowerLimit ||
+        formState.exitGramage > measure50Cm.upperLimit
+      ) {
+        setIsOutOfRange(true); // Aralık dışıysa uyarıyı göster
+      } else {
+        setIsOutOfRange(false); // Aralıkta ise uyarıyı kaldır
+      }
+    }
+  }, [formState.exitGramage, measure50Cm]); // exitGramage ve measure50Cm her değiştiğinde çalışır
+  console.log(isOutOfRange);
   //! Ilgılı bolumdeki olcumlerı cekecek query...
-  const getAllMeasurement = async () => {
+  // const getAllMeasurement = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasurements`,
+  //       {
+  //         params: {
+  //           areaName,
+  //         },
+  //       }
+  //     );
+
+  //     if (response.status === 200) {
+  //       setAllMeasurement(response.data);
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   getAllMeasurement();
+  // }, []);
+
+  //! malzeme no ya gore verı cekecek query...
+  const handleGetMeasureDataWıthOrderNo = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasurements`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasureWithOrderId`,
         {
           params: {
             areaName,
+            material_no,
           },
         }
       );
@@ -61,9 +125,31 @@ function MeasurementDataEntry() {
     }
   };
 
-  useEffect(() => {
-    getAllMeasurement();
-  }, []);
+  //! metarıal no ıle olcum verısı cekecek query
+  const handleGetMeasureWithMetarialNo = async () => {
+    try {
+      const response3 = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasureWithOrderId`,
+        {
+          params: {
+            areaName,
+            material_no: orderData.MATERIAL_NO, // material_no'yu orderData'dan kullanıyoruz
+          },
+        }
+      );
+      if (response3.status === 200) {
+        if (Array.isArray(response3.data) && response3.data.length > 0) {
+          setAllMeasurement(response3.data);
+        } else {
+          toast.info("Geçmiş ölçüm verisi bulunamadı.");
+        }
+      } else {
+        toast.error("Geçmiş ölçüm verisi çekilemedi.");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
@@ -78,12 +164,63 @@ function MeasurementDataEntry() {
         }
       );
 
+      console.log("İlk response:", response.data); // İlk çağrıda gelen veriyi kontrol edin
+
       if (response.status === 200) {
         toast.success("Sipariş başarıyla okutuldu...");
-        setOrderData(response.data);
+        setOrderData(response.data); // Veriyi state'e setliyoruz
+        console.log(response.data.MATERIAL_NO);
+
+        // İkinci API çağrısı - getMetarialMeasureData
+        const response2 = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMetarialMeasureData`,
+          {
+            params: {
+              metarial_no: response.data.MATERIAL_NO, // Direk response.data kullanıyoruz
+            },
+          }
+        );
+
+        console.log("İkinci response:", response2.data); // İkinci çağrıda gelen veriyi kontrol edin
+
+        if (response2.status === 200 && response2.data) {
+          setMeasure50Cm(response2.data);
+          if (!response2.data) {
+            toast.error(
+              "Malzeme no belirtildi, ancak ölçüm aralığı bulunamadı."
+            );
+          }
+        } else {
+          toast.error("Ölçü aralığı bulunamadı.");
+        }
+
+        // Üçüncü API çağrısı - getMeasureWithOrderId
+        const response3 = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasureWithOrderId`,
+          {
+            params: {
+              areaName,
+              material_no: response.data.MATERIAL_NO, // material_no'yu orderData'dan kullanıyoruz
+            },
+          }
+        );
+
+        console.log("Üçüncü response:", response3.data); // Üçüncü çağrıda gelen veriyi kontrol edin
+
+        if (response3.status === 200) {
+          if (Array.isArray(response3.data) && response3.data.length > 0) {
+            setAllMeasurement(response3.data);
+          } else {
+            toast.info("Geçmiş ölçüm verisi bulunamadı.");
+          }
+        } else {
+          toast.error("Geçmiş ölçüm verisi çekilemedi.");
+        }
+      } else {
+        toast.error("Sipariş bilgileri çekilemedi, böyle bir sipariş yok.");
       }
     } catch (err) {
-      console.log(err);
+      toast.error(err.response?.data ? err.response.data : err.message);
     }
   };
 
@@ -111,7 +248,7 @@ function MeasurementDataEntry() {
     const measurementsInfo = {
       order_no: orderData?.ORDER_ID,
       material_no: orderData?.MATERIAL_NO,
-      operator: userInfo?.id_dec,
+      operator: user?.id_dec,
       area_name: areaName,
       entry_measurement: formState.entryMeasurement,
       exit_measurement: formState.exitMeasurement,
@@ -135,6 +272,11 @@ function MeasurementDataEntry() {
         return;
       }
 
+      if (!measurementsInfo.exit_weight_50cm) {
+        toast.error("Çıkıs gramajı alanı doldurulmalıdır.");
+        return;
+      }
+
       response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/measurements`,
         measurementsInfo
@@ -155,27 +297,39 @@ function MeasurementDataEntry() {
           description: "",
           measurement_package: 0.0,
         });
-        getAllMeasurement();
+        handleGetMeasureWithMetarialNo();
+        setIsOutOfRange(false);
+        setMeasure50Cm(null);
       }
     } catch (err) {
-      toast.error("Veri kaydedilemedi: " + err.message);
+      toast.error(err.response ? err.response.data : "");
+      console.log(err);
+    }
+  };
+  //! secılı olcumu sılecek(status u degıstırecek) query...
+  const handleDeletedMeasure = async () => {
+    console.log(selectedRow);
+    if (selectedRow === null || selectedRow.length <= 0) {
+      toast.error("Silmek istediğiniz ölçüyü seçin.");
+      return;
+    }
+
+    try {
+      const { area_name, order_no, id } = selectedRow[0];
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/deleteMeasurement`,
+        { area_name, order_no, id, user: user.id_dec }
+      );
+
+      if (response.status === 200) {
+        toast.success("Ölçüm basarıyla silindi");
+        handleGetMeasureWithMetarialNo();
+      }
+    } catch (err) {
       console.log(err);
     }
   };
 
-  // useEffect(() => {
-  //   if (selectedRow) {
-  //     setFormState({
-  //       orderId: "",
-  //       entryMeasurement: "",
-  //       exitMeasurement: "",
-  //       entryGramage: 0.0,
-  //       exitGramage: 0.0,
-  //       gramage: 0.0,
-  //       quantity: 0.0,
-  //     })
-  //   }
-  // }, [selectedRow]);
   // formu temızleyecek state...
   const handleDeleteForm = () => {
     setFormState({
@@ -186,7 +340,7 @@ function MeasurementDataEntry() {
       entry_measurement: "",
       exit_measurement: "",
       entry_weight_50cm: 0.0,
-      exit_weight_50cm: 0.0,
+      exit_weight_50cm: null,
       data_entry_date: "",
       description: "",
       measurement_package: 0.0,
@@ -285,42 +439,58 @@ function MeasurementDataEntry() {
       type: "text",
       value: formState.orderId || "", // Eğer undefined ise "" kullan
       onkeydown: handleKeyDown,
+      className: `h-[4rem]`,
     },
     {
       name: "entryMeasurement",
       placeholder: "Giriş Ölçüsünü Giriniz",
       type: "number",
       value: formState.entryMeasurement || "",
+      className: `h-[4rem]`,
     },
     {
       name: "exitMeasurement",
       placeholder: "Çıkış Ölçüsünü Giriniz",
       type: "number",
       value: formState.exitMeasurement || "",
+      className: `h-[4rem]`,
     },
     {
       name: "entryGramage",
       placeholder: "50 cm İçin Giriş Gramajı",
       type: "number",
       value: formState.entryGramage || "",
+      className: `h-[4rem]`,
     },
     {
       name: "exitGramage",
       placeholder: "50 cm İçin Çıkış Gramajı",
       type: "number",
       value: formState.exitGramage || "",
+      className: `
+        h-[4rem] 
+        ${
+          measure50Cm &&
+          (formState.exitGramage < measure50Cm.lowerLimit ||
+            formState.exitGramage > measure50Cm.upperLimit)
+            ? "bg-red-500"
+            : "bg-white"
+        }
+      `,
     },
     {
       name: "gramage",
       placeholder: "Gramaj",
       type: "number",
       value: formState.gramage || "",
+      className: `h-[4rem]`,
     },
     {
       name: "quantity",
       placeholder: "Adet",
       type: "number",
       value: formState.quantity || "",
+      className: `h-[4rem]`,
     },
   ];
 
@@ -332,14 +502,15 @@ function MeasurementDataEntry() {
       onClick: handleSumbit,
     },
     {
-      children: "Güncelle",
+      children: "Sil",
       type: "button",
-      className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
+      className: "w-[150px] sm:py-2 text-sm bg-red-500 hover:bg-red-600",
+      onClick: handleDeletedMeasure,
     },
     {
       children: "Kapat",
       type: "button",
-      className: "w-[150px] sm:py-2 text-sm",
+      className: "w-[150px] sm:py-2 text-sm bg-red-500 hover:bg-red-600",
       onClick: handleClosePopup,
     },
   ];
@@ -358,8 +529,26 @@ function MeasurementDataEntry() {
         <div className="md:w-[1600px] w-[800px] h-[850px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
           {/* header */}
           <header className="h-[10%] w-full bg-secondary">
-            <div className="w-full h-full flex items-center justify-center">
-              <h1 className="text-[40px] font-semibold">Ölçüm Veri Girişi</h1>
+            <div className="w-full h-full flex items-center justify-between">
+              <div className="w-1/4 h-full flex gap-x-10 text-[30px] justify-center items-center">
+                <h1 className="text-[25px] text-white underline tracking-wider  font-semibold">
+                  Ölçüm Veri Girişi
+                </h1>
+              </div>
+              <div className="w-1/2 h-full flex gap-x-10 text-[25px] justify-center items-center">
+                <span className="text-red-500 text-[50px] font-semibold">
+                  {isOutOfRange ? "Ölçüm verisi aralık dışında" : ""}
+                </span>
+              </div>
+
+              <div className="w-1/4 h-full flex gap-x-10 text-[22px] justify-center items-center">
+                {measure50Cm && (
+                  <span>Alt Limit: {`${measure50Cm?.lowerLimit} gr`}</span>
+                )}
+                {measure50Cm && (
+                  <span>Üst Limit: {`${measure50Cm?.upperLimit} gr`}</span>
+                )}
+              </div>
             </div>
           </header>
           <section className="h-[60%] w-full">
@@ -395,7 +584,7 @@ function MeasurementDataEntry() {
                     type={field.type}
                     name={field.name}
                     placeholder={field.placeholder}
-                    addProps={"h-[4rem]"}
+                    addProps={field.className}
                     touched={field.name === "entryGramage"} // Example of using touched and errorMessage
                     errorMessage={
                       field.name === "entryGramage" &&

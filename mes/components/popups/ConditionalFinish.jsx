@@ -47,7 +47,6 @@ function ConditionalFinish() {
 
   //! Şartlı bitirme isteği
   const handleConditionalFinish = async () => {
-    const id_dec = userInfo.id_dec;
     try {
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/conditionalFinish`,
@@ -72,7 +71,7 @@ function ConditionalFinish() {
       console.log(err);
     }
   };
-
+  console.log(user)
   const buttons = [
     {
       children: "Kapat",

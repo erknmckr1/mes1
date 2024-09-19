@@ -7,6 +7,7 @@ const { Op, json } = require("sequelize");
 const { createWork, stopWork, rWork } = require("../orderOperations");
 const MeasureData = require("../../models/MeasureData");
 const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
+const Zincir50CMGR = require("../../models/Zincir50CMGR");
 const sequelize = require("../../lib/dbConnect");
 
 //! Bölümdeki tüm durmuş ve aktif işleri çekecek query...
@@ -27,12 +28,12 @@ async function getWorksWithoutId(areaName) {
         status: 200,
         message: result,
       };
-    } 
+    }
     // Eğer sonuç yoksa 404 status ve mesaj dön
     else {
       return {
         status: 404,
-        message: "No works found" ,
+        message: "No works found",
       };
     }
   } catch (err) {
@@ -40,7 +41,7 @@ async function getWorksWithoutId(areaName) {
     // Hata oluşursa 500 status ve hata mesajı döndür
     return {
       status: 500,
-      message:  "Database query failed" ,
+      message: "Database query failed",
     };
   }
 }
@@ -1033,6 +1034,19 @@ async function createMeasurementData(measurementsInfo) {
       },
     });
 
+    const sologroup = await GroupRecords.findOne({
+      where: {
+        group_no: measurementsInfo.group_no,
+      },
+    });
+
+    if (sologroup.group_status === "3") {
+      return {
+        status: 404,
+        message: "Ölçü alabilmek için önce prosesi bitirin",
+      };
+    }
+
     console.log(group);
 
     // Grup statüsü 5 ya da 7 olanların kontrolünü yap
@@ -1048,10 +1062,18 @@ async function createMeasurementData(measurementsInfo) {
       };
     }
 
+    if (sologroup.group_status === "3") {
+      return {
+        status: 404,
+        message: "Ölçü alabilmek için önce prosesi bitirin",
+      };
+    }
+
     const measure = await MeasureData.findOne({
       where: {
         order_no: measurementsInfo.order_no,
         group_no: measurementsInfo.group_no,
+        measure_status: "1",
       },
     });
 
@@ -1092,6 +1114,7 @@ async function createMeasurementData(measurementsInfo) {
       description: measurementsInfo.description,
       measurement_package: measurementsInfo.measurement_package,
       group_no: measurementsInfo.group_no,
+      measure_status: "1",
     });
 
     // Başarılı yanıt döndür
@@ -1105,10 +1128,7 @@ async function createMeasurementData(measurementsInfo) {
     // Hata durumunda yanıt döndür
     return {
       status: 500,
-      message: {
-        success: false,
-        error: "Ölçüm verisi kaydedilirken bir hata oluştu.",
-      },
+      message: "Ölçüm verisi kaydedilirken bir hata oluştu.",
     };
   }
 }
@@ -1350,7 +1370,7 @@ async function finishTheGroup({ groups, id_dec }) {
 //! Grubu teslim edecek servis gs-6 ws-4
 async function deliverTheGroup(group, id_dec) {
   try {
-    // Group status "5" değilse işlem yapılmayacak
+    // Grup status "5" değilse işlem yapılmayacak
     if (group.group_status !== "5") {
       return {
         status: 400,
@@ -1358,7 +1378,8 @@ async function deliverTheGroup(group, id_dec) {
           "Grup teslim edilmeye uygun değil. Lütfen bitmiş bir grubu teslim edin.",
       };
     }
-    // teslim edilecek grupları al
+
+    // Teslim edilecek grupları al
     const groups = await GroupRecords.findAll({
       where: {
         group_no: group.group_no,
@@ -1366,39 +1387,47 @@ async function deliverTheGroup(group, id_dec) {
       },
     });
 
-    const allOrders = [];
+    // Tüm iş emirlerini tek seferde al
+    const allOrders = await WorkLog.findAll({
+      where: {
+        group_no: group.group_no,
+      },
+    });
 
-    for (const grp of groups) {
-      const orders = await WorkLog.findAll({
+    // İş emirlerini filtrele ve tekrar edenleri önle
+    const uniqueOrders = Array.from(
+      new Set(allOrders.map((item) => item.order_no))
+    );
+
+    // Eksik ölçümleri kontrol et
+    const incompleteMeasurements = [];
+
+    for (const order_no of uniqueOrders) {
+      // Bu order_no için measure_status "1" olan bir kayıt var mı diye kontrol et
+      const hasValidMeasurement = await MeasureData.findOne({
         where: {
-          group_no: grp.group_no,
+          order_no: order_no,
+          group_no: group.group_no,
+          measure_status: "1",
         },
       });
 
-      orders.forEach((item) => {
-        if (!allOrders.includes(item.order_no)) {
-          allOrders.push(item);
-        }
-      });
-    }
-
-    for (const order of allOrders) {
-      const orderMeasure = await MeasureData.findOne({
-        where: {
-          order_no: order.order_no,
-          group_no: order.group_no,
-        },
-      });
-
-      if (!orderMeasure) {
-        return {
-          status: 404,
-          message: `Prosesi teslim edebilmek için eksik ölçümleri yapınız: order no: ${order.order_no} grup no: ${order.group_no}`,
-        };
+      if (!hasValidMeasurement) {
+        incompleteMeasurements.push(`order no: ${order_no}`);
       }
     }
 
-    // Group status "6" yapılıyor (teslim edilmiş)
+    // Eğer eksik ölçümler varsa, teslim işlemini durdur
+    if (incompleteMeasurements.length > 0) {
+      return {
+        status: 404,
+        message: `Prosesi teslim edebilmek için eksik ölçümleri yapınız: ${incompleteMeasurements.join(
+          ", "
+        )}`,
+      };
+    }
+
+    // Grup status "6" yapılıyor (teslim edilmiş)
     await GroupRecords.update(
       {
         group_status: "6",
@@ -1419,6 +1448,7 @@ async function deliverTheGroup(group, id_dec) {
     };
   }
 }
+
 //! Seçili siparişleri bitirecek servis
 async function finishSelectedOrders(params) {
   const { orders, id_dec } = params;
@@ -1816,6 +1846,88 @@ async function addReadOrderToGroup(group, orderList, user, areaName, section) {
     };
   }
 }
+
+//! okutulan sıparısın olcu aralıgını getırecek servıs
+async function getMetarialMeasureData(metarial_no) {
+  try {
+    const result = await Zincir50CMGR.findOne({
+      where: {
+        materialCode: metarial_no,
+      },
+    });
+
+    // findOne bir obje veya null döner, bu nedenle length yerine null kontrolü yapılmalı
+    if (result) {
+      return { status: 200, message: result };
+    } else {
+      return {
+        status: 404,
+        message: `${metarial_no} için ölçü aralığı bulunamadı.`,
+      };
+    }
+  } catch (err) {
+    console.error("Error in getMetarialMeasureData function:", err); // Hatalı fonksiyon adını düzelttim
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
+//! Malzeme no ya gore olcum cekecek query...
+async function getMeasureWithOrderId(material_no, areaName) {
+  try {
+    const result = await MeasureData.findAll({
+      where: {
+        material_no,
+        area_name: areaName,
+        measure_status: "1",
+      },
+      order: [["data_entry_date", "DESC"]],
+    });
+
+    if (result && result.length > 0) {
+      return { status: 200, message: result };
+    } else {
+      return {
+        status: 200,
+        message: `${material_no} ait geçmiş olçüm bulunamadı.`,
+      };
+    }
+  } catch (error) {
+    console.error("Error in getMeasureWithOrderId function:", error); // Hata adı düzeltilmiş
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+//! secılı olcumu sılecek servıs
+async function deleteMeasurement(area_name, order_no, id, user) {
+  console.log(id);
+  try {
+    const measure = await MeasureData.findOne({ where: { id } });
+
+    if (!measure) {
+      return { status: 404, message: "Silmek istediğiniz ölçüm bulunamadı" };
+    }
+
+    const result = await MeasureData.update(
+      {
+        delete_date: new Date().toISOString(),
+        who_deleted_measure: user,
+        measure_status: "2",
+      },
+      {
+        where: { area_name, order_no, id },
+      }
+    );
+
+    if (result[0] === 0) {
+      return { status: 400, message: "Ölçüm silinemedi, işlem başarısız" };
+    }
+
+    return { status: 200, message: "Ölçüm silme işlemi başarılı" };
+  } catch (err) {
+    console.error("Error in deleteMeasurement function:", err);
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -1843,4 +1955,7 @@ module.exports = {
   deliverTheGroup,
   addReadOrderToGroup,
   getWorksWithoutId,
+  getMetarialMeasureData,
+  getMeasureWithOrderId,
+  deleteMeasurement,
 };

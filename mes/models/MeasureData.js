@@ -63,6 +63,18 @@ const MeasureData = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    measure_status:{
+      type:DataTypes.STRING,
+      allowNull:true
+    },
+    who_deleted_measure:{
+      type:DataTypes.STRING,
+      allowNull:true 
+    },
+    delete_date:{
+      type:DataTypes.DATE,
+      allowNull:true 
+    }
   },
   {
     tableName: "measurement_data",
