@@ -81,7 +81,8 @@ function StopJobPopup() {
         if (
           selectedGroupNo &&
           selectedGroupNo.length === 1 &&
-          selectedGroupNo[0].group_status === "3"
+          selectedGroupNo[0].group_status === "3" &&
+          molaSebebi
         ) {
           response = await axios.put(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/stopToSelectedMachine`,
@@ -93,7 +94,7 @@ function StopJobPopup() {
             }
           );
         } else {
-          toast.error("Sadece 1 aktif makine seçin.");
+          toast.error("Durdurma nedenini seçiniz.");
           return;
         }
 
@@ -113,7 +114,7 @@ function StopJobPopup() {
     } catch (err) {
       console.log(err);
       toast.error(
-        "Makibe durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
+        "Makine durdurma işlemi başarısız oldu. Durdurma nedenini seçip tekrar deneyin."
       );
     }
   }

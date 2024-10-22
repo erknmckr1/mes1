@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Grup listesini çekecek async thunk
+//! Grup listesini çekecek async thunk
 export const handleGetGroupList = createAsyncThunk(
   "order/fetchGroupList",
   async (_, thunkAPI) => {
@@ -14,7 +14,7 @@ export const handleGetGroupList = createAsyncThunk(
   }
 );
 
-// Buzlama işleri listeleyecek async thunk
+//! Buzlama işleri listeleyecek async thunk
 export const fetchBuzlamaWorks = createAsyncThunk(
   "order/fetchWorksList",
   async (params, thunkAPI) => {
@@ -32,7 +32,7 @@ export const fetchBuzlamaWorks = createAsyncThunk(
   }
 );
 
-// getWorksWithoutId işlemi için async thunk
+//! getWorksWithoutId işlemi için async thunk
 export const getWorksWithoutId = createAsyncThunk(
   "order/getWorksWithoutId",
   async (params, thunkAPI) => {

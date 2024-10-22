@@ -481,12 +481,12 @@ function OrderGroupManagement() {
       className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
       onClick: handleRemoveOrderFromGroup,
     },
-    {
-      children: "Siparişi Teslim Et",
-      type: "button",
-      className: "w-[150px] sm:py-2 text-sm",
-      onClick: deliverSelectedOrder,
-    },
+    
+      //children: "Siparişi Teslim Et",
+      //type: "button",
+      //className: "w-[150px] sm:py-2 text-sm",
+      //onClick: deliverSelectedOrder,
+    
   ];
   return (
     <div className="w-screen h-screen top-0 left-0 absolute  text-black font-semibold">

@@ -80,50 +80,7 @@ function MeasurementDataEntry() {
     }
   }, [formState.exitGramage, measure50Cm]); // exitGramage ve measure50Cm her değiştiğinde çalışır
   console.log(isOutOfRange);
-  //! Ilgılı bolumdeki olcumlerı cekecek query...
-  // const getAllMeasurement = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasurements`,
-  //       {
-  //         params: {
-  //           areaName,
-  //         },
-  //       }
-  //     );
 
-  //     if (response.status === 200) {
-  //       setAllMeasurement(response.data);
-  //     }
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   getAllMeasurement();
-  // }, []);
-
-  //! malzeme no ya gore verı cekecek query...
-  const handleGetMeasureDataWıthOrderNo = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMeasureWithOrderId`,
-        {
-          params: {
-            areaName,
-            material_no,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        setAllMeasurement(response.data);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
 
   //! metarıal no ıle olcum verısı cekecek query
   const handleGetMeasureWithMetarialNo = async () => {
@@ -142,16 +99,18 @@ function MeasurementDataEntry() {
           setAllMeasurement(response3.data);
         } else {
           toast.info("Geçmiş ölçüm verisi bulunamadı.");
+          setAllMeasurement(null);
         }
       } else {
         toast.error("Geçmiş ölçüm verisi çekilemedi.");
+        setAllMeasurement(null);
       }
     } catch (error) {
       console.log(error);
     }
   };
 
-  //! Okutulan siparişi çekecek query...
+  //! Okutulan siparişi v bu sipariş için malzeme olcum aralıgını çekecek query...
   const handleGetOrderById = async () => {
     console.log(formState.orderId);
     try {
@@ -171,7 +130,7 @@ function MeasurementDataEntry() {
         setOrderData(response.data); // Veriyi state'e setliyoruz
         console.log(response.data.MATERIAL_NO);
 
-        // İkinci API çağrısı - getMetarialMeasureData
+        // İkinci API çağrısı - getMetarialMeasureData malzemenın ölçüm aralıgını al. 
         const response2 = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMetarialMeasureData`,
           {
@@ -323,7 +282,7 @@ function MeasurementDataEntry() {
 
       if (response.status === 200) {
         toast.success("Ölçüm basarıyla silindi");
-        handleGetMeasureWithMetarialNo();
+        await handleGetMeasureWithMetarialNo();
       }
     } catch (err) {
       console.log(err);
@@ -331,23 +290,23 @@ function MeasurementDataEntry() {
   };
 
   // formu temızleyecek state...
-  const handleDeleteForm = () => {
-    setFormState({
-      order_no: "",
-      material_no: "",
-      operator: "",
-      area_name: "",
-      entry_measurement: "",
-      exit_measurement: "",
-      entry_weight_50cm: 0.0,
-      exit_weight_50cm: null,
-      data_entry_date: "",
-      description: "",
-      measurement_package: 0.0,
-    });
+  // const handleDeleteForm = () => {
+  //   setFormState({
+  //     order_no: "",
+  //     material_no: "",
+  //     operator: "",
+  //     area_name: "",
+  //     entry_measurement: "",
+  //     exit_measurement: "",
+  //     entry_weight_50cm: 0.0,
+  //     exit_weight_50cm: null,
+  //     data_entry_date: "",
+  //     description: "",
+  //     measurement_package: 0.0,
+  //   });
 
-    console.log(formState);
-  };
+  //   console.log(formState);
+  // };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -523,6 +482,7 @@ function MeasurementDataEntry() {
     }
     return "";
   };
+  
   return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">

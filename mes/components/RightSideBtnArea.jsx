@@ -25,6 +25,7 @@ import axios from "axios";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice"; // buzlama gıbı ekranlarda operasyon oncesı ıd sorulacaksa bu state ı kullanıyoruz.
+import { setFirePopup } from "@/redux/globalSlice";
 
 function RightSideBtnArea() {
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
@@ -430,7 +431,7 @@ function RightSideBtnArea() {
   //! Makineye sipariş gönderme (başlatma) fonksiyonu...
   const handleSendToMachine = async () => {
     // Makine ve proses secılı mı ?
-    if (!selectedGroupNo || !selectedProcess) {
+    if (!selectedGroupNo || !selectedProcess || !selectedMachine) {
       toast.error("Makine ve Proses seçiniz.");
       return;
     }
@@ -771,6 +772,13 @@ function RightSideBtnArea() {
     }
   };
 
+  //? TASLAMA FONKSIYONLARI...
+
+  // fire popup ı acacak fonksyon
+  const handleOpenFirePopup = () => {
+    dispatch(setFirePopup(true));
+    console.log("x");
+  };
   // Kalite buttons
   const buttons_r = [
     {
@@ -947,6 +955,16 @@ function RightSideBtnArea() {
     },
   ];
 
+  const taslama_buttons = [
+    {
+      onClick: handleOpenFirePopup,
+      children: "FİRE GİRİŞİ",
+      type: "button",
+      className: "w-[200px]",
+      disabled: isCurrentBreak,
+    },
+  ];
+
   //? Route gore section un sağ tarafına farklı yapıda render edecegız.
   const renderButtons = () => {
     if (areaName === "kalite" || areaName === "kurutiras") {
@@ -969,6 +987,23 @@ function RightSideBtnArea() {
         <div className="">
           <div className="w-full grid grid-cols-2 gap-1">
             {cekic_buttons.map((button, index) => (
+              <Button
+                key={index}
+                className={button.className}
+                children={button.children}
+                type={button.type}
+                onClick={button.onClick}
+                disabled={isCurrentBreak}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    } else if (areaName === "taslama") {
+      return (
+        <div className="">
+          <div className="w-full flex flex-col gap-y-5 justify-center items-center">
+            {taslama_buttons.map((button, index) => (
               <Button
                 key={index}
                 className={button.className}
