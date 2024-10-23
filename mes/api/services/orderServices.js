@@ -9,6 +9,7 @@ const MeasureData = require("../../models/MeasureData");
 const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
 const Zincir50CMGR = require("../../models/Zincir50CMGR");
 const sequelize = require("../../lib/dbConnect");
+const PureGoldScrapMeasurements = require("../../models/PureGoldScrapMeasurements");
 
 //! Bölümdeki tüm durmuş ve aktif işleri çekecek query...
 async function getWorksWithoutId(areaName) {
@@ -1898,7 +1899,6 @@ async function getMeasureWithOrderId(material_no, areaName) {
 }
 //! secılı olcumu sılecek servıs
 async function deleteMeasurement(area_name, order_no, id, user) {
-  console.log(id);
   try {
     const measure = await MeasureData.findOne({ where: { id } });
 
@@ -1925,6 +1925,63 @@ async function deleteMeasurement(area_name, order_no, id, user) {
   } catch (err) {
     console.error("Error in deleteMeasurement function:", err);
     return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
+//? FİRE İŞLEMLERİ İÇİN GEREKLİ SERVİSLER...
+async function scrapMeasure(formState, user_id, areaName) {
+  const {
+    orderId,
+    goldSetting,
+    entryGramage,
+    exitGramage,
+    gold_pure_scrap,
+    diffirence,
+  } = formState;
+  try {
+    const result = await PureGoldScrapMeasurements.create({
+      order_no: orderId,
+      operator: user_id,
+      area_name: areaName,
+      entry_measurement: entryGramage,
+      exit_measurement: exitGramage,
+      measurement_diff: diffirence,
+      gold_pure_scrap,
+      gold_setting: goldSetting,
+    });
+    return { status: 200, message: "Veri başarıyla kaydedildi." }; // Başarılı yanıt
+  } catch (err) {
+    console.error("Error in deleteMeasurement function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+
+//! fire olcumlerını cekecek servis
+async function getScrapMeasure(order_no) {
+  try {
+    const result = await PureGoldScrapMeasurements.findAll({
+      where: {
+        order_no,
+      },
+    });
+    return { status: 200, message: result };
+  } catch (err) {
+    console.error("Error in deleteMeasurement function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+//! fire ölçümünü silecek servis
+async function deleteScrapMeasure(id) {
+  try {
+    const result = await PureGoldScrapMeasurements.destroy({
+      where: {
+        scrapMeasurement_id: id,
+      },
+    });
+    return { status: 200, message: "Ölçüm başarıyla silindi" };
+  } catch (err) {
+    console.error("Error in deleteMeasurement function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
 
@@ -1958,4 +2015,7 @@ module.exports = {
   getMetarialMeasureData,
   getMeasureWithOrderId,
   deleteMeasurement,
+  scrapMeasure,
+  getScrapMeasure,
+  deleteScrapMeasure,
 };

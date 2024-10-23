@@ -20,7 +20,8 @@ const GroupRecords = require("./GroupRecords");
 const MeasureData = require("./MeasureData");
 const ConditionalFinishReason = require("./ConditionalFinishReasons");
 const WorkStatus = require("./WorkStatus");
-const Zincir50CMGR = require("./Zincir50CMGR")
+const Zincir50CMGR = require("./Zincir50CMGR");
+const PureGoldScrapMeasurements = require("./PureGoldScrapMeasurements");
 const models = {
   User,
   BreakLog,
@@ -43,7 +44,8 @@ const models = {
   MeasureData,
   ConditionalFinishReason,
   WorkStatus,
-  Zincir50CMGR
+  Zincir50CMGR,
+  PureGoldScrapMeasurements
 };
 
 // İlişkileri tanımlama

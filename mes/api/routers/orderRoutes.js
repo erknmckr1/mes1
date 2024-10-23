@@ -29,7 +29,10 @@ const {
   getWorksWithoutId,
   getMetarialMeasureData,
   getMeasureWithOrderId,
-  deleteMeasurement
+  deleteMeasurement,
+  scrapMeasure,
+  getScrapMeasure,
+  deleteScrapMeasure
 } = require("../services/orderServices");
 
 //!
@@ -310,8 +313,32 @@ router.get("/getMeasureWithOrderId", async (req, res) => {
 });
 //! ılgılı olcumu sılecek (statusunu degıstırecek) route...
 router.put("/deleteMeasurement", async (req, res) => {
-  const { area_name, order_no, id,user } = req.body;
-  const result = await deleteMeasurement(area_name, order_no, id,user);
+  const { area_name, order_no, id, user } = req.body;
+  const result = await deleteMeasurement(area_name, order_no, id, user);
+  return res.status(result.status).json(result.message);
+});
+
+//? FİRE İŞLEMLERİ...
+//! Fire olçüm kaydı için query atılacak route...
+router.post("/scrapMeasure", async (req, res) => {
+  console.log(req.body)
+  const { formState,user_id,areaName } = req.body;
+  const result = await scrapMeasure(formState,user_id,areaName);
+  return res.status(result.status).json(result.message);
+});
+
+//! fire olcumlerını cekecek route...
+router.get("/getScrapMeasure",async (req,res)=>{
+  const {order_no} = req.query
+  const result = await getScrapMeasure(order_no);
+  return res.status(result.status).json(result.message);
+})
+
+//! fire  Ölçümü silme rotası
+router.put("/deleteScrapMeasure", async (req, res) => {
+  const { id } = req.body;
+  console.log(id)
+  const result = await deleteScrapMeasure( id);
   return res.status(result.status).json(result.message);
 });
 
