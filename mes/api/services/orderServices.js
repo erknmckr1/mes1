@@ -4,12 +4,18 @@ const GroupRecords = require("../../models/GroupRecords");
 const User = require("../../models/User");
 const StoppedWorksLogs = require("../../models/StoppedWorksLog");
 const { Op, json } = require("sequelize");
-const { createWork, stopWork, rWork } = require("../orderOperations");
+const {
+  createWork,
+  stopWork,
+  rWork,
+  createCekicWorkLog,
+} = require("../orderOperations");
 const MeasureData = require("../../models/MeasureData");
 const ConditionalFinishReason = require("../../models/ConditionalFinishReasons");
 const Zincir50CMGR = require("../../models/Zincir50CMGR");
 const sequelize = require("../../lib/dbConnect");
 const PureGoldScrapMeasurements = require("../../models/PureGoldScrapMeasurements");
+const SectionParticiptionLogs = require("../../models/SectionParticiptionLogs");
 
 //! Bölümdeki tüm durmuş ve aktif işleri çekecek query...
 async function getWorksWithoutId(areaName) {
@@ -18,7 +24,7 @@ async function getWorksWithoutId(areaName) {
       where: {
         area_name: areaName,
         work_status: {
-          [Op.in]: ["1", "2"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["1", "2", "6"], // '1' veya '2' durumundaki işleri getir
         },
       },
     });
@@ -1985,6 +1991,162 @@ async function deleteScrapMeasure(id) {
   }
 }
 
+//? FİRE İŞLEMLERİ İÇİN GEREKLİ SERVİSLER SON...
+
+//? CEKİC BOLUME KATILAM İŞLEMLERİ....
+
+//! Bölüme katılım sağlanması için kullanılacak servis...
+async function joinSection(section, areaName, user_id, field) {
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    // kullanıcı bır bolume katılmıs mı ?
+    const isJoinUserField = await SectionParticiptionLogs.findOne({
+      where: {
+        operator_id: user_id,
+        exit_time: null,
+      },
+    });
+
+    if (isJoinUserField) {
+      return {
+        status: 409, // 409: Conflict durumu daha uygun
+        message: `${isJoinUserField.dataValues.field} bölümüne katılım sağlamışsınız. Önce bu bölümden ayrılıp tekrar deneyin.`,
+      };
+    }
+
+    if (!isJoinUserField) {
+      const joinSection = await SectionParticiptionLogs.create({
+        section,
+        area_name: areaName,
+        operator_id: user_id,
+        field,
+        join_time: currentDateTimeOffset,
+      });
+      return { status: 200, message: "Bölüme başarıyla katıldınız." };
+    } else {
+      return {
+        status: 303,
+        message: "Daha önceden bu bölüme katılım sağlamıssınız.",
+      };
+    }
+  } catch (err) {
+    console.error("Error in joinSection  function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+//! Bölüme katılmıs bir personelin çıkısını yapacak servis
+async function exitSection(
+  selectedPersonInField,
+  areaName,
+  selectedHammerSectionField
+) {
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const exitSection = await SectionParticiptionLogs.update(
+      {
+        exit_time: currentDateTimeOffset,
+      },
+      {
+        where: {
+          operator_id: selectedPersonInField,
+          exit_time: null,
+          area_name: areaName,
+          field: selectedHammerSectionField,
+        },
+      }
+    );
+
+    const updatedRecords = await SectionParticiptionLogs.findAll({
+      where: {
+        exit_time: currentDateTimeOffset,
+        operator_id: selectedPersonInField,
+      },
+    });
+
+    if (updatedRecords.length > 0) {
+      return { status: 200, message: "Bölümden ayrılma işlemi başarılı." };
+    } else {
+      // Güncelleme başarısızsa bir yanıt döndür
+      return {
+        status: 404,
+        message: "Kayıt bulunamadı veya çıkış yapılamadı.",
+      };
+    }
+  } catch (err) {
+    console.error("Error in exitSection function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+
+//! Bölümdeki kullanıcıları çekecek servis...
+async function getPersonInTheField(areaName) {
+  try {
+    const result = await SectionParticiptionLogs.findAll({
+      where: {
+        area_name: areaName,
+        exit_time: null,
+      },
+    });
+
+    return { status: 200, message: result };
+  } catch (err) {
+    console.error("Error in deleteMeasurement function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+
+//! Setup ı bitirip işi baslatacak servis
+async function finishedToSetup(work_info, currentDateTimeOffset) {
+  const { uniq_id } = work_info;
+  console.log(uniq_id)
+  try {
+    let work = await WorkLog.findOne({
+      where: {
+        uniq_id,
+        setup_end_date: null,
+      },
+    });
+    if(!work){
+     return  {
+        status: 404,
+        message: "Setup bitireceğiniz iş bulunamadı.",
+      };
+    }
+    console.log({x:work})
+    let updateResult;
+    let createResult;
+    if (work) {
+      updateResult = await WorkLog.update(
+        {
+          work_status: "7",
+          setup_end_date: new Date().toISOString(),
+        },
+        {
+          where: {
+            uniq_id,
+          },
+        }
+      );
+    }
+
+    if (updateResult) {
+      createResult = await createCekicWorkLog({
+        work_info,
+        currentDateTimeOffset,
+        field: work.dataValues.field,
+      });
+    }
+    return {
+      status: 200,
+      message: "İşlem başarıyla tamamlandı.",
+    };
+  } catch (err) {
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+
+//? CEKİC BOLUME KATILAM İŞLEMLERİ SON...
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -2018,4 +2180,8 @@ module.exports = {
   scrapMeasure,
   getScrapMeasure,
   deleteScrapMeasure,
+  joinSection,
+  exitSection,
+  getPersonInTheField,
+  finishedToSetup,
 };

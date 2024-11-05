@@ -15,10 +15,14 @@ function ProcessArea() {
   const pathname = usePathname();
   const pageName = pathname.split("/")[3]; // URL'den sayfa ismini alır 2. parametreyi aldık.
   const dispatch = useDispatch();
-  const { processList, selectedProcess, selectedMachine,machineList } = useSelector(
-    (state) => state.order
-  );
-  const {theme} = useSelector(theme => theme.global)
+  const {
+    processList,
+    selectedProcess,
+    selectedMachine,
+    machineList,
+    selectedHammerSectionField,
+  } = useSelector((state) => state.order);
+  const { theme } = useSelector((theme) => theme.global);
   //! İlgili bölüme göre proses listesini getırecek istek...
   const getProcessList = async () => {
     try {
@@ -28,14 +32,23 @@ function ProcessArea() {
           params: { area_name: pageName },
         }
       );
-      dispatch(setProcessList(response.data));
 
-      // kalite ekranında default olarak Genel kontrol secılı gelsın...
+      let processes = response.data;
+
+      // Eğer cekic ekranıysa ve selectedHammerSectionField 'Makine' değilse, processList'i boş dizi yap
+      if (pageName === "cekic" && selectedHammerSectionField !== "makine") {
+        processes = [];
+        dispatch(setSelectedProcess(""));
+      }
+
+      dispatch(setProcessList(processes));
+
+      // kalite ekranında default olarak Genel kontrol secili gelsin
       if (pageName === "kalite") {
-        const genelKontrolProcess = response.data.find(
+        const genelKontrolProcess = processes.find(
           (process) => process.process_name === "Genel (Tümü) Kontrol"
         );
-  
+
         if (genelKontrolProcess) {
           dispatch(setSelectedProcess(genelKontrolProcess));
         }
@@ -54,45 +67,62 @@ function ProcessArea() {
           params: { area_name: pageName },
         }
       );
-      dispatch(setMachineList(response.data));
+
+      let machines = response.data;
+
+      // Eğer cekic ekranıysa ve selectedHammerSectionField 'Makine' değilse, setMachineList'i boş dizi yap
+      if (pageName === "cekic" && selectedHammerSectionField !== "makine") {
+        machines = [];
+        dispatch(setSelectedProcess(""));
+      }
+
+      dispatch(setMachineList(machines));
+      setOnMachine([]);
     } catch (err) {
       console.log(err);
     }
   };
 
-
+  console.log(machineList);
   const filteredMachine = () => {
     if (!machineList || !selectedProcess) {
       return;
     }
-    const filtered = machineList.filter(item => item.process_name === selectedProcess.process_name);
-    setOnMachine(filtered)
+    const filtered = machineList.filter(
+      (item) => item.process_name === selectedProcess.process_name
+    );
+    setOnMachine(filtered);
   };
-  
 
   useEffect(() => {
     filteredMachine();
-  },[selectedProcess])
- 
+  }, [selectedProcess]);
+
   useEffect(() => {
     getProcessList();
     getMachineList();
-  }, []);
+  }, [selectedHammerSectionField,pageName]);
 
   return (
-    <div className={`w-full h-full overflow-y-auto transition-all  tablearea ${theme} border-secondary border-2`}>
+    <div
+      className={`w-full h-full overflow-y-auto transition-all  tablearea ${theme} border-secondary border-2`}
+    >
       <div className="w-full h-full flex">
-        <div className={`${pageName === "kalite" ? "w-full" :"w-1/2"} h-full flex flex-col`}>
-          <div className={`px-6 py-3 text-left text-xs thead ${theme}   font-medium uppercase tracking-wider`}>
-            {pageName === "kalite" ? "Kontrol Türleri" :"Prosesler"}
+        <div
+          className={`${
+            pageName === "kalite" ? "w-full" : "w-1/2"
+          } h-full flex flex-col`}
+        >
+          <div
+            className={`px-6 py-3 text-left text-xs thead ${theme}   font-medium uppercase tracking-wider`}
+          >
+            {pageName === "kalite" ? "Kontrol Türleri" : "Prosesler"}
           </div>
           <ul className="overflow-y-auto text-center bg-white border-t-2">
             {processList &&
               processList.map((item, index) => (
                 <li
-                  onClick={() =>
-                    dispatch(setSelectedProcess(item))
-                  }
+                  onClick={() => dispatch(setSelectedProcess(item))}
                   key={item.process_id}
                   className={`p-2 hover:bg-green-600 border cursor-pointer  ${
                     selectedProcess.process_name === item.process_name
@@ -105,25 +135,31 @@ function ProcessArea() {
               ))}
           </ul>
         </div>
-        { pageName !== "kalite"  && <div className="w-1/2 h-full flex flex-col border-l">
-          <div className={`px-6 py-3 text-left text-xs ${theme} thead   font-medium uppercase tracking-wider`}>
-            Makineler
+        {pageName !== "kalite" && (
+          <div className="w-1/2 h-full flex flex-col border-l">
+            <div
+              className={`px-6 py-3 text-left text-xs ${theme} thead   font-medium uppercase tracking-wider`}
+            >
+              Makineler
+            </div>
+            <ul className="overflow-y-auto text-center bg-white border-t-2">
+              {onMachine &&
+                onMachine.map((item, index) => (
+                  <li
+                    key={index}
+                    className={`p-2 hover:bg-green-600 border cursor-pointer ${
+                      selectedMachine.machine_name === item.machine_name
+                        ? "bg-green-500"
+                        : `listeleman ${theme}`
+                    }`}
+                    onClick={() => dispatch(setSelectedMachine(item))}
+                  >
+                    {item.machine_name}
+                  </li>
+                ))}
+            </ul>
           </div>
-          <ul className="overflow-y-auto text-center bg-white border-t-2">
-            {
-             onMachine && onMachine.map((item, index) => (
-                <li
-                  key={index}
-                  className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                    selectedMachine.machine_name === item.machine_name ? "bg-green-500" : `listeleman ${theme}`
-                  }`}
-                  onClick={()=>dispatch(setSelectedMachine(item))}
-                >
-                  {item.machine_name}
-                </li>
-              ))}
-          </ul>
-        </div>}
+        )}
       </div>
     </div>
   );

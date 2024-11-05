@@ -33,6 +33,7 @@ const {
   finishedWork,
   cancelWork,
   getStoppedWorks,
+  createCekicWorkLog,
 } = require("../api/orderOperations");
 const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
@@ -163,6 +164,7 @@ app.get("/getBreakOnUsers", async (req, res) => {
 
 //! Molayı bitirecek metot...
 app.post("/returnToBreak", async (req, res) => {
+  console.log("x")
   const { operator_id, end_time } = req.body;
   console.log("Received request to return from break:", operator_id, end_time);
   try {
@@ -285,9 +287,19 @@ app.post("/createWorkLog", async (req, res) => {
   const currentDate = new Date();
   const currentDateTimeOffset = currentDate.toISOString();
 
-  const { work_info } = req.body;
+  const { work_info, field } = req.body;
+  console.log(work_info)
   try {
-    const result = await createWork({ work_info, currentDateTimeOffset });
+    let result;
+    if (work_info.area_name === "cekic") {
+      result = await createCekicWorkLog({
+        work_info,
+        currentDateTimeOffset,
+        field,
+      });
+    } else {
+      result = await createWork({ work_info, currentDateTimeOffset });
+    }
     res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
   } catch (err) {
     res.status(500).json({ message: "Internal server error." });

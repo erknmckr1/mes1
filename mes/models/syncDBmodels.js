@@ -22,6 +22,7 @@ const ConditionalFinishReason = require("./ConditionalFinishReasons");
 const WorkStatus = require("./WorkStatus");
 const Zincir50CMGR = require("./Zincir50CMGR");
 const PureGoldScrapMeasurements = require("./PureGoldScrapMeasurements");
+const SectionParticiptionLogs = require("./SectionParticiptionLogs")
 const models = {
   User,
   BreakLog,
@@ -45,7 +46,8 @@ const models = {
   ConditionalFinishReason,
   WorkStatus,
   Zincir50CMGR,
-  PureGoldScrapMeasurements
+  PureGoldScrapMeasurements,
+  SectionParticiptionLogs
 };
 
 // İlişkileri tanımlama

@@ -1,12 +1,34 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+//! İlgili bölümdeki kullanıcıları çekecek async thunk...
+export const getJoinTheField = createAsyncThunk(
+  "order/fetchJoinTheField",
+  async (params, thunkAPI) => {
+    const { areaName } = params;
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getPersonInTheField`,
+        {
+          params: {
+            areaName,
+          },
+        }
+      );
+      return response.data;
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.response.data);
+    }
+  }
+);
 //! Grup listesini çekecek async thunk
 export const handleGetGroupList = createAsyncThunk(
   "order/fetchGroupList",
   async (_, thunkAPI) => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getGroupList`);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getGroupList`
+      );
       return response.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data);
@@ -20,11 +42,14 @@ export const fetchBuzlamaWorks = createAsyncThunk(
   async (params, thunkAPI) => {
     const { areaName } = params;
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkToBuzlama`, {
-        params: {
-          areaName,
-        },
-      });
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkToBuzlama`,
+        {
+          params: {
+            areaName,
+          },
+        }
+      );
       return response.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data);
@@ -38,11 +63,14 @@ export const getWorksWithoutId = createAsyncThunk(
   async (params, thunkAPI) => {
     const { areaName } = params;
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorksWithoutId`, {
-        params: {
-          areaName,
-        },
-      });
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorksWithoutId`,
+        {
+          params: {
+            areaName,
+          },
+        }
+      );
       return response.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data);
@@ -79,6 +107,9 @@ const orderSlice = createSlice({
     conditionalFinishPopup: false,
     pastGroupOperationsPopup: false,
     measurementEntryPopup: false,
+    selectedHammerSectionField: "", // Cekic ekranındaki alan ismini tutacak state...
+    usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
+    selectedPersonInField:"" // alana katılmıs secılmıs kullanıyı tutacak state...
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -154,6 +185,12 @@ const orderSlice = createSlice({
     setPastGroupOperationsPopup: (state, action) => {
       state.pastGroupOperationsPopup = action.payload;
     },
+    setSelectedHammerSectionField: (state, action) => {
+      state.selectedHammerSectionField = action.payload;
+    },
+    setSelectedPersonInField:(state,action) => {
+      state.selectedPersonInField = action.payload
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -179,7 +216,7 @@ const orderSlice = createSlice({
         console.error("Failed to fetch buzlama works:", action.payload);
       })
 
-      // getWorksWithoutId işlemleri operasyonn oncesı ıd gırılen ekranlar ıcın bu fonksıyonu kullanıyoruz. 
+      // getWorksWithoutId işlemleri operasyonn oncesı ıd gırılen ekranlar ıcın bu fonksıyonu kullanıyoruz.
       .addCase(getWorksWithoutId.pending, (state) => {
         state.workList = [];
       })
@@ -187,6 +224,16 @@ const orderSlice = createSlice({
         state.workList = action.payload;
       })
       .addCase(getWorksWithoutId.rejected, (state, action) => {
+        console.error("Failed to fetch works without ID:", action.payload);
+      })
+      // İlgili alan da bölüme katılmıs ullanıcılara cekecek thunk fonksıyonları
+      .addCase(getJoinTheField.pending, (state) => {
+        state.usersJoinedTheField = [];
+      })
+      .addCase(getJoinTheField.fulfilled, (state, action) => {
+        state.usersJoinedTheField = action.payload;
+      })
+      .addCase(getJoinTheField.rejected, (state, action) => {
         console.error("Failed to fetch works without ID:", action.payload);
       });
   },
@@ -216,6 +263,8 @@ export const {
   setPastGroupOperationsPopup,
   setMeasurementPopup,
   setConditionalFinishPopup,
+  setSelectedHammerSectionField,
+  setSelectedPersonInField
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

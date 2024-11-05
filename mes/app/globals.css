@@ -32,8 +32,8 @@ body {
   }
 }
 /* MUI DATA GRID ...  */
-.MuiDataGrid-columnHeader{
-  background-color: #2C3E50;
+.MuiDataGrid-columnHeader {
+  background-color: #2c3e50;
   color: white !important;
   border-right: 2px solid;
   border-color: white;
@@ -47,12 +47,11 @@ body {
   color: black;
 } */
 /* t body cell border left */
-.MuiDataGrid-cell{
+.MuiDataGrid-cell {
   border-right: 2px solid;
   border-color: white;
   cursor: pointer;
 }
-
 
 /* .MuiDataGrid-footerContainer{
   display: none !important;
@@ -64,68 +63,73 @@ body {
 .green-row {
   background-color: green !important;
 }
-.blue-row{
+.blue-row {
   background-color: blue;
 }
-.red-row{
+.red-row {
   background-color: rgb(255, 0, 0);
 }
 .red-row:hover {
   background-color: red !important;
 }
-
+.yellow-row {
+  background-color: #f0c819;
+}
+.yellow-row:hover {
+  background-color: #f0c819;
+}
 
 /*Tema css */
 .header.dark {
   background-color: #121212;
-  color: #E0E0E0;
+  color: #e0e0e0;
 }
 
 .header.light {
-  background-color: #E5E8E8;
+  background-color: #e5e8e8;
   color: #000000;
 }
 
 .section.dark {
   background-color: #121212;
-  color: #E0E0E0;
+  color: #e0e0e0;
 }
-.section.light{
-  background-color: #E5E8E8;
+.section.light {
+  background-color: #e5e8e8;
   color: #000000;
 }
 
-.themabtn.dark{
-  background-color: #3498DB;
-  color: #E0E0E0;
+.themabtn.dark {
+  background-color: #3498db;
+  color: #e0e0e0;
 }
-.themabtn.light{
-  background-color: #E67E22;
+.themabtn.light {
+  background-color: #e67e22;
   color: #000000;
 }
-.tablearea.dark{
-  background-color: #2E4053;
-  color: #E0E0E0;
+.tablearea.dark {
+  background-color: #2e4053;
+  color: #e0e0e0;
 }
-.tablearea.light{
-  background-color: #F2F3F4;
+.tablearea.light {
+  background-color: #f2f3f4;
   color: #000000;
 }
-.thead.dark{
-  background-color: #212F3C;
-  color: #E0E0E0;
+.thead.dark {
+  background-color: #212f3c;
+  color: #e0e0e0;
 }
-.thead.light{
+.thead.light {
   color: black;
-  background-color: #B2BABB;
+  background-color: #b2babb;
 }
-.listeleman.dark{
-  background-color: #515A5A;
-  color: #E0E0E0;
+.listeleman.dark {
+  background-color: #515a5a;
+  color: #e0e0e0;
 }
-.button.dark{
-  color:#E0E0E0;
+.button.dark {
+  color: #e0e0e0;
 }
-.button.light{
+.button.light {
   color: black;
 }

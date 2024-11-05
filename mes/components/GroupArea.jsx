@@ -1,7 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { handleGetGroupList, fetchBuzlamaWorks } from "@/redux/orderSlice";
-import { setFilteredGroup, setSelectedGroupNos } from "@/redux/orderSlice";
+
+import {
+  handleGetGroupList,
+  fetchBuzlamaWorks,
+  setFilteredGroup,
+  setSelectedGroupNos,
+  setSelectedHammerSectionField,
+  getJoinTheField,
+  setSelectedPersonInField,
+} from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 function GroupArea() {
   const { theme } = useSelector((theme) => theme.global);
@@ -9,6 +17,8 @@ function GroupArea() {
   const pathName = usePathname();
   const section = pathName.split("/")[2];
   const areaName = pathName.split("/")[3];
+  const [filteredPersonInField, setFilteredPersonInField] = useState([]);
+
   const {
     groupList,
     selectedGroupNo,
@@ -16,11 +26,18 @@ function GroupArea() {
     filteredGroup,
     selectedProcess,
     selectedMachine,
+    selectedHammerSectionField,
+    usersJoinedTheField,
+    selectedPersonInField,
   } = useSelector((state) => state.order);
 
   useEffect(() => {
     dispatch(handleGetGroupList());
     dispatch(fetchBuzlamaWorks({ areaName }));
+    // şimdilik isteği sadece cekıc ekranlarında atalım
+    if (areaName === "cekic") {
+      dispatch(getJoinTheField({ areaName }));
+    }
   }, [dispatch, areaName]);
 
   // seçilen grubu ılgılı ozellıklerıyle bır dızıde tut ve bu grubua gore orderları fıltrele
@@ -62,7 +79,37 @@ function GroupArea() {
     dispatch(setFilteredGroup(newFilteredGroup));
   };
 
-  const cekicAreas = ["Makine", "Açma", "Sarma", "Tezgah (Kalite Kontrol)"];
+  const cekicAreas = [
+    { field: "Makine", name: "makine", id: 1 },
+    { field: "Tezgah", name: "tezgah", id: 2 },
+    { field: "Açma", name: "acma", id: 3 },
+    { field: "Sarma", name: "sarma", id: 4 },
+  ];
+
+  //? CEKIC ISLEMLERI...
+  // cekic alanı sececek fonksıyon...
+  const handleSelectedArea = (name) => {
+    dispatch(setSelectedHammerSectionField(name));
+  };
+
+  const handleSelectedPersonInField = useCallback(
+    (operator_id) => {
+      if (selectedPersonInField !== operator_id) {
+        dispatch(setSelectedPersonInField(operator_id));
+      } else {
+        dispatch(setSelectedPersonInField(""));
+      }
+    },
+    [dispatch, selectedPersonInField]
+  );
+  console.log(selectedPersonInField);
+  
+  useEffect(() => {
+    const filtered = usersJoinedTheField.filter((item) => {
+      return item.field === selectedHammerSectionField;
+    });
+    setFilteredPersonInField(filtered);
+  }, [selectedHammerSectionField, usersJoinedTheField]);
 
   const renderArea = () => {
     if (areaName === "buzlama") {
@@ -169,10 +216,15 @@ function GroupArea() {
                 <ul>
                   {cekicAreas.map((item, index) => (
                     <li
-                      className="w-full text-center py-2 cursor-pointer hover:bg-slate-400 text-[20px] bg-slate-200 text-black border-b-2 font-bold border-black"
-                      key={index}
+                      className={`w-full py-2 h-16 items-center flex justify-center cursor-pointer hover:bg-green-500 text-[20px] text-black border-b-2 font-bold border-black ${
+                        selectedHammerSectionField === item.name
+                          ? "bg-green-500 "
+                          : `listeleman ${theme}`
+                      }`}
+                      key={item.id}
+                      onClick={() => handleSelectedArea(item.name)}
                     >
-                      {item}
+                      {item.field}
                     </li>
                   ))}
                 </ul>
@@ -185,7 +237,24 @@ function GroupArea() {
                 <span className="text-center w-full py-2 border-b text-xs">
                   Operatörler
                 </span>
-                <div className="w-full overflow-y-auto h-full pt-1 text-black"></div>
+                <ul className="w-full overflow-y-auto h-full pt-1 text-black flex flex-col ">
+                  {filteredPersonInField &&
+                    filteredPersonInField.map((item, index) => (
+                      <li
+                        key={index}
+                        onClick={() =>
+                          handleSelectedPersonInField(item.operator_id)
+                        }
+                        className={`h-12 overflow-y-auto cursor-pointer border-b border-black bg-green-500 px-2 flex items-center rounded-sm ${
+                          item.operator_id === selectedPersonInField
+                            ? "bg-green-500 "
+                            : `listeleman ${theme}`
+                        }`}
+                      >
+                        {item.operator_id}
+                      </li>
+                    ))}
+                </ul>
               </div>
             </div>
           </div>

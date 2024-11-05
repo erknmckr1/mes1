@@ -26,6 +26,10 @@ const WorkLog = sequelize.define('WorkLog', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  field: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   work_status: {
     type: DataTypes.STRING(1),
     allowNull: false
@@ -79,6 +83,14 @@ const WorkLog = sequelize.define('WorkLog', {
     allowNull: true
   },
   work_end_date: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  setup_start_date: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  setup_end_date: {
     type: DataTypes.DATE,
     allowNull: true
   },

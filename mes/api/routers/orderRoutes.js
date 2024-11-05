@@ -32,7 +32,11 @@ const {
   deleteMeasurement,
   scrapMeasure,
   getScrapMeasure,
-  deleteScrapMeasure
+  deleteScrapMeasure,
+  joinSection,
+  exitSection,
+  getPersonInTheField,
+  finishedToSetup
 } = require("../services/orderServices");
 
 //!
@@ -321,25 +325,58 @@ router.put("/deleteMeasurement", async (req, res) => {
 //? FİRE İŞLEMLERİ...
 //! Fire olçüm kaydı için query atılacak route...
 router.post("/scrapMeasure", async (req, res) => {
-  console.log(req.body)
-  const { formState,user_id,areaName } = req.body;
-  const result = await scrapMeasure(formState,user_id,areaName);
+  console.log(req.body);
+  const { formState, user_id, areaName } = req.body;
+  const result = await scrapMeasure(formState, user_id, areaName);
   return res.status(result.status).json(result.message);
 });
 
 //! fire olcumlerını cekecek route...
-router.get("/getScrapMeasure",async (req,res)=>{
-  const {order_no} = req.query
+router.get("/getScrapMeasure", async (req, res) => {
+  const { order_no } = req.query;
   const result = await getScrapMeasure(order_no);
   return res.status(result.status).json(result.message);
-})
+});
 
 //! fire  Ölçümü silme rotası
 router.put("/deleteScrapMeasure", async (req, res) => {
   const { id } = req.body;
-  console.log(id)
-  const result = await deleteScrapMeasure( id);
+  const result = await deleteScrapMeasure(id);
   return res.status(result.status).json(result.message);
 });
+//? FİRE İŞLEMLERİ SON
+
+//? CEKİC - BÖLÜME KATILMA İŞLEMLERİ
+//! Bölüme katılma route
+router.post("/join-section", async (req, res) => {
+  const { section, areaName, user_id, field } = req.body;
+  const result = await joinSection(section, areaName, user_id, field);
+  return res.status(result.status).json(result.message);
+});
+//! Bölümden ayrılma route
+router.put("/exit-section", async (req, res) => {
+  const { selectedPersonInField, areaName, selectedHammerSectionField } =
+    req.body;
+  const result = await exitSection(
+    selectedPersonInField,
+    areaName,
+    selectedHammerSectionField
+  );
+  return res.status(result.status).json(result.message);
+});
+//! Bölümdeki kullanıcıları cekecek rotue
+router.get("/getPersonInTheField", async (req, res) => {
+  const { areaName } = req.query;
+  const result = await getPersonInTheField(areaName);
+  return res.status(result.status).json(result.message);
+});
+//! Setup ı bıtırıp işi baslatacak route...
+router.post("/finishedToSetup", async (req, res) => {
+  const { work_info } = req.body;
+  const currentDateTimeOffset = new Date().toISOString(); // currentDateTimeOffset tanımlandı
+  const result = await finishedToSetup(work_info, currentDateTimeOffset);
+  return res.status(result.status).json(result.message);
+});
+//? CEKİC - BÖLÜME KATILMA İŞLEMLERİ SON...
 
 module.exports = router;

@@ -35,6 +35,7 @@ function FirePopup() {
     setOrderData(null);
   };
 
+  // inputlarda bir degısıklık oldugunda tetıklenecek fonksıyon
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -48,7 +49,6 @@ function FirePopup() {
         ? parseFloat(value) || 0 // Eğer geçerli bir sayı değilse 0 yap
         : value; // Diğer alanlar için olduğu gibi bırak
 
-    // Yeni state'i güncellerken farkı otomatik hesapla
     const newFormState = {
       ...formState,
       [name]: convertedValue,
@@ -238,7 +238,7 @@ function FirePopup() {
           exitGramage: 0.0, // Sayısal başlangıç değeri
           gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
           diffirence: 0.0, // Sayısal başlangıç değeri
-        })
+        });
       }
     } catch (err) {
       console.log(err);
@@ -302,6 +302,8 @@ function FirePopup() {
     };
   });
   console.log(formState);
+  
+  // inputFields da her nesne bir inputun özelliklerini taşır.
   const inputFields = [
     {
       name: "orderId",

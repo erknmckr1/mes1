@@ -7,13 +7,17 @@ import { setMolaPopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
-import { fetchOnBreakUsers,setİsCurrentBreak } from "@/redux/breakOperationsSlice";
+import { setUser } from "@/redux/userSlice";
+import {
+  fetchOnBreakUsers,
+  setİsCurrentBreak,
+} from "@/redux/breakOperationsSlice";
 function MolaPopup() {
   const dispatch = useDispatch();
   const [molaReason, setMolaReason] = useState(null);
   const [araSebebi, setAraSebebi] = useState("");
-  const userInfo = useSelector((state) => state.user.userInfo);
-  const {isCurrentBreak} = useSelector((state)=>state.break)
+  const { userInfo, user, userIdPopup } = useSelector((state) => state.user);
+  const { isCurrentBreak } = useSelector((state) => state.break);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3];
   const section = pathname.split("/")[2];
@@ -42,7 +46,6 @@ function MolaPopup() {
     getOzelAraReason();
   }, []);
 
-  console.log(userInfo)
   //! Özel ara oluşturmak için gerekli fonksıyon, servis fonksıoyonlarının renkleri kırmızı renkte
   //! Kullanıcı hangı sayfada araya cıkıyorsa tabloda main_section ona gore dolduruluyor.
   const createBreak = async (userInfo, araSebebi) => {
@@ -55,7 +58,7 @@ function MolaPopup() {
       operator_id: userInfo.id_dec,
       area_name: areaName,
       op_name: userInfo.op_username,
-      section:section
+      section: section,
     };
     try {
       const response = await axios.post(
@@ -64,7 +67,7 @@ function MolaPopup() {
       );
 
       if (response.data.isAlreadyOnBreak === false) {
-        await dispatch(fetchOnBreakUsers({areaName}));
+        await dispatch(fetchOnBreakUsers({ areaName }));
         toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
         dispatch(setMolaPopup(false));
       } else if (response.data.isAlreadyOnBreak === true) {
@@ -76,6 +79,49 @@ function MolaPopup() {
     }
   };
 
+  //! Molaya cıkmak ıcın ekranlarda ekstra ıd ıstıyorsak yanı gırıs yapılması ıle ısımız yoksa asagıdakı fonksıyon calısacak
+  const createBreakWıthId = async (araSebebi) => {
+    if (!araSebebi) {
+      toast.error("Ara sebebini seçmeden işlem yapamazsınız.");
+      return;
+    }
+    const startLog = {
+      break_reason_id: araSebebi,
+      operator_id: user.id_dec,
+      area_name: areaName,
+      op_name: user.op_username,
+      section,
+    };
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBreak`,
+        startLog
+      );
+
+      if (response.data.isAlreadyOnBreak === false) {
+        await dispatch(fetchOnBreakUsers({ areaName }));
+        toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
+        dispatch(setUser(""));
+        dispatch(setMolaPopup(false));
+      } else if (response.data.isAlreadyOnBreak === true) {
+        toast.error("Bu kullanici zateb molada...");
+        dispatch(setUser(""))
+      }
+    } catch (err) {
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
+      console.log(err);
+      dispatch(setUser(""))
+    }
+  };
+
+  const createBreakFunc = () => {
+    if (areaName === "cekic") {
+      createBreakWıthId(araSebebi);
+    } else {
+      createBreak(userInfo, araSebebi);
+    }
+  };
+
   const buttons = [
     {
       onClick: closeMolaPopup,
@@ -84,7 +130,7 @@ function MolaPopup() {
       className: "",
     },
     {
-      onClick: () => createBreak(userInfo, araSebebi),
+      onClick: createBreakFunc,
       children: "Araya Cik",
       type: "button",
       className: "bg-red-600 hover:bg-red-500",
@@ -159,8 +205,16 @@ function MolaPopup() {
                       </thead>
                       <tbody className="p-3">
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
-                          <th>{userInfo && userInfo.id_dec}</th>
-                          <th>{userInfo && userInfo.op_name}</th>
+                          <th>
+                            {areaName === "cekic"
+                              ? user && user.id_dec
+                              : userInfo && userInfo.id_dec}
+                          </th>
+                          <th>
+                            {areaName === "cekic"
+                              ? user && user.op_username
+                              : userInfo && userInfo.op_username}
+                          </th>
                           <th>{araSebebi}</th>
                           <th>{currentDate}</th>
                         </tr>

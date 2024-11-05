@@ -7,13 +7,14 @@ import { usePathname } from 'next/navigation';
 function BreakTable() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
+  const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const {theme} = useSelector(theme => theme.global)
   const { onBreak_users, loading, error,isCurrentBreak } = useSelector((state) => state.break);
 
   useEffect(() => {
     dispatch(fetchOnBreakUsers({areaName}));
-  }, [dispatch,isCurrentBreak]);
+  }, [dispatch,isCurrentBreak,user]);
 
   if (loading) {
     return <div>Loading...</div>;

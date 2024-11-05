@@ -151,7 +151,7 @@ function FinishedWorkPopup() {
   return (
     <div className="w-screen h-screen top-0 left-0 absolute">
       <div className="flex items-center justify-center w-full h-full">
-        <div className="w-[1800px] h-[1000px] bg-black border-2 border-white p-3 static z-50 rounded-md">
+        <div className="w-[1800px] h-[900px] bg-black border-2 border-white p-3 static z-50 rounded-md">
           <div className="w-full h-full">
             {/* title */}
             <div className="h-[100px] text-[50px] font-semibold flex justify-center items-center text-white bg-secondary">
