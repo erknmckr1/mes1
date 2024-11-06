@@ -10,7 +10,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
-import { setUser } from "@/redux/userSlice";
+import { setSelectedOrder } from "@/redux/orderSlice";
 
 function FirePopup() {
   const [formState, setFormState] = useState({
@@ -82,6 +82,75 @@ function FirePopup() {
     setFormState(newFormState);
   };
 
+  // tablodan veri seç...
+  const handleRowSelection = (params) => {
+    // Satırın seçili olup olmadığını kontrol et
+    const isSelected = selectedRow?.some((item) => item.id === params.row.id);
+
+    if (isSelected) {
+      // Satırı seçimden kaldır
+      const updatedSelection = selectedRow.filter(
+        (item) => item.id !== params.row.id
+      );
+      setSelectedRow(updatedSelection);
+      setFormState({
+        orderId: "", // Boş olarak sıfırlanıyor
+        goldSetting: 0,
+        entryGramage: 0.0,
+        exitGramage: 0.0,
+        gold_pure_scrap: 0.0,
+        diffirence: 0.0,
+      });
+    } else {
+      // Yeni satırı seç ve formu güncelle
+      setSelectedRow([params.row]);
+      setFormState({
+        orderId: params.row.order_no, // params.row kullanılarak güncelleniyor
+        goldSetting: params.row.gold_setting,
+        entryGramage: params.row.entry_measurement,
+        exitGramage: params.row.exit_measurement,
+        gold_pure_scrap: params.row.has_fire,
+        diffirence: params.row.entry_measurement - params.row.exit_measurement, // Farkı hesaplayarak ekleyebiliriz
+      });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleGetOrderById();
+    }
+  };
+
+  //! Girilen order id ye göre fire ölçümünü çekecek servis...
+  const handleGetScrapMeasure = async (order_no) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getScrapMeasure`,
+        {
+          params: { order_no },
+        }
+      );
+      if (response.status === 200) {
+        setAllMeasurement(response.data);
+        return response.data;
+      } else {
+        const emptyData = {
+          orderId: "",
+          goldSetting: 0,
+          entryGramage: 0.0,
+          exitGramage: 0.0,
+          gold_pure_scrap: 0.0,
+          diffirence: 0.0,
+        };
+        setAllMeasurement(emptyData);
+        return emptyData;
+      }
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
+  };
+
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
     console.log(formState.orderId);
@@ -98,7 +167,7 @@ function FirePopup() {
       if (response.status === 200) {
         toast.success("Sipariş başarıyla okutuldu...");
         setOrderData(response.data); // Veriyi state'e setliyoruz
-        await handleGetScrapMeasure();
+        await handleGetScrapMeasure(response.data.ORDER_ID);
         setFormState({
           orderId: response.data.ORDER_ID, // String olarak kalıyor
           goldSetting: response.data.CARAT, // Sayısal başlangıç değeri
@@ -107,65 +176,13 @@ function FirePopup() {
           gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
           diffirence: 0.0, // Sayısal başlangıç değeri
         });
+        setSelectedRow(null);
       } else {
         toast.error("Sipariş bilgileri çekilemedi, böyle bir sipariş yok.");
       }
     } catch (err) {
       toast.error(err.response?.data ? err.response.data : err.message);
-    }
-  };
-
-  // tablodan veri seç...
-  const handleRowSelection = (params) => {
-    // sipariş seçili mi ?
-    const isSelected = selectedRow?.some((item) => item.id === params.row.id);
-
-    if (isSelected) {
-      const updatedSelection = selectedRow.filter(
-        (item) => item.id !== params.row.id
-      );
-      setSelectedRow(updatedSelection);
-    } else {
-      setSelectedRow([params.row]);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleGetOrderById();
-    }
-  };
-
-  //! Girilen order id ye göre fire ölçümünü çekecek servis...
-  const handleGetScrapMeasure = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getScrapMeasure`,
-        {
-          params: {
-            order_no: orderData?.ORDER_ID,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        setAllMeasurement(response.data); // Veriyi state'e setlemeye devam ediyoruz
-        return response.data; // Veriyi ayrıca döndürüyoruz ki handleSubmit kullanabilsin
-      } else {
-        const emptyData = {
-          orderId: "", // String olarak kalıyor
-          goldSetting: 0, // Sayısal başlangıç değeri
-          entryGramage: 0.0, // Sayısal başlangıç değeri
-          exitGramage: 0.0, // Sayısal başlangıç değeri
-          gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-          diffirence: 0.0, // Sayısal başlangıç değeri
-        };
-        setAllMeasurement(emptyData);
-        return emptyData; // Boş veriyi de döndürüyoruz
-      }
-    } catch (err) {
-      console.log(err);
-      return []; // Hata durumunda boş bir array döndürüyoruz
+      setSelectedRow(null);
     }
   };
 
@@ -175,14 +192,13 @@ function FirePopup() {
       if (!orderData || orderData?.length === 0) {
         toast.error("Okutulan sipariş hatalı, sipariş bulunamadı.");
         return;
-      } else if (!formState.entryGramage || !formState.exitGramage) {
-        toast.error("Giriş ya da Çıkış ölçüsünü girip tekrar deneyiniz.");
+      } else if (!formState.entryGramage) {
+        toast.error("Giriş  ölçüsünü girip tekrar deneyiniz.");
         return;
       }
 
       // Önce mevcut fire ölçümünü alıyoruz
-      const previousScrap = await handleGetScrapMeasure();
-      console.log(previousScrap);
+      const previousScrap = await handleGetScrapMeasure(orderData.order_no);
       // Eğer daha önce bir ölçüm yapılmışsa kullanıcıya bilgi veriyoruz
       if (previousScrap && previousScrap.length > 0) {
         toast.info(
@@ -199,7 +215,7 @@ function FirePopup() {
 
       if (response.status === 200) {
         toast.success("Fire veri girişi başarıyla gerçekleştirildi.");
-        await handleGetScrapMeasure(); // Yeni ölçümü tekrar çekiyoruz
+        await handleGetScrapMeasure(orderData.ORDER_ID); // Yeni ölçümü tekrar çekiyoruz
         setFormState({
           orderId: "", // String olarak kalıyor
           goldSetting: 0, // Sayısal başlangıç değeri
@@ -210,11 +226,52 @@ function FirePopup() {
         });
       }
     } catch (err) {
-      console.log(err);
-      toast.error("Fire veri girişi sırasında bir hata oluştu.");
+      toast.error(err?.response.data);
+      setFormState({
+        orderId: "", // String olarak kalıyor
+        goldSetting: 0, // Sayısal başlangıç değeri
+        entryGramage: 0.0, // Sayısal başlangıç değeri
+        exitGramage: 0.0, // Sayısal başlangıç değeri
+        gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
+        diffirence: 0.0, // Sayısal başlangıç değeri
+      });
+      setSelectedRow(null);
     }
   };
 
+  //! Ölçüm verisini güncelleyecek query...
+  const handleUpdete = async () => {
+    if (!allMeasurement || allMeasurement.length < 0) {
+      toast.error("Güncelleyeceğiniz ölçüm için iş emrini okutunuz.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/updateMeasure`,
+        {
+          formState,
+          uniq_id:selectedRow[0].uniq_id
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Ölçüm verisi başarıyla güncellendi.");
+        setFormState({
+          orderId: "", // String olarak kalıyor
+          goldSetting: 0, // Sayısal başlangıç değeri
+          entryGramage: 0.0, // Sayısal başlangıç değeri
+          exitGramage: 0.0, // Sayısal başlangıç değeri
+          gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
+          diffirence: 0.0, // Sayısal başlangıç değeri
+        });
+        setSelectedOrder(null);
+        await handleGetScrapMeasure(orderData.ORDER_ID);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   //! secılı olcumu sılecek(status u degıstırecek) query...
   const handleDeletedMeasure = async () => {
     console.log(selectedRow);
@@ -299,10 +356,10 @@ function FirePopup() {
         : "",
       gold_setting: item.gold_setting,
       has_fire: item.gold_pure_scrap,
+      uniq_id:item.scrapMeasurement_id
     };
   });
-  console.log(formState);
-  
+
   // inputFields da her nesne bir inputun özelliklerini taşır.
   const inputFields = [
     {
@@ -360,10 +417,10 @@ function FirePopup() {
       onClick: handleSubmit,
     },
     {
-      children: "Sil",
+      children: "Düzenle",
       type: "button",
-      className: "w-[150px] sm:py-2 text-sm bg-red-500 hover:bg-red-600",
-      onClick: handleDeletedMeasure,
+      className: "w-[150px] sm:py-2 bg-secondary hover:bg-secondary text-sm",
+      onClick: handleUpdete,
     },
     {
       children: "Kapat",

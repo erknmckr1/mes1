@@ -1945,6 +1945,17 @@ async function scrapMeasure(formState, user_id, areaName) {
     diffirence,
   } = formState;
   try {
+    const measure = await PureGoldScrapMeasurements.findOne({
+      where: { order_no: orderId },
+    });
+    console.log({ measure: measure });
+    if (measure) {
+      return {
+        status: 400,
+        message: `${measure.dataValues.order_no} nolu siparişin ölçümü yapılmış. `,
+      }; // Başarılı yanıt
+    }
+
     const result = await PureGoldScrapMeasurements.create({
       order_no: orderId,
       operator: user_id,
@@ -1957,7 +1968,7 @@ async function scrapMeasure(formState, user_id, areaName) {
     });
     return { status: 200, message: "Veri başarıyla kaydedildi." }; // Başarılı yanıt
   } catch (err) {
-    console.error("Error in deleteMeasurement function:", err);
+    console.error("Error in scrapMeasure function:", err);
     return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
@@ -1984,9 +1995,46 @@ async function deleteScrapMeasure(id) {
         scrapMeasurement_id: id,
       },
     });
+
+    if (result) {
+    }
     return { status: 200, message: "Ölçüm başarıyla silindi" };
   } catch (err) {
-    console.error("Error in deleteMeasurement function:", err);
+    console.error("Error in getScrapMeasure function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
+//! Fire ölçümünü güncelleyecek servis
+async function updateMeasure(formState, uniq_id) {
+  const {
+    orderId,
+    goldSetting,
+    entryGramage,
+    exitGramage,
+    gold_pure_scrap,
+    diffirence,
+  } = formState;
+  try {
+    const result = await PureGoldScrapMeasurements.update(
+      {
+        entry_measurement: entryGramage,
+        exit_measurement: exitGramage,
+        measurement_diff: diffirence,
+      },
+      {
+        where: {
+          order_no: orderId,
+          scrapMeasurement_id: uniq_id,
+        },
+      }
+    );
+
+    return {
+      status: 200,
+      message: "Ölçüm başarıyla güncellendi.",
+    };
+  } catch (err) {
+    console.log(err);
     return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
@@ -2098,7 +2146,7 @@ async function getPersonInTheField(areaName) {
 //! Setup ı bitirip işi baslatacak servis
 async function finishedToSetup(work_info, currentDateTimeOffset) {
   const { uniq_id } = work_info;
-  console.log(uniq_id)
+  console.log(uniq_id);
   try {
     let work = await WorkLog.findOne({
       where: {
@@ -2106,13 +2154,13 @@ async function finishedToSetup(work_info, currentDateTimeOffset) {
         setup_end_date: null,
       },
     });
-    if(!work){
-     return  {
+    if (!work) {
+      return {
         status: 404,
         message: "Setup bitireceğiniz iş bulunamadı.",
       };
     }
-    console.log({x:work})
+    console.log({ x: work });
     let updateResult;
     let createResult;
     if (work) {
@@ -2184,4 +2232,5 @@ module.exports = {
   exitSection,
   getPersonInTheField,
   finishedToSetup,
+  updateMeasure,
 };

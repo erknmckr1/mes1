@@ -36,7 +36,8 @@ const {
   joinSection,
   exitSection,
   getPersonInTheField,
-  finishedToSetup
+  finishedToSetup,
+  updateMeasure
 } = require("../services/orderServices");
 
 //!
@@ -325,7 +326,6 @@ router.put("/deleteMeasurement", async (req, res) => {
 //? FİRE İŞLEMLERİ...
 //! Fire olçüm kaydı için query atılacak route...
 router.post("/scrapMeasure", async (req, res) => {
-  console.log(req.body);
   const { formState, user_id, areaName } = req.body;
   const result = await scrapMeasure(formState, user_id, areaName);
   return res.status(result.status).json(result.message);
@@ -344,6 +344,14 @@ router.put("/deleteScrapMeasure", async (req, res) => {
   const result = await deleteScrapMeasure(id);
   return res.status(result.status).json(result.message);
 });
+
+//! Fire ölçüm verisini güncelleyecek route...
+router.put("/updateMeasure",async(req,res)=>{
+  const {formState,uniq_id} = req.body;
+  console.log(req.body);
+  const result = await updateMeasure(formState,uniq_id);
+  return res.status(result.status).json(result.message);
+})
 //? FİRE İŞLEMLERİ SON
 
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ

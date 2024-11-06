@@ -105,17 +105,17 @@ function MolaPopup() {
         dispatch(setMolaPopup(false));
       } else if (response.data.isAlreadyOnBreak === true) {
         toast.error("Bu kullanici zateb molada...");
-        dispatch(setUser(""))
+        dispatch(setUser(""));
       }
     } catch (err) {
       toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
       console.log(err);
-      dispatch(setUser(""))
+      dispatch(setUser(""));
     }
   };
 
   const createBreakFunc = () => {
-    if (areaName === "cekic") {
+    if (areaName === "cekic" || areaName === "buzlama") {
       createBreakWıthId(araSebebi);
     } else {
       createBreak(userInfo, araSebebi);
@@ -206,12 +206,12 @@ function MolaPopup() {
                       <tbody className="p-3">
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
                           <th>
-                            {areaName === "cekic"
+                            {areaName === "cekic" || areaName === "buzlama"
                               ? user && user.id_dec
                               : userInfo && userInfo.id_dec}
                           </th>
                           <th>
-                            {areaName === "cekic"
+                            {areaName === "cekic" || areaName === "buzlama"
                               ? user && user.op_username
                               : userInfo && userInfo.op_username}
                           </th>

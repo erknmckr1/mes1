@@ -128,7 +128,7 @@ function LeftSideBtnArea() {
     }
 
     // Kimlik varsa ve alan 'cekic' ise ilgili fonksiyonu çağır
-    if (areaName === "cekic") {
+    if (areaName === "cekic" || areaName === "buzlama") {
       returnToBreakWıthId();
       console.log(user);
     } else {
@@ -139,7 +139,10 @@ function LeftSideBtnArea() {
   //! Molaya cıkıs ıcın ıd popup ını acacak ve sonrasında mola popupını acacak fonksıyon..
   const ozelAraWıthId = () => {
     // Kullanıcı kimliği kontrolü
+    console.log("y")
+    console.log(user)
     if (!user || !user.id_dec) {
+      console.log("x")
       dispatch(setUserIdPopup(true));
       setRetryAction("ozelAraWıthId");
       return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
@@ -147,7 +150,7 @@ function LeftSideBtnArea() {
   };
 
   const funcOzelAra = () => {
-    if (areaName === "cekic") {
+    if (areaName === "cekic" || areaName === "buzlama") {
       ozelAraWıthId();
     } else {
       openOzelAra();
