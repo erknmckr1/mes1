@@ -8,6 +8,9 @@ function HrLeaveForm() {
   const [leaveResons, setLeaveReasons] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedReason, setSelectedReason] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [formData, setFormData] = useState({
     kullanici: "",
     baslangicTarihi: "",
@@ -17,7 +20,7 @@ function HrLeaveForm() {
     aciklama: "",
     izinSebebi: "",
   });
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, allUser } = useSelector((state) => state.user);
 
   useEffect(() => {
     const getLeaveReasons = async () => {
@@ -43,7 +46,7 @@ function HrLeaveForm() {
     e.preventDefault();
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${formData.kullanici}/getuserinfo`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${selectedUser.id_dec}/getuserinfo`
       );
       if (response.status === 200) {
         setUser(response.data);
@@ -56,11 +59,22 @@ function HrLeaveForm() {
     }
   };
 
-  console.log(user);
-
+  // Kullanıcı arama input'unda değişiklik olduğunda filtreleme işlemi yapıyoruz.
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+    // Eğer input boş değilse kullanıcıları filtrele
+    if (value.trim() !== "" && name === "kullanici") {
+      const filtered = allUser?.filter((item) =>
+        item.op_username.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+      setDropdownVisible(true); // Dropdown'u görünür yap
+    } else {
+      setFilteredUsers([]);
+      setDropdownVisible(false); // Input boşsa dropdown'u kapat
+    }
   };
 
   //! Yeni izin talebi olusturmak ıcın gereklı query
@@ -88,8 +102,8 @@ function HrLeaveForm() {
           )
         ) {
           if (
-            formData.kullanici === user.id_dec ||
-            formData.kullanici === user.id_hex
+            selectedUser.id_dec === user.id_dec ||
+            selectedUser.id_hex === user.id_hex
           ) {
             const response = await axios.post(
               `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeaveByIK`,
@@ -99,7 +113,7 @@ function HrLeaveForm() {
                 op_username,
                 auth1,
                 auth2,
-                userInfo
+                userInfo,
               }
             );
 
@@ -107,7 +121,8 @@ function HrLeaveForm() {
               toast.success(
                 `${formData.kullanici}/${user?.op_username} kullanıcısı için başarıyla izin olusturuldu.`
               );
-              setFormData({
+              // Form verilerini sıfırla
+              await setFormData({
                 kullanici: "",
                 baslangicTarihi: "",
                 donusTarihi: "",
@@ -117,6 +132,8 @@ function HrLeaveForm() {
                 izinSebebi: "",
               });
               setUser(null);
+              setSelectedUser(null);
+              setSelectedReason("");
             } else {
               toast.error(
                 `${formData.kullanici}/${user?.op_username} kullanıcısı için izin olusturulamadı.`
@@ -126,6 +143,8 @@ function HrLeaveForm() {
             toast.error(
               "Personel id'yi okuttuktan sonra 'Personel Ara' butonuna tıklamayı unutmayın. Girilen id ile izin olusturmaya calıstıgınız personelin id'si uyusmuyor."
             );
+            setSelectedUser(null);
+            setSelectedReason("");
           }
         }
       }
@@ -133,12 +152,21 @@ function HrLeaveForm() {
       console.log(err);
     }
   };
+  // Kullanıcı seçildiğinde çalışacak fonksiyon
+  const handleSelectedUser = (user) => {
+    setSelectedUser(user);
+    setFormData({ ...formData, kullanici: user.op_username });
+
+    // Dropdown'u kapat ama input'taki değeri silme
+    setFilteredUsers([]);
+    setDropdownVisible(false);
+  };
 
   return (
     <div className="text-black p-4">
       <form onSubmit={handleCreateLeave}>
         <div className="grid grid-cols-2 gap-2 gap-x-4">
-          <div>
+          <div className="relative">
             <label className="block mb-2 font-semibold">Kullanıcı İd</label>
             <input
               type="text"
@@ -148,6 +176,23 @@ function HrLeaveForm() {
               value={formData.kullanici}
               onChange={handleInputChange}
             />
+            {dropdownVisible &&
+              filteredUsers.length > 0 &&
+              formData.kullanici.length > 0 && (
+                <div className="max-h-[300px] absolute p-2 overflow-y-scroll left-0 right-0 shadow-xl bg-white transition-all duration-200 ">
+                  {filteredUsers.map((item, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleSelectedUser(item)}
+                      className="text-black py-1 flex gap-x-5 border-b hover:text-white hover:font-semibold hover:bg-slate-500 cursor-pointer hover:p-2"
+                    >
+                      <span className="w-2 font-semibold">{index + 1}-</span>
+                      <span className="w-24">{item.id_dec}</span>
+                      <span>{item.op_username}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
           <div>
             <label className="block mb-2 font-semibold">
@@ -171,6 +216,7 @@ function HrLeaveForm() {
               className="w-full p-2 border rounded-md"
               required
               onChange={handleInputChange}
+              value={formData.baslangicTarihi}
             />
           </div>
           <div>
@@ -183,6 +229,7 @@ function HrLeaveForm() {
               className="w-full p-2 border rounded-md"
               required
               onChange={handleInputChange}
+              value={formData.donusTarihi}
             />
           </div>
           <div className="w-full h-12">

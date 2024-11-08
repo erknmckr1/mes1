@@ -248,6 +248,11 @@ function FirePopup() {
       return;
     }
 
+    if(!selectedRow || selectedRow.length < 0){
+      toast.error("Güncelleyeceğiniz ölçüm verisini seçiniz.");
+      return;
+    }
+
     try {
       if (confirm("Ölçüm güncellensin mi ?")) {
         const response = await axios.put(

@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 function LeaveManagement() {
   const [tab, setTab] = useState("1");
   const { selectedFlow } = useSelector((state) => state.global);
+  const { allUser } = useSelector((state) => state.user);
   const currentFlow = leaveConfig[selectedFlow];
   const currentTab = currentFlow?.tabs[tab];
   const dispatch = useDispatch();
@@ -30,10 +31,8 @@ function LeaveManagement() {
         console.log(err);
       }
     }
-
     getAllUser();
   }, []);
-
   return (
     <div className="h-full w-full   flex items-center  sm:gap-x-3 sm:px-4">
       <div className="w-full h-full flex flex-col">

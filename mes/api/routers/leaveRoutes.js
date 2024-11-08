@@ -197,6 +197,7 @@ router.get("/confirmSelections", async (req, res) => {
 
 //! Toplu talep iptal route
 router.get("/cancelSelectionsLeave", async (req, res) => {
+  console.log(req.body);
   const { leaveIds, id_dec } = req.query;
   const selections = leaveIds.split(",");
   const result = await cancelSelectionsLeave(selections, id_dec);

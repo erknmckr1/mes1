@@ -19,7 +19,6 @@ function LeaveTable({ status }) {
   const [selectionModel, setSelectionModel] = useState([]);
   const { allUser, permissions } = useSelector((state) => state.user);
 
-  console.log(permissions);
   //! Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
     const { id_dec, roleId } = userInfo;

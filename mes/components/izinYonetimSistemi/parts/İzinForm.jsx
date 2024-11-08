@@ -56,7 +56,6 @@ function IzinForm() {
   // Form data backend'e gönderme işlemi burada yapılacak
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
   };
 
   //! Yenı bir izin kaydı olusturacak fonksıyon...
@@ -125,8 +124,6 @@ function IzinForm() {
       izinSebebi: "",
     });
   }
-
-  console.log(selectedReason);
 
   return (
     <form className="text-black p-4" onSubmit={handleSubmit}>
