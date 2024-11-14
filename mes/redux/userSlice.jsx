@@ -1,5 +1,25 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+
+// Thunk: Tüm kullanıcıları getiren API çağrısı
+export const fetchAllUsers = createAsyncThunk(
+  "user/fetchAllUsers",
+  async (_, thunkAPI) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/getAllUsers`
+      );
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        return rejectWithValue("Kullanıcı verileri çekilemedi");
+      }
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
 
 export const userSlice = createSlice({
   name: "user",
@@ -34,6 +54,21 @@ export const userSlice = createSlice({
     setUserIdPopup: (state, action) => {
       state.userIdPopup = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAllUsers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllUsers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.allUser = action.payload;
+      })
+      .addCase(fetchAllUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 

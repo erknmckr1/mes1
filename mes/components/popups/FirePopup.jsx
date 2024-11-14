@@ -81,7 +81,7 @@ function FirePopup() {
 
     setFormState(newFormState);
   };
-
+  console.log(formState)
   // tablodan veri seç...
   const handleRowSelection = (params) => {
     // Satırın seçili olup olmadığını kontrol et

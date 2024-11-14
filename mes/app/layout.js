@@ -37,7 +37,7 @@ function Layout({ children }) {
   const area_name = pathName.split("/")[3];
   const foodPopupState = useSelector((state) => state.global.foodPopupState);
   const isMolaPopup = useSelector((state) => state.global.isMolaPopup);
-  const {isFirePopup} = useSelector(state => state.global)
+  const { isFirePopup } = useSelector((state) => state.global);
   const {
     stopReasonPopup,
     cancelReasonPopup,
@@ -78,7 +78,7 @@ function Layout({ children }) {
       {conditionalFinishPopup && <ConditionalFinish />}
       {pastGroupOperationsPopup && <PastGroupsOperationsPopup />}
       {userIdPopup && <UserIdPopup />}
-      {isFirePopup && <FirePopup/>}
+      {isFirePopup && <FirePopup />}
       <ToastContainer />
     </>
   );
@@ -88,16 +88,17 @@ function HomeLayout({ children }) {
   const pathName = usePathname();
   const project = pathName.split("/")[1];
   const returnUrl = localStorage.getItem("returnUrl") || "/";
-  const {isSurveyPopup,isFirePopup} = useSelector(state => state.global)
+  const { isSurveyPopup, isFirePopup } = useSelector((state) => state.global);
+  const operation = pathName.split("/")[3]
   return (
     <>
       {project === "home" && (
-        <div className="w-screen h-screen flex">
+        <div className="w-screen h-screen flex ">
           <HomeSidebars />
           <div className="flex-1 w-full flex flex-col">
             {/* header */}
             <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
-              <div></div>
+              <div className="text-[30px]">{operation === "mesaiolustur" ? "MESAİ OLUSTUR" : ""}</div>
               <div className="flex items-center space-x-10">
                 <div className=" text-white  ">
                   <a
@@ -114,7 +115,7 @@ function HomeLayout({ children }) {
                 </div>
               </div>
             </div>
-            <main className="flex-1 p-4 overflow-auto">{children}</main>
+            <main className="flex-1   ">{children}</main>
           </div>
           {isSurveyPopup && <SurveyPopup />}
         </div>

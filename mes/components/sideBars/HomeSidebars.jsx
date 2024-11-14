@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { TbNurse } from "react-icons/tb";
+import {FcOvertime} from "react-icons/fc"
 
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
@@ -109,20 +110,20 @@ function HomeSidebars() {
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },
     {
+      label: "Mesai Yönetimi",
+      icon: <FcOvertime />,
+      flow: "mesai",
+      isOpen: isMesaiOpen,
+      items: [
+        { label: "Mesai Oluştur", icon: <FaEdit />,href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaiolustur`, },
+        { label: "Mesai Onayla", icon: <BsCheckCircle /> },
+      ],
+    },
+    {
       label: "Midas 2024 Memnuniyet Anketi",
       flow: "anket",    
       href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
     },
-    // {
-    //   label: "Mesai Yönetimi",
-    //   icon: <FcOvertime />,
-    //   flow: "mesai",
-    //   isOpen: isMesaiOpen,
-    //   items: [
-    //     { label: "Mesai Oluştur", icon: <FaEdit /> },
-    //     { label: "Mesai Onayla", icon: <BsCheckCircle /> },
-    //   ],
-    // },
     // {
     //   label: "Satın Alma Yönetimi",
     //   icon: <FaMoneyBill />,

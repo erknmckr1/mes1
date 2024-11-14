@@ -2020,6 +2020,7 @@ async function updateMeasure(formState, uniq_id) {
         entry_measurement: entryGramage,
         exit_measurement: exitGramage,
         measurement_diff: diffirence,
+        gold_pure_scrap
       },
       {
         where: {

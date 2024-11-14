@@ -38,6 +38,7 @@ const {
 const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
 const orderRoutes = require("../api/routers/orderRoutes");
+const shiftRoutes = require("../api/routers/shiftRoutes");
 app.use(express.json());
 app.use(cookieParser());
 
@@ -420,3 +421,5 @@ app.use("/api/user", userRoutes);
 
 //? Order ıslemlerı ıle ılgılı rotalar (sipariş olustur iptal güncelle vs. bütün iş birimlerinin servislerini içerebilir.)
 app.use("/api/order", orderRoutes);
+
+app.use("/api/shift",shiftRoutes);

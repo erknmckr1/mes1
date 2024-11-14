@@ -51,14 +51,18 @@ body {
   border-right: 2px solid;
   border-color: white;
   cursor: pointer;
+
 }
 
 /* .MuiDataGrid-footerContainer{
   display: none !important;
 }  */
-
+/* GRİD END */
 .selected-row {
   background-color: grey !important;
+}
+.shift-row{
+  background-color: #e2ebeb;
 }
 .green-row {
   background-color: green !important;
