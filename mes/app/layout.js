@@ -95,7 +95,8 @@ function HomeLayout({ children }) {
       {project === "home" && (
         <div className="w-screen h-screen flex ">
           <HomeSidebars />
-          <div className="flex-1 w-full flex flex-col">
+          {/* sag tarafın genıslıgı 100 - sidebar kadar */}
+          <div className="flex-1 w-[calc(100%-256px)] flex flex-col">  
             {/* header */}
             <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
               <div className="text-[30px]">{operation === "mesaiolustur" ? "MESAİ OLUSTUR" : ""}</div>
@@ -115,7 +116,7 @@ function HomeLayout({ children }) {
                 </div>
               </div>
             </div>
-            <main className="flex-1   ">{children}</main>
+            <main className="flex-1 "> {children}</main>
           </div>
           {isSurveyPopup && <SurveyPopup />}
         </div>

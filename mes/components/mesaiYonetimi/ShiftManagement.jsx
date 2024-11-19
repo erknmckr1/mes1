@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
@@ -6,6 +7,7 @@ import Button from "../ui/Button";
 import { fetchShiftLogs } from "@/redux/shiftSlice";
 import { fetchAllUsers } from "@/redux/userSlice";
 import ShiftTable from "./ShiftTable";
+import { ShiftChart, BasicPie } from "./charts/ShiftChart";
 function ShiftManagement() {
   const dispatch = useDispatch();
   const [user, setUser] = useState(null);
@@ -134,7 +136,7 @@ function ShiftManagement() {
   return (
     <div className="w-full h-full flex flex-col gap-y-2">
       {/* form komponent... */}
-      <div className="w-full h-1/4 rounded-md  flex  justify-center text-black bg-white p-1  ">
+      <div className="w-auto h-1/4 rounded-md  flex  justify-center text-black bg-white p-1  ">
         {/* 1 */}
         <div className="w-[30%] ">
           <div className="flex w-full justify-evenly items-center">
@@ -271,8 +273,21 @@ function ShiftManagement() {
         </div>
       </div>
       {/* table */}
-      <div className="h-3/4 w-auto sm:w-full  bg-white rounded-md ">
-        <ShiftTable />
+      <div className="h-3/4 w-auto sm:w-full  bg-white rounded-md flex">
+        <div className="w-2/3 h-full">
+          <ShiftTable />
+        </div>
+        {/* charts */}
+         <div className="w-1/3 h-full flex  flex-col justify-center items-center ">
+          <div className="h-1/2 flex justify-center items-end">
+            {" "}
+            <ShiftChart />
+          </div>
+          <div className="h-1/2 flex justify-center items-center">
+            {" "}
+            <BasicPie />{" "}
+          </div>
+        </div> 
       </div>
     </div>
   );

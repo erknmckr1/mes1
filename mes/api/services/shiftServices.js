@@ -40,11 +40,17 @@ async function createShift(
 //! Tüm mesai verisini çekecek servis...
 async function getShiftLogs() {
   try {
-    const result = await ShiftLog.findAll();
+    const result = await ShiftLog.findAll({
+      where: {
+        shift_status : "1"
+        // shift_status: {
+        //   [Op.in]: ["1"],
+        // },
+      },
+    });
     if (result.length > 0) {
       return {
         status: 200,
-        message: "Mesai başarıyla alındı",
         message: result,
       };
     } else {
@@ -55,8 +61,41 @@ async function getShiftLogs() {
     return { status: 500, message: "İç sunucu hatası." };
   }
 }
+//! Mesaiyi iptal edecek fonksiyon...
+async function cancelShift(shift_uniq_id, cancelled_by) {
+  try {
+    const shift = await ShiftLog.findOne({
+      where: {
+        shift_uniq_id,
+      },
+    });
+    if (!shift) {
+      return {
+        status: 404,
+        message: "İptal etmeye çalıstıgınız mesai kaydı bulunamadı.",
+      };
+    }
 
+    await ShiftLog.update(
+      {
+        shift_status: "2",
+        cancelled_by,
+      },
+      {
+        where: {
+          shift_uniq_id,
+        },
+      }
+    );
+
+    return { status: 200, message: "Mesai başarıyla iptal edildi." };
+  } catch (err) {
+    console.error("Veritabanı hatası:", err);
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
 module.exports = {
   createShift,
   getShiftLogs,
+  cancelShift,
 };

@@ -11,6 +11,10 @@ const ShiftLog = sequelize.define('ShiftLog', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  cancelled_by: { // Mesaiyi oluşturan kişi
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   operator_id: { // Mesaide kalacak kişinin ID'si
     type: DataTypes.STRING,
     allowNull: true

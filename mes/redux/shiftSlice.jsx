@@ -9,13 +9,19 @@ export const fetchShiftLogs = createAsyncThunk(
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/getShiftLogs`
       );
-      return response.data; // Veriyi döndür
+      console.log("Shift Logs API Response:", response.data); // Burada veriyi kontrol edin
+      if (Array.isArray(response.data)) {
+        return response.data; // Eğer bir dizi ise döndür
+      } else {
+        return thunkAPI.rejectWithValue("Beklenmeyen veri formatı.");
+      }
     } catch (err) {
-      console.error(err);
+      console.error("API Hatası:", err);
       return thunkAPI.rejectWithValue("Veri çekilemedi.");
     }
   }
 );
+
 
 export const shiftSlice = createSlice({
   name: "shift",

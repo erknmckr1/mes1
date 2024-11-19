@@ -39,6 +39,9 @@ const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
 const orderRoutes = require("../api/routers/orderRoutes");
 const shiftRoutes = require("../api/routers/shiftRoutes");
+const User = require("../models/User");
+const Role = require("../models/Roles");
+const Permissions = require("../models/Permissions");
 app.use(express.json());
 app.use(cookieParser());
 
@@ -116,6 +119,42 @@ app.get("/check-login", async (req, res) => {
   } catch (err) {
     console.error("Token doğrulama başarısız:", err);
     res.json({ isLoggedIn: false });
+  }
+});
+
+//! check permission...
+app.get("/check-permission", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1]; // "Bearer TOKEN" formatını ayıkla
+  if (!token) {
+    return res.status(401).json({ message: "Yetkisiz erişim" });
+  }
+  try {
+    // Token'ı doğrula
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const { operator_id } = decoded;
+
+    // Kullanıcının izinlerini al (Kullanıcının ID'si üzerinden)
+    const user = await User.findByPk(operator_id, {
+      include: {
+        model: Role, // Kullanıcının rolünü dahil et
+        include: {
+          model: Permissions, // Kullanıcının rolüne bağlı izinleri dahil et
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Kullanıcı veya rol bulunamadı" });
+    }
+
+    const permissions = user.Role.Permissions.map(
+      (permission) => permission.name
+    ); 
+    return res.status(200).json(permissions); // İzinleri döndür
+  } catch (err) {
+    console.error("Token doğrulama hatası:", err); // Hata logu
+    return res.status(403).json({ message: "Geçersiz token" });
   }
 });
 
@@ -423,3 +462,5 @@ app.use("/api/user", userRoutes);
 app.use("/api/order", orderRoutes);
 
 app.use("/api/shift",shiftRoutes);
+
+module.exports = {SECRET_KEY}

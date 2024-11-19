@@ -18,7 +18,7 @@ import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { TbNurse } from "react-icons/tb";
-import {FcOvertime} from "react-icons/fc"
+import { FcOvertime } from "react-icons/fc";
 
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
@@ -79,6 +79,20 @@ function HomeSidebars() {
   const seeAll = permissions.includes("Görme");
   const onay1 = permissions.includes("1. Onay");
   const onay2 = permissions.includes("2. Onay");
+  const mesaiOlusturma = permissions.includes("MesaiOlusturma");
+
+  // HandleMesaiClick fonksiyonunu ekleyelim
+  const handleMesaiClick = () => {
+    console.log("x");
+    if (!mesaiOlusturma) {
+      // Yetki yoksa home rotasına yönlendir ve toast göster
+      toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
+      return;
+    }
+    // Yetkisi varsa ilgili rotaya yönlendir
+    window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaiolustur`;
+  };
 
   const menuItems = [
     {
@@ -92,11 +106,12 @@ function HomeSidebars() {
           icon: <FaEdit />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur`,
         },
-        (onay1 || onay2) && userInfo.roleId !== 7 && {
-          label: "İzin Talebi Onayla",
-          icon: <BsCheckCircle />,
-          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebionayla`,
-        },
+        (onay1 || onay2) &&
+          userInfo.roleId !== 7 && {
+            label: "İzin Talebi Onayla",
+            icon: <BsCheckCircle />,
+            href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebionayla`,
+          },
         seeAll && {
           label: "Tüm İzin Talepleri (İK)",
           icon: <MdDynamicFeed />,
@@ -115,13 +130,25 @@ function HomeSidebars() {
       flow: "mesai",
       isOpen: isMesaiOpen,
       items: [
-        { label: "Mesai Oluştur", icon: <FaEdit />,href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaiolustur`, },
-        { label: "Mesai Onayla", icon: <BsCheckCircle /> },
+        {
+          label: "Mesai Oluştur",
+          icon: <FaEdit />,
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home`,
+          onClick: () => handleMesaiClick(), // href yerine onClick kullanıyoruz
+        },
+        // {
+        //   label: "Mesai Onayla",
+        //   icon: <BsCheckCircle />,
+        //   onClick: () =>
+        //     handleMesaiClick(
+        //       `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaionayla`
+        //     ),
+        // },
       ],
     },
     {
       label: "Midas 2024 Memnuniyet Anketi",
-      flow: "anket",    
+      flow: "anket",
       href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
     },
     // {
@@ -141,7 +168,6 @@ function HomeSidebars() {
     // },
     // { label: "Raporlar", icon: <TbChartInfographic /> },
   ];
-
 
   const handleSelection = (item) => {
     dispatch(setSelectedFlow(item));
@@ -199,7 +225,7 @@ function HomeSidebars() {
                   >
                     <div className="flex gap-x-3 items-center">
                       {item.icon}
-                      <Link href={`${item?.href}`} >{item.label}</Link>
+                      <Link href={`${item?.href}`}>{item.label}</Link>
                     </div>
                     {item.items &&
                       (item.isOpen ? (
@@ -212,7 +238,17 @@ function HomeSidebars() {
                     <ul className="ps-4">
                       {item.items.map((subItem, subIndex) => (
                         <Link
-                          onClick={() => handleSelection(subItem.label)}
+                          onClick={() => {
+                            if (subItem.onClick) {
+                              // Eğer onClick fonksiyonu varsa onu çalıştır
+                              subItem.onClick();
+                              handleSelection(subItem.label);
+                            } else if (subItem.href) {
+                              // Eğer href varsa yönlendir
+                              handleSelection(subItem.label);
+                              window.location.href = subItem.href;
+                            }
+                          }}
                           href={`${subItem.href}`}
                         >
                           <li
