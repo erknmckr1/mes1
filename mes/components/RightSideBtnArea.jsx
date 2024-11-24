@@ -43,6 +43,7 @@ function RightSideBtnArea() {
     selectedHammerSectionField,
     selectedPersonInField,
     read_order,
+    stopReasonPopup 
   } = useSelector((state) => state.order);
 
   const { userInfo, user } = useSelector((state) => state.user);
@@ -102,7 +103,7 @@ function RightSideBtnArea() {
       setRetryAction(null); // İşlem tetiklendikten sonra sıfırla
     }
   }, [retryAction, user]);
-
+  console.log(stopReasonPopup,retryAction)
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
     // grub secılı mı ?
@@ -118,8 +119,8 @@ function RightSideBtnArea() {
     if (actionType === "group") {
       if (!user || !user.id_dec) {
         // Eğer kullanıcı ID yoksa, pop-up aç
-        dispatch(setUserIdPopup(true));
         setRetryAction("handleOpenStopPopup"); // Parametreyi kaydediyoruz
+        dispatch(setUserIdPopup(true));
         return;
       }
       if (

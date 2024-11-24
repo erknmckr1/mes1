@@ -79,6 +79,16 @@ function GroupArea() {
     dispatch(setFilteredGroup(newFilteredGroup));
   };
 
+  //? yenı makıne ıslevı gerceklestıgı zaman son prosesi listele...
+  const filteredGroupList = groupList.reduce((acc, group) => {
+    const existingGroup = acc.find((g) => g.group_no === group.group_no);
+    if (!existingGroup || new Date(existingGroup.group_creation_date) < new Date(group.group_creation_date)) {
+      // Eğer bu group_no daha önce eklenmediyse ya da daha yeniyse, güncelle
+      return acc.filter((g) => g.group_no !== group.group_no).concat(group);
+    }
+    return acc;
+  }, []);
+
   const cekicAreas = [
     { field: "Makine", name: "makine", id: 1 },
     { field: "Tezgah", name: "tezgah", id: 2 },
@@ -102,7 +112,6 @@ function GroupArea() {
     },
     [dispatch, selectedPersonInField]
   );
-  console.log(selectedPersonInField);
   
   useEffect(() => {
     const filtered = usersJoinedTheField.filter((item) => {
@@ -124,7 +133,7 @@ function GroupArea() {
                 Grup Listesi
               </h1>
               <div className="overflow-y-auto h-full">
-                {groupList.map((item, index) => (
+                {filteredGroupList.map((item, index) => (
                   <div key={index} className="text-black pt-1">
                     <div
                       // status e ve secılı olup olmama durumuna göre css ekledık...

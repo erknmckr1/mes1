@@ -51,8 +51,6 @@ function MeasurementDataEntry() {
 
     // Eğer sayı beklenen bir alan ise değeri sayıya çeviriyoruz
     const convertedValue =
-      name === "entryMeasurement" ||
-      name === "exitMeasurement" ||
       name === "entryGramage" ||
       name === "exitGramage" ||
       name === "gramage" ||
@@ -402,15 +400,15 @@ function MeasurementDataEntry() {
     },
     {
       name: "entryMeasurement",
-      placeholder: "Giriş Ölçüsünü Giriniz",
-      type: "number",
+      placeholder: "Giriş Ölçüsünü (En x Boy)",
+      type: "text",
       value: formState.entryMeasurement || "",
       className: `h-[4rem]`,
     },
     {
       name: "exitMeasurement",
-      placeholder: "Çıkış Ölçüsünü Giriniz",
-      type: "number",
+      placeholder: "Çıkış Ölçüsünü (En x Boy)",
+      type: "text",
       value: formState.exitMeasurement || "",
       className: `h-[4rem]`,
     },

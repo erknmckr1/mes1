@@ -7,7 +7,9 @@ import {
   handleGetGroupList,
   setSelectedGroupNos,
   setFilteredGroup,
+  getWorksWithoutId,
 } from "@/redux/orderSlice";
+import { setUser } from "@/redux/userSlice";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -18,7 +20,7 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 function StopJobPopup() {
   const dispatch = useDispatch();
   const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
-  const userInfo = useSelector((state) => state.user.userInfo);
+  const {userInfo,user} = useSelector((state) => state.user);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
@@ -88,7 +90,7 @@ function StopJobPopup() {
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/stopToSelectedMachine`,
             {
               selectedGroup: selectedGroupNo[0],
-              id_dec: userInfo?.id_dec,
+              id_dec: user?.id_dec,
               stop_reason_id: molaSebebi.stop_reason_id,
               area_name: areaName,
             }
@@ -101,11 +103,7 @@ function StopJobPopup() {
         if (response.status === 200) {
           toast.success(response.data);
           dispatch(handleGetGroupList());
-          getWorkList({
-            areaName,
-            userId: userInfo.id_dec,
-            dispatch,
-          });
+          dispatch(getWorksWithoutId({ areaName }));
           dispatch(setStopReasonPopup({ visible: false, actionType: "" }));
           dispatch(setSelectedGroupNos([]));
           dispatch(setFilteredGroup([]));
@@ -127,15 +125,14 @@ function StopJobPopup() {
     }
   };
 
-  console.log(stopReasonPopup);
-
   useEffect(() => {
     getBreakReason();
-  }, []);
+  }, []); 
   const buttons = [
     {
       onClick: () => {
         dispatch(setStopReasonPopup({ visible: false, actionType: "" }));
+        dispatch(setUser(null));
       },
       children: "Vazgeç",
       type: "button",
@@ -224,14 +221,22 @@ function StopJobPopup() {
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="p-3">
+                      {areaName === "kalite" && <tbody className="p-3">
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
                           <th>{userInfo && userInfo.id_dec}</th>
                           <th>{userInfo && userInfo.op_name}</th>
                           <th>{molaSebebi.stop_reason_name}</th>
                           <th>{currentDate}</th>
                         </tr>
-                      </tbody>
+                      </tbody>}
+                      {areaName === "buzlama" && <tbody className="p-3">
+                        <tr className="bg-gray-100 h-16 text-black text-[23px]">
+                          <th>{user && user.id_dec}</th>
+                          <th>{user && user.op_name}</th>
+                          <th>{molaSebebi.stop_reason_name}</th>
+                          <th>{currentDate}</th>
+                        </tr>
+                      </tbody>}
                     </table>
                   </div>
                   <div className="w-full h-[15%] ">

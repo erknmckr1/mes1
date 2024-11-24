@@ -151,7 +151,8 @@ function LeftSideBtnArea() {
 
   const funcOzelAra = () => {
     if (areaName === "cekic" || areaName === "buzlama") {
-      ozelAraWıthId();
+      //ozelAraWıthId();
+      toast.info("Molaya çıkış işlemi şuan da gerçekleştirilemiyor. Üzerinde çalışıyoruz.")
     } else {
       openOzelAra();
     }

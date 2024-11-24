@@ -235,7 +235,6 @@ function JobTable() {
     }else if (row.work_status === "6") {
       return "yellow-row";
     }
-
     return "";
   };
 

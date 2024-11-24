@@ -25,12 +25,12 @@ const MeasureData = sequelize.define(
       field: "Bölüm",
     },
     entry_measurement: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.STRING,
       allowNull: true,
       field: "Giriş Ölçüsü",
     },
     exit_measurement: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.STRING,
       allowNull: true,
       field: "Çıkış Ölçüsü",
     },

@@ -1376,6 +1376,7 @@ async function finishTheGroup({ groups, id_dec }) {
 
 //! Grubu teslim edecek servis gs-6 ws-4
 async function deliverTheGroup(group, id_dec) {
+  console.log(group)
   try {
     // Grup status "5" değilse işlem yapılmayacak
     if (group.group_status !== "5") {
@@ -1441,7 +1442,7 @@ async function deliverTheGroup(group, id_dec) {
       },
       {
         where: {
-          group_record_id: group.group_record_id,
+          group_no: group.group_no,
         },
       }
     );
