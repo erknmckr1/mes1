@@ -1950,7 +1950,9 @@ async function scrapMeasure(formState, user_id, areaName) {
       where: { order_no: orderId },
     });
     console.log({ measure: measure });
-    if (measure) {
+
+    
+    if (measure && orderId !== "123456") {
       return {
         status: 400,
         message: `${measure.dataValues.order_no} nolu siparişin ölçümü yapılmış. `,

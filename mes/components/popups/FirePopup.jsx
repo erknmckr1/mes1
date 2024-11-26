@@ -81,7 +81,7 @@ function FirePopup() {
 
     setFormState(newFormState);
   };
-  console.log(formState)
+
   // tablodan veri seç...
   const handleRowSelection = (params) => {
     // Satırın seçili olup olmadığını kontrol et
@@ -153,7 +153,6 @@ function FirePopup() {
 
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
-    console.log(formState.orderId);
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrderById`,
@@ -248,7 +247,7 @@ function FirePopup() {
       return;
     }
 
-    if(!selectedRow || selectedRow.length < 0){
+    if (!selectedRow || selectedRow.length < 0) {
       toast.error("Güncelleyeceğiniz ölçüm verisini seçiniz.");
       return;
     }
@@ -344,30 +343,32 @@ function FirePopup() {
     { field: "has_fire", headerName: "Has Fire", width: 200 },
   ];
 
-  const rows = allMeasurement?.map((item, index) => {
-    const data_entry_date = item.createdAt ? new Date(item.createdAt) : null;
-    return {
-      id: item.scrapMeasurement_id,
-      order_no: item.order_no,
-      operator: item.operator,
-      area_name: item.area_name,
-      entry_measurement: item.entry_measurement,
-      exit_measurement: item.exit_measurement,
-      data_entry_date: data_entry_date
-        ? data_entry_date.toLocaleDateString("tr-TR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          })
-        : "",
-      gold_setting: item.gold_setting,
-      has_fire: item.gold_pure_scrap,
-      uniq_id: item.scrapMeasurement_id,
-    };
-  });
+  const rows = allMeasurement
+    ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    ?.map((item, index) => {
+      const data_entry_date = item.createdAt ? new Date(item.createdAt) : null;
+      return {
+        id: item.scrapMeasurement_id,
+        order_no: item.order_no,
+        operator: item.operator,
+        area_name: item.area_name,
+        entry_measurement: item.entry_measurement,
+        exit_measurement: item.exit_measurement,
+        data_entry_date: data_entry_date
+          ? data_entry_date.toLocaleDateString("tr-TR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+          : "",
+        gold_setting: item.gold_setting,
+        has_fire: item.gold_pure_scrap,
+        uniq_id: item.scrapMeasurement_id,
+      };
+    });
 
   // inputFields da her nesne bir inputun özelliklerini taşır.
   const inputFields = [

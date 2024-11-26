@@ -13,13 +13,12 @@ import { FaRegUser } from "react-icons/fa";
 import { setSelectedFlow, setSurveyPopup } from "@/redux/globalSlice";
 import { setSelectedManagement } from "@/redux/workFlowManagement";
 import Button from "../ui/Button";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { TbNurse } from "react-icons/tb";
 import { FcOvertime } from "react-icons/fc";
-
+import Link from "next/link";
 function HomeSidebars() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // mobil side barı acıp kapatacak metot...
   const [isMesaiOpen, setIsMesaiOpen] = useState(false); // mesai menusunu acılıp kapanmasını yonetecek state
@@ -80,18 +79,27 @@ function HomeSidebars() {
   const onay1 = permissions.includes("1. Onay");
   const onay2 = permissions.includes("2. Onay");
   const mesaiOlusturma = permissions.includes("MesaiOlusturma");
-
+  const mesaiOnaylama = permissions.includes("MesaiOnaylama");
+  console.log(permissions);
   // HandleMesaiClick fonksiyonunu ekleyelim
-  const handleMesaiClick = () => {
-    console.log("x");
-    if (!mesaiOlusturma) {
-      // Yetki yoksa home rotasına yönlendir ve toast göster
-      toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
-      window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
-      return;
+  const handleMesaiClick = (click) => {
+    if (click === "mesaiOlusturma") {
+      if (!mesaiOlusturma) {
+        // Yetki yoksa home rotasına yönlendir ve toast göster
+        toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
+        return;
+      }
+      // Yetkisi varsa ilgili rotaya yönlendir
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaiolustur`;
+    } else if (click === "mesaiOnaylama") {
+      if (!mesaiOnaylama) {
+        toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
+        return;
+      }
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaionayla`;
     }
-    // Yetkisi varsa ilgili rotaya yönlendir
-    window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaiolustur`;
   };
 
   const menuItems = [
@@ -133,24 +141,20 @@ function HomeSidebars() {
         {
           label: "Mesai Oluştur",
           icon: <FaEdit />,
-          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home`,
-          onClick: () => handleMesaiClick(), // href yerine onClick kullanıyoruz
+          onClick: () => handleMesaiClick("mesaiOlusturma"), // href yerine onClick kullanıyoruz
         },
-        // {
-        //   label: "Mesai Onayla",
-        //   icon: <BsCheckCircle />,
-        //   onClick: () =>
-        //     handleMesaiClick(
-        //       `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaionayla`
-        //     ),
-        // },
+        {
+          label: "Mesai Onayla",
+          icon: <BsCheckCircle />,
+          onClick: () => handleMesaiClick("mesaiOnaylama"),
+        },
       ],
     },
-    {
-      label: "Midas 2024 Memnuniyet Anketi",
-      flow: "anket",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
-    },
+    // {
+    //   label: "Midas 2024 Memnuniyet Anketi",
+    //   flow: "anket",
+    //   href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
+    // },
     // {
     //   label: "Satın Alma Yönetimi",
     //   icon: <FaMoneyBill />,
@@ -188,7 +192,7 @@ function HomeSidebars() {
       <div
         className={`absolute sm:static top-0 left-0 h-full z-40 transition-transform transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } sm:translate-x-0 w-64 bg-black text-white border-r border-secondary`}
+        } sm:translate-x-0 w-full bg-black text-white border-r border-secondary`}
       >
         {/* img div */}
         <div className="h-[15%] sm:h-[20%] w-full flex items-center justify-center">
@@ -225,7 +229,7 @@ function HomeSidebars() {
                   >
                     <div className="flex gap-x-3 items-center">
                       {item.icon}
-                      <Link href={`${item?.href}`}>{item.label}</Link>
+                      <span>{item.label}</span>
                     </div>
                     {item.items &&
                       (item.isOpen ? (
@@ -237,7 +241,7 @@ function HomeSidebars() {
                   {item.isOpen && item.items && (
                     <ul className="ps-4">
                       {item.items.map((subItem, subIndex) => (
-                        <Link
+                        <li
                           onClick={() => {
                             if (subItem.onClick) {
                               // Eğer onClick fonksiyonu varsa onu çalıştır
@@ -246,23 +250,28 @@ function HomeSidebars() {
                             } else if (subItem.href) {
                               // Eğer href varsa yönlendir
                               handleSelection(subItem.label);
-                              window.location.href = subItem.href;
                             }
                           }}
-                          href={`${subItem.href}`}
                         >
-                          <li
-                            key={subIndex}
-                            className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
-                              selectedFlow === subItem.label
-                                ? "bg-gray-700"
-                                : ""
-                            }`}
-                          >
-                            {subItem.icon}
-                            {subItem.label}
-                          </li>
-                        </Link>
+                          {subItem.href ? (
+                            <Link
+                              href={subItem.href}
+                              className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
+                                selectedFlow === subItem.label
+                                  ? "bg-gray-700"
+                                  : ""
+                              }`}
+                            >
+                              {subItem.icon}
+                              {subItem.label}
+                            </Link>
+                          ) : (
+                            <span className="mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2">
+                              {subItem.icon}
+                              {subItem.label}
+                            </span>
+                          )}
+                        </li>
                       ))}
                     </ul>
                   )}
