@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../lib/dbConnect'); // db connection
 const Role = require('./Roles');
+const ShiftLog = require("../models/ShiftLog");
 
 const User = sequelize.define('User', {
   id_dec: {

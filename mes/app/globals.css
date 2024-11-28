@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -62,7 +72,7 @@ body {
   background-color: grey !important;
 }
 .shift-row{
-  background-color: #e2ebeb;
+  background-color: #727ee7 !important;
 }
 .green-row {
   background-color: green !important;

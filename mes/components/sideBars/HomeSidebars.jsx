@@ -99,6 +99,13 @@ function HomeSidebars() {
         return;
       }
       window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaionayla`;
+    }else if (click === "idariisler"){
+      if (!mesaiOnaylama) {
+        toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
+        return;
+      }
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/idariisler`;
     }
   };
 
@@ -147,6 +154,11 @@ function HomeSidebars() {
           label: "Mesai Onayla",
           icon: <BsCheckCircle />,
           onClick: () => handleMesaiClick("mesaiOnaylama"),
+        },
+        {
+          label: "Mesai İdari İşler",
+          icon: <BsCheckCircle />,
+          onClick: () => handleMesaiClick("idariisler"),
         },
       ],
     },

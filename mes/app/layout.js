@@ -89,17 +89,25 @@ function HomeLayout({ children }) {
   const project = pathName.split("/")[1];
   const returnUrl = localStorage.getItem("returnUrl") || "/";
   const { isSurveyPopup, isFirePopup } = useSelector((state) => state.global);
-  const operation = pathName.split("/")[3]
+  const operation = pathName.split("/")[3];
+  const operationTitles = {
+    mesaiolustur: "MESAİ OLUŞTUR",
+    mesaionayla: "MESAİ ONAYLA",
+  };
   return (
     <>
       {project === "home" && (
         <div className="w-screen h-screen flex ">
-          <HomeSidebars />
-          {/* sag tarafın genıslıgı 100 - sidebar kadar */}
-          <div className="flex-1 w-[calc(100%-256px)] flex flex-col">  
+          <div className="fixed h-full z-50 w-64">
+            <HomeSidebars />
+          </div>
+          {/* section sag tarafın genıslıgı 100vh - sidebar kadar */}
+          <section className="flex-1 flex flex-col ml-[256px] " style={{ width: 'calc(100% - 256px)' }}>
             {/* header */}
-            <div className="h-[100px] w-full border-secondary border-b shadow-lg flex items-center justify-between px-4">
-              <div className="text-[30px]">{operation === "mesaiolustur" ? "MESAİ OLUSTUR" : ""}</div>
+            <div className="h-[100px]  bg-black  border-secondary border-b shadow-lg flex items-center justify-between px-4">
+              <div className="text-[30px] text-white">
+                {operationTitles[operation]}
+              </div>
               <div className="flex items-center space-x-10">
                 <div className=" text-white  ">
                   <a
@@ -116,8 +124,8 @@ function HomeLayout({ children }) {
                 </div>
               </div>
             </div>
-            <main className="flex-1 "> {children}</main>
-          </div>
+            <main className="flex-1 w-full  "> {children}</main>
+          </section>
           {isSurveyPopup && <SurveyPopup />}
         </div>
       )}
