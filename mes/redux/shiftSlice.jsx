@@ -9,7 +9,6 @@ export const fetchShiftLogs = createAsyncThunk(
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/getShiftLogs`
       );
-      console.log("Shift Logs API Response:", response.data); // Burada veriyi kontrol edin
       if (Array.isArray(response.data)) {
         return response.data; // Eğer bir dizi ise döndür
       } else {
@@ -22,15 +21,27 @@ export const fetchShiftLogs = createAsyncThunk(
   }
 );
 
-
 export const shiftSlice = createSlice({
   name: "shift",
   initialState: {
     usersOnShifts: [],
     loading: false,
     error: null,
+    selection_shift: [],
+    selectedShiftReport:[],
+    shiftReportPopup: false
   },
-  reducers: {},
+  reducers: {
+    setSelectionShift: (state, action) => {
+      state.selection_shift = action.payload;
+    },
+    setSelectedShiftReport: (state, action) => {
+      state.selectedShiftReport = action.payload;
+    },    
+    setShiftReportPopup: (state,action) => {
+      state.shiftReportPopup = action.payload
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchShiftLogs.pending, (state) => {
@@ -49,5 +60,7 @@ export const shiftSlice = createSlice({
       });
   },
 });
+
+export const { setSelectionShift,setSelectedShiftReport,setShiftReportPopup } = shiftSlice.actions;
 
 export default shiftSlice.reducer;

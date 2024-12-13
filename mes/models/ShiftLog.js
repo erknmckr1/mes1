@@ -37,7 +37,37 @@ const ShiftLog = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    driver_name: {
+      // Mesaide kalacak kişinin ID'si
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    driver_no: {
+      // Mesaide kalacak kişinin ID'si
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     vehicle: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    vehicle_plate_no: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    station_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    evening_service_time: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    morning_service_time: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    service_time: {
       type: DataTypes.STRING,
       allowNull: true,
     },
@@ -65,7 +95,15 @@ const ShiftLog = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-  },
+    service_key:{
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+   shift_index:{
+    type:DataTypes.INTEGER,
+    allowNull:true
+   }
+  },  
   {
     tableName: "shift_log_table",
     timestamps: false,

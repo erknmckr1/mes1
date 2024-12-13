@@ -61,9 +61,11 @@ body {
   border-right: 2px solid;
   border-color: white;
   cursor: pointer;
+}
+.MuiDataGrid-row:hover{
+  background-color: rgb(47, 51, 71) !important;
 
 }
-
 /* .MuiDataGrid-footerContainer{
   display: none !important;
 }  */

@@ -40,12 +40,11 @@ async function createShift(
 
 //! Tüm mesai verisini çekecek servis...
 async function getShiftLogs() {
-  console.log("x");
   try {
     const result = await ShiftLog.findAll({
       where: {
         shift_status: {
-          [Op.in]: ["1", "3"], // Belirli shift_status değerlerini filtrele
+          [Op.in]: ["1", "3", "4", "5"], // Belirli shift_status değerlerini filtrele
         },
       },
       include: [
@@ -58,6 +57,7 @@ async function getShiftLogs() {
             "address",
             "stop_name",
             "route",
+            "op_username",
           ], // Sadece gerekli sütunları seç
         },
       ],
@@ -145,9 +145,124 @@ async function approveShift(shift_uniq_id, approved_by) {
     return { status: 500, message: "İç sunucu hatası." };
   }
 }
+
+//! Ardısık servis_key
+async function getNextServiceKey() {
+  try {
+    // Mevcut en büyük service_key değerini bul
+    const maxKey = await ShiftLog.max("service_key");
+
+    // Yeni service_key'i döndür
+    return maxKey ? maxKey + 1 : 1; // Eğer hiç yoksa 1 ile başla
+  } catch (err) {
+    console.error(err);
+    throw new Error("Service key oluşturulamadı.");
+  }
+}
+
+//! vasıta bılgılerını guncelleyecek servıs...
+async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
+  const {
+    driver_name,
+    driver_no,
+    vehicle_licance,
+    station_name,
+    service_time,
+    evening_service_time,
+    morning_service_time,
+    vehicle,
+  } = vasıtaForm;
+
+  try {
+    // Yeni bir service_key oluştur
+    const newServiceKey = await getNextServiceKey();
+
+    // Onaylanmamış kayıtları kontrol et
+    const unapprovedShifts = await ShiftLog.count({
+      where: {
+        shift_uniq_id: shiftUnıqIds,
+        shift_status: { [Op.ne]: "3" }, // Bu ifade, SQL'deki "eşit değildir" (!= veya <>) anlamını taşır.
+      },
+    });
+
+    if (unapprovedShifts > 0) {
+      return {
+        status: 403,
+        message:
+          "Sadece onaylanmış kayıtlara vasıta bilgilerini ekleyebilirsiniz. Sadece onaylı kayıtları seçin.",
+      };
+    }
+
+    // shift_status belirle
+    const shift_status = morning_service_time
+      ? "4"
+      : evening_service_time
+      ? "5"
+      : null;
+
+    if (!shift_status) {
+      return {
+        status: 400,
+        message: "Geçerli bir sabah veya akşam servis zamanı giriniz.",
+      };
+    }
+
+    // Kayıtları güncelle
+    await ShiftLog.update(
+      {
+        driver_name,
+        driver_no,
+        station_name,
+        evening_service_time,
+        morning_service_time,
+        service_time,
+        vehicle_plate_no: vehicle_licance,
+        vehicle,
+        shift_status,
+        service_key: newServiceKey,
+      },
+      {
+        where: {
+          shift_uniq_id: shiftUnıqIds,
+        },
+      }
+    );
+
+    return { status: 200, message: "Vasıta bilgileri başarıyla güncellendi." };
+  } catch (err) {
+    console.error(err); // Hata ayıklama için
+    return { status: 500, message: "İç sunucu hatası." };
+  }
+}
+
+//! Servis içindeki surayı guncelleyecek servis...
+async function savedShiftIndex(selectedServiceIndex) {
+  try {
+    for (const item of selectedServiceIndex) {
+      const { shift_uniq_id, shift_index } = item;
+      await ShiftLog.update(
+        {
+          shift_index,
+        },
+        {
+          where: {
+            shift_uniq_id,
+          },
+        }
+      );
+    }
+
+    return { status: 200, message: "Sıra güncelleme işlemi başarılı." };
+  } catch (err) {
+    return { status: 500, message: "İç Sunucu Hatası" };
+  }
+}
+
 module.exports = {
   createShift,
   getShiftLogs,
   cancelShift,
   approveShift,
+  addVehicleInfo,
+  savedShiftIndex,
 };

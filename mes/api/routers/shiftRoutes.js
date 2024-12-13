@@ -4,7 +4,9 @@ const {
   createShift,
   getShiftLogs,
   cancelShift,
-  approveShift
+  approveShift,
+  addVehicleInfo,
+  savedShiftIndex,
 } = require("../services/shiftServices");
 
 //! yenı mesaı olusturmak ıcın kullanılacak route...
@@ -53,6 +55,31 @@ router.put("/approveShift", async (req, res) => {
   const { shift_uniq_id, approved_by } = req.body;
   const result = await approveShift(shift_uniq_id, approved_by);
   res.status(result.status).json(result.message);
+});
+//! vasıta bılgılerını ekleyecek route
+router.put("/addVehicleInfo", async (req, res) => {
+  const { shiftUnıqIds, vasıtaForm } = req.body;
+  const result = await addVehicleInfo(shiftUnıqIds, vasıtaForm);
+  res.status(result.status).json(result.message);
+  ("");
+});
+//! Servisteki kişilerin sırasını guncelleyecek route
+router.put("/savedShiftIndex", async (req, res) => {
+  const { selectedServiceIndex } = req.body;
+  console.log({x:selectedServiceIndex})
+  // Gelen verinin kontrolü
+  if (
+    !Array.isArray(selectedServiceIndex) ||
+    selectedServiceIndex.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Geçerli bir sıralama verisi gönderilmedi." });
+  }
+
+  const result = await savedShiftIndex(selectedServiceIndex);
+  res.status(result.status).json(result.message);
+  ("");
 });
 
 module.exports = router;
