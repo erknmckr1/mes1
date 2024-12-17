@@ -51,6 +51,7 @@ function ShiftTable() {
         };
         return {
           id: item.shift_uniq_id,
+          service_key:item.service_key,
           op_id: item.operator_id,
           name: a?.op_username || "Bilinmiyor",
           title: a?.title || "Bilinmiyor",
@@ -70,6 +71,7 @@ function ShiftTable() {
 
   const columns = [
     { field: "op_id", headerName: "İd", width: 150 },
+    { field: "service_key", headerName: "Servis No", width: 150 },
     { field: "name", headerName: "Kullanici İsmi", width: 200 },
     { field: "title", headerName: "Ünvan", width: 200 },
     { field: "stop_name", headerName: "Durak", width: 200 },

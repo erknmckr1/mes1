@@ -7,6 +7,7 @@ const {
   approveShift,
   addVehicleInfo,
   savedShiftIndex,
+  updatedVehicleInfo,
 } = require("../services/shiftServices");
 
 //! yenı mesaı olusturmak ıcın kullanılacak route...
@@ -66,7 +67,6 @@ router.put("/addVehicleInfo", async (req, res) => {
 //! Servisteki kişilerin sırasını guncelleyecek route
 router.put("/savedShiftIndex", async (req, res) => {
   const { selectedServiceIndex } = req.body;
-  console.log({x:selectedServiceIndex})
   // Gelen verinin kontrolü
   if (
     !Array.isArray(selectedServiceIndex) ||
@@ -80,6 +80,23 @@ router.put("/savedShiftIndex", async (req, res) => {
   const result = await savedShiftIndex(selectedServiceIndex);
   res.status(result.status).json(result.message);
   ("");
+});
+//! servıs bılgılerını guncelleyecek route...
+router.put("/updatedVehicleInfo", async (req, res) => {
+  try {
+    const { vasıtaForm, service_key } = req.body;
+
+    if (!service_key) {
+      return res.status(400).json({ message: "Servis anahtarı eksik." });
+    }
+
+    const result = await updatedVehicleInfo(vasıtaForm, service_key);
+
+    res.status(result.status).json(result.message);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası. Lütfen tekrar deneyin." });
+  }
 });
 
 module.exports = router;

@@ -40,11 +40,15 @@ async function createShift(
 
 //! Tüm mesai verisini çekecek servis...
 async function getShiftLogs() {
+  const today = new Date().toISOString().split("T")[0]; // Bugünün tarihi (YYYY-MM-DD)
   try {
     const result = await ShiftLog.findAll({
       where: {
         shift_status: {
           [Op.in]: ["1", "3", "4", "5"], // Belirli shift_status değerlerini filtrele
+        },
+        start_date: {
+          [Op.gte]: today, // start_date bugünün tarihi veya sonrası olanları al
         },
       },
       include: [
@@ -172,7 +176,7 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
     morning_service_time,
     vehicle,
   } = vasıtaForm;
-
+  console.log(vasıtaForm)
   try {
     // Yeni bir service_key oluştur
     const newServiceKey = await getNextServiceKey();
@@ -258,6 +262,43 @@ async function savedShiftIndex(selectedServiceIndex) {
   }
 }
 
+//! servis bilgilerini guncelleyecek fonksıyon...
+const updatedVehicleInfo = async (vasıtaForm, service_key) => {
+  try {
+    if (!service_key || !vasıtaForm.driver_name || !vasıtaForm.driver_no) {
+      return {
+        status: 400,
+        message: "Eksik bilgi gönderildi (Servis Key, sürücü ismi, sürücü no).",
+      };
+    }
+
+    const result = await ShiftLog.update(
+      {
+        driver_name: vasıtaForm.driver_name,
+        driver_no: vasıtaForm.driver_no,
+        vehicle_licance: vasıtaForm.vehicle_licance || null,
+        station_name: vasıtaForm.station_name || null,
+        service_time: vasıtaForm.service_time || null,
+        evening_service_time: vasıtaForm.evening_service_time || null,
+        morning_service_hours: vasıtaForm.morning_service_time || null,
+        vehicle: vasıtaForm.vehicle,
+      },
+      { where: { service_key } }
+    );
+
+    if (result[0] === 0) {
+      return { status: 404, message: "Servis bilgisi bulunamadı." };
+    }
+
+    return {
+      status: 200,
+      message: "Servis bilgileri güncelleme işlemi başarılı.",
+    };
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 module.exports = {
   createShift,
   getShiftLogs,
@@ -265,4 +306,5 @@ module.exports = {
   approveShift,
   addVehicleInfo,
   savedShiftIndex,
+  updatedVehicleInfo,
 };

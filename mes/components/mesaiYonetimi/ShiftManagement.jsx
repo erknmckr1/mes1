@@ -276,8 +276,19 @@ function IdariIsler() {
   }, []);
 
   const groupedData = usersOnShifts.reduce((acc, curr) => {
-    const { service_key, vehicle, station_name, shift_uniq_id, start_date } =
-      curr;
+    const {
+      service_key,
+      vehicle,
+      station_name,
+      shift_uniq_id,
+      start_date,
+      driver_name,
+      driver_no,
+      evening_service_time,
+      morning_service_time,
+      service_time,
+      vehicle_plate_no,
+    } = curr;
 
     // Eğer service_key eksikse bu kaydı atla
     if (!service_key) {
@@ -296,6 +307,12 @@ function IdariIsler() {
         user_count: 0,
         shiftIds: [],
         start_date,
+        driver_name,
+        driver_no,
+        evening_service_time,
+        morning_service_time,
+        service_time,
+        vehicle_plate_no,
       };
     }
 
@@ -320,9 +337,16 @@ function IdariIsler() {
     station_names: Array.from(data.station_names), // Set'ten diziye çevir
     user_count: data.user_count,
     shiftIds: data.shiftIds,
-    start_date:data.start_date
+    start_date: data.start_date,
+    service_time: data.service_time,
+    start_date: data.start_date,
+    driver_name: data.driver_name,
+    driver_no: data.driver_no,
+    evening_service_time: data.evening_service_time,
+    morning_service_time: data.morning_service_time,
+    vehicle_plate_no: data.vehicle_plate_no,
   }));
-  
+
   //! mesai kaydına servıs bılgılerını ekleyecek fonksıyon...
   const handleAddVehicleInfo = async () => {
     if (!vasıtaForm.vehicle) {
@@ -355,6 +379,7 @@ function IdariIsler() {
       if (response.status === 200) {
         toast.success("Vasıta bilgileri başarıyla güncellendi.");
         dispatch(fetchShiftLogs());
+        dispatch(setSelectionShift([]));
         setVasıtaForm({
           driver_name: "",
           driver_no: "",
@@ -369,7 +394,7 @@ function IdariIsler() {
       console.log(err);
     }
   };
-
+  console.log(selectedShiftReport);
   //! Mesai kaydını ıptal edecek istek
   handleCancelShift = async (rows) => {
     if (rows.length === 0) {
@@ -420,21 +445,76 @@ function IdariIsler() {
   // servıs atananlar tablosundan satır sececek fonksıyon...
   const handleSelectedRow = (row) => {
     const currentSelectedShiftReport = [...selectedShiftReport];
-
+    // Eğer zaten seçiliyse, seçimi kaldır
     if (
       currentSelectedShiftReport
         .map((item) => item.service_key)
         .includes(row.service_key)
     ) {
-      dispatch(
-        setSelectedShiftReport(
-          currentSelectedShiftReport.filter(
-            (item) => item.service_key !== row.service_key
-          )
-        )
+      const updatedSelection = currentSelectedShiftReport.filter(
+        (item) => item.service_key !== row.service_key
       );
+
+      dispatch(setSelectedShiftReport(updatedSelection));
+
+      // Eğer seçim sıfırsa veya birden fazlaysa formu sıfırla
+      if (updatedSelection.length !== 1) {
+        setVasıtaForm({
+          driver_name: "",
+          driver_no: "",
+          vehicle_licance: "",
+          station_name: "",
+          service_time: "12:00",
+          evening_service_time: times[0],
+          morning_service_hours: "",
+          vehicle: "",
+        });
+      } else {
+        // Eğer seçim 1'e düştüyse formu doldur
+        setVasıtaForm({
+          driver_name: updatedSelection[0].driver_name || "",
+          driver_no: updatedSelection[0].driver_no || "",
+          vehicle_licance: updatedSelection[0].vehicle_plate_no || "",
+          station_name: updatedSelection[0].station_name[0] || "",
+          service_time: updatedSelection[0].service_time || "12:00",
+          evening_service_time:
+            updatedSelection[0].evening_service_time || times[0],
+          morning_service_hours: updatedSelection[0].morning_service_time || "",
+          vehicle: updatedSelection[0].vehicle || "",
+        });
+      }
     } else {
-      dispatch(setSelectedShiftReport([...currentSelectedShiftReport, row]));
+      // Eğer seçim yapılıyorsa, ekle
+      const updatedSelection = [...currentSelectedShiftReport, row];
+      dispatch(setSelectedShiftReport(updatedSelection));
+
+      // Eğer seçim 1 olduysa formu doldur
+      if (updatedSelection.length === 1) {
+        const selected = updatedSelection[0]; // Seçili eleman
+
+        setVasıtaForm({
+          driver_name: selected.driver_name || "", // Null kontrolü
+          driver_no: selected.driver_no || "",
+          vehicle_licance: selected.vehicle_plate_no || "", // Eğer `vehicle_plate_no` yoksa kontrol edin
+          station_name: selected.station_names[0] || "", // Array kontrolü
+          service_time: selected.service_time || "12:00",
+          evening_service_time: selected.evening_service_time || times[0],
+          morning_service_hours: selected.morning_service_time || "",
+          vehicle: selected.vehicle || "",
+        });
+      } else {
+        // Eğer seçim birden fazlaysa formu sıfırla
+        setVasıtaForm({
+          driver_name: "",
+          driver_no: "",
+          vehicle_licance: "",
+          station_name: "",
+          service_time: "12:00",
+          evening_service_time: times[0],
+          morning_service_hours: "",
+          vehicle: "",
+        });
+      }
     }
   };
 
@@ -442,6 +522,30 @@ function IdariIsler() {
   const handleOpenReportPopup = () => {
     dispatch(setShiftReportPopup(true));
   };
+
+  //! Servis bilgilerini güncelleyecek fonksiyon...
+  const handleUpdatedService = async () => {
+    try {
+      if (selectedShiftReport.length !== 1) {
+        toast.error("Güncelleme yapmak için sadece bir servis seçiniz.");
+        return;
+      }
+      if (confirm("Servis bilgileri güncellensin mi ?")) {
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/updatedVehicleInfo`,
+          { vasıtaForm, service_key: selectedShiftReport[0].service_key }
+        );
+
+        if (response.status === 200) {
+          toast.success("Servis bilgileri başarıyla güncellendi.");
+          dispatch(fetchShiftLogs());
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <div className=" w-full ">
       <div className="h-[600px] flex">
@@ -553,10 +657,10 @@ function IdariIsler() {
                   placeholder={item.placeholder}
                   addProps={item.className}
                   type={item.type}
-                  value={vasıtaForm[item.name]} // Değeri state'den alıyor
+                  value={vasıtaForm[item.name]} // Seçili verilerle doldurulan değer
                   onChange={(e) =>
                     handleChange({ name: item.name, value: e.target.value })
-                  } // Ortak handleChange fonksiyonu
+                  }
                 />
               ))}
             </div>
@@ -603,6 +707,10 @@ function IdariIsler() {
               <Button
                 onClick={handleAddVehicleInfo}
                 children={"Vasıta Bilgilerini Ekle"}
+              />
+              <Button
+                onClick={handleUpdatedService}
+                children={"Vasıta Bilgileri Güncelle"}
               />
               <Button
                 onClick={handleOpenReportPopup}

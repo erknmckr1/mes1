@@ -7,6 +7,8 @@ import { FaRegSave, FaDownload, FaSearch, FaCalendarAlt } from "react-icons/fa";
 import { RiArrowGoBackLine } from "react-icons/ri";
 import axios from "axios";
 import { toast } from "react-toastify";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 function ShiftReportPopup() {
   const dispatch = useDispatch();
@@ -18,6 +20,36 @@ function ShiftReportPopup() {
   );
   const [serviceDate, setServiceDate] = useState("");
   const [filteredServiceList, setFilteredServiceList] = useState([]);
+
+  const generatePDF = () => {
+    const doc = new jsPDF(); // Yeni PDF belgesi oluştur
+    doc.setFont("times", "normal"); // Times New Roman
+    // PDF başlığı
+    doc.text("Yolcu Listesi", 14, 10);
+    doc.setFont("helvetica", "normal"); // jsPDF'nin varsayılan Türkçe destekli fontu
+
+    // Tablo verileri için başlıklar
+    const tableColumn = ["Sıra", "ID", "Kullanıcı Adı", "Durak", "Adres"];
+
+    // Tablo verileri (selectedServiceIndex üzerinden)
+    const tableRows = selectedServiceIndex.map((item, index) => [
+      index + 1,
+      item.operator_id,
+      item.User.op_username,
+      item.station_name,
+      item.station_name,
+    ]);
+
+    // Tabloyu PDF'e ekle
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20, // Tabloyu PDF'in altına yerleştirme
+    });
+
+    // PDF'i indir
+    doc.save("YolcuListesi.pdf");
+  };
 
   // Eger ıdarı ısler komponentınde bır
   const groupedData = usersOnShifts.reduce((acc, curr) => {
@@ -177,9 +209,18 @@ function ShiftReportPopup() {
                     <div className="w-full rounded-md flex justify-between items-center  h-auto text-center p-2  bg-[#A6AEBF]">
                       <h1 className="w-auto">Yolcu Listesi</h1>
                       <div className="flex w-auto items-center gap-x-5 ">
-                        <button onClick={savedShiftIndex} className="p-2 hover:bg-gray-300 rounded">
+                        <button
+                          onClick={savedShiftIndex}
+                          className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
+                        >
                           {" "}
-                          <FaRegSave className="text-xl text-[#eceff3] cursor-pointer" />
+                          <FaRegSave className="text-xl cursor-pointer" />
+                        </button>
+                        <button
+                          onClick={generatePDF}
+                          className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
+                        >
+                          <FaDownload className=" text-xl cursor-pointer" />
                         </button>
                       </div>
                     </div>
@@ -273,7 +314,7 @@ function ShiftReportPopup() {
                             type="date"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                           />
-                          <button className="p-2 hover:bg-gray-300 rounded">
+                          <button className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded">
                             <FaCalendarAlt className="text-xl cursor-pointer text-[#eceff3]" />
                           </button>
                         </div>
@@ -281,7 +322,7 @@ function ShiftReportPopup() {
                         {/* Filtreleme butonu */}
                         <button
                           onClick={handleFilteredDateService}
-                          className="p-2 hover:bg-gray-300 rounded"
+                          className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
                         >
                           <FaSearch className="text-xl text-[#eceff3] cursor-pointer" />
                         </button>
@@ -289,7 +330,7 @@ function ShiftReportPopup() {
                         {/* Reset butonu */}
                         <button
                           onClick={handleResetServiceData}
-                          className="p-2 hover:bg-gray-300 rounded"
+                          className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
                         >
                           <RiArrowGoBackLine className="text-xl text-[#eceff3] cursor-pointer" />
                         </button>
