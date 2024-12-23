@@ -4,7 +4,9 @@ import { setShiftReportPopup, fetchShiftLogs } from "@/redux/shiftSlice";
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { FaRegSave, FaDownload, FaSearch, FaCalendarAlt } from "react-icons/fa";
+import { MdDeleteOutline } from "react-icons/md";
 import { RiArrowGoBackLine } from "react-icons/ri";
+import { IoExitOutline } from "react-icons/io5";
 import axios from "axios";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
@@ -12,15 +14,18 @@ import "jspdf-autotable";
 
 function ShiftReportPopup() {
   const dispatch = useDispatch();
-  const [selectedService, setSelectedService] = useState([]);
-  const [selectedServiceIndex, setSelectedServiceIndex] = useState([]);
-  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  const [selectedService, setSelectedService] = useState([]); // seçili servisi tutacak state...
+  const [selectedServiceIndex, setSelectedServiceIndex] = useState([]); // servis seçim esnasında onUserShıft ı shıft ındex'e göre sıralayp tutacak state sol tablo
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null); // surukleme esnasında sol tarafdaki tabledan secılenın index'ini tutacak state...
+  const [draggedShiftItem, setDraggedShiftItem] = useState({}); // Mesai kayıtları tablosunda (sol taraf) suruklenen kaydın bılgılerını tutacak state
+  const [selectedShift, setSelectedShift] = useState({}); // seçilen mesi kaydının bılgısını tutacak state...
   const { selectedShiftReport, usersOnShifts } = useSelector(
     (state) => state.shift
   );
   const [serviceDate, setServiceDate] = useState("");
   const [filteredServiceList, setFilteredServiceList] = useState([]);
 
+  // tablo verısını pdf olarak al...
   const generatePDF = () => {
     const doc = new jsPDF(); // Yeni PDF belgesi oluştur
     doc.setFont("times", "normal"); // Times New Roman
@@ -53,8 +58,22 @@ function ShiftReportPopup() {
 
   // Eger ıdarı ısler komponentınde bır
   const groupedData = usersOnShifts.reduce((acc, curr) => {
-    const { service_key, vehicle, station_name, shift_uniq_id, start_date } =
-      curr;
+    const {
+      service_key,
+      vehicle,
+      station_name,
+      shift_uniq_id,
+      start_date,
+      driver_name,
+      driver_no,
+      end_time,
+      morning_service_time,
+      evening_service_time,
+      start_time,
+      vehicle_plate_no,
+      opproved_time,
+      end_date,
+    } = curr;
     if (!service_key) {
       return acc;
     }
@@ -70,6 +89,15 @@ function ShiftReportPopup() {
         user_count: 0,
         shiftIds: [],
         start_date,
+        driver_name,
+        driver_no,
+        end_time,
+        morning_service_time,
+        evening_service_time,
+        start_time,
+        vehicle_plate_no,
+        opproved_time,
+        end_date,
       };
     }
 
@@ -93,13 +121,29 @@ function ShiftReportPopup() {
     user_count: data.user_count,
     shiftIds: data.shiftIds,
     start_date: data.start_date,
+    driver_name: data.driver_name,
+    driver_no: data.driver_no,
+    end_time: data.end_time,
+    morning_service_time: data.morning_service_time,
+    evening_service_time: data.evening_service_time,
+    start_time: data.start_time,
+    vehicle_plate_no: data.vehicle_plate_no,
+    opproved_time: data.opproved_time,
+    end_date: data.end_date,
   }));
 
-  // drag drop function
-  const handleDragStart = (index) => {
-    setDraggedItemIndex(index); // Sürüklenen elemanın indeksini kaydet
+  // seçili dataya mı bakılıyor tum dataya mı ?
+  const resultDatas = () => {
+    return selectedShiftReport.length > 0 ? selectedShiftReport : result;
   };
 
+  //? SOL TARAFTAKİ TABLE ICIN DRAG DROP OLAYLARI
+  // drag drop function sol taraftaki table ıcın...
+  const handleDragStart = (index, item) => {
+    setDraggedItemIndex(index); // Sürüklenen elemanın indeksini kaydet
+    setDraggedShiftItem(item);
+  };
+  // hedef bolgenın uzerınde dolasırken tetıklenır.
   const handleDragOver = (event) => {
     event.preventDefault(); // Tarayıcı varsayılanını engelle
   };
@@ -118,8 +162,7 @@ function ShiftReportPopup() {
     setSelectedServiceIndex(reindexedList);
     setDraggedItemIndex(null);
   };
-
-  // drag drop function
+  //? SOL TARAFTAKİ TABLE ICIN DRAG DROP OLAYLARI BITIS
 
   // Servıs sececek function...
   const handleSelectedRow = (row) => {
@@ -128,7 +171,6 @@ function ShiftReportPopup() {
       setSelectedServiceIndex([]);
     } else {
       setSelectedService(row);
-
       // seçili servise göre datayı filtrele
       // Seçili servise göre datayı filtrele ve shift_index'e göre sırala
       const filteredData = usersOnShifts
@@ -138,17 +180,10 @@ function ShiftReportPopup() {
     }
   };
 
+  // popup ı kapatacak fonksıyon...
   const handleClosePopup = () => {
     dispatch(setShiftReportPopup(false));
-  };
-
-  // const filteredData = usersOnShifts.filter(
-  //   (item) => item.service_key === selectedService?.service_key
-  // );
-
-  // seçili dataya mı bakılıyor tum dataya mı ?
-  const resultDatas = () => {
-    return selectedShiftReport.length > 0 ? selectedShiftReport : result;
+    setDraggedShiftItem({});
   };
 
   // servıs lıstesını guncelleyecek metot.
@@ -158,7 +193,7 @@ function ShiftReportPopup() {
     );
     setFilteredServiceList(filteredData); // Filtrelenmiş veriyi state'e ata
   };
-  //
+  // ekrandaki seçili elemanları resetleyecek fonksıyon...
   const handleResetServiceData = () => {
     setServiceDate(""); // Tarih seçimini sıfırla
     setFilteredServiceList([]); // Filtrelenmiş veriyi temizle
@@ -188,6 +223,68 @@ function ShiftReportPopup() {
     }
   };
 
+  //! Servis degısıklıgını sağlayacak fonksiyon...
+  const handleDropToChangeService = async (item) => {
+    if (!draggedShiftItem) {
+      toast.error("Tasiyacağınız servis kaydını sürüleyiniz.");
+      return;
+    }
+    try {
+      if (confirm("Taşinsin mi ?")) {
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/moveToDiffService`,
+          {
+            draggedShiftItem,
+            item,
+          }
+        );
+        if (response.status === 200) {
+          toast.success(response?.data);
+          dispatch(fetchShiftLogs());
+        }
+        console.log(response)
+      }
+    } catch (err) {
+      console.log(err);
+      const errorMessage = err.response?.data?.message || "Bir hata oluştu.";
+      toast.error(errorMessage);
+    }
+  };
+
+  // Serviste bulunan mesai kayıtlarını gosteren tablodan sacılen satırı tutacak state sadece bır satır.
+  const handleSelectedShıft = (item) => {
+    if (selectedShift.shift_uniq_id === item.shift_uniq_id) {
+      setSelectedShift({});
+    } else {
+      setSelectedShift(item);
+    }
+  };
+
+  //! Kullanıcıyı servisten cıkaracak query...
+  const userOutOfService = async () => {
+    if (!selectedShift) {
+      toast.error("Servisten cıkaracagınız yolcuyu seçin.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/userOutOfService`,
+        {
+          selectedShift,
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(`${response.data}`);
+        setSelectedShift({});
+        dispatch(fetchShiftLogs());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  console.log(selectedShift);
   return (
     <div className="w-screen    z-50 h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex  justify-center items-center w-full h-full">
@@ -221,6 +318,12 @@ function ShiftReportPopup() {
                           className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
                         >
                           <FaDownload className=" text-xl cursor-pointer" />
+                        </button>
+                        <button
+                          onClick={userOutOfService}
+                          className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
+                        >
+                          <MdDeleteOutline  className=" text-xl cursor-pointer"  />
                         </button>
                       </div>
                     </div>
@@ -259,10 +362,18 @@ function ShiftReportPopup() {
                             <tr
                               key={index}
                               draggable
-                              onDragStart={() => handleDragStart(index)}
+                              onDragStart={() => handleDragStart(index, item)}
                               onDragOver={handleDragOver}
                               onDrop={() => handleDrop(index)}
-                              className="border-b h-8 hover:bg-slate-300 cursor-pointer"
+                              onClick={() => {
+                                handleSelectedShıft(item);
+                              }}
+                              className={`border-b h-8 hover:bg-slate-300 cursor-pointer ${
+                                item.shift_uniq_id ===
+                                selectedShift.shift_uniq_id
+                                  ? "bg-[#D0E8C5]"
+                                  : ""
+                              }`}
                             >
                               <td className="text-center border border-slate-400">
                                 {index + 1}
@@ -369,6 +480,8 @@ function ShiftReportPopup() {
                               } hover:bg-gray-200`}
                               //style={{ height: "w50px" }}
                               onClick={() => handleSelectedRow(item)} // Satır seçme fonksiyonunu çağır
+                              onDragOver={handleDragOver}
+                              onDrop={() => handleDropToChangeService(item)}
                             >
                               <td className="text-center border border-slate-400 ">
                                 {item.vehicle}

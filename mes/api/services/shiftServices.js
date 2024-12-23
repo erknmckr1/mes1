@@ -176,7 +176,7 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
     morning_service_time,
     vehicle,
   } = vasıtaForm;
-  console.log(vasıtaForm)
+  console.log(vasıtaForm);
   try {
     // Yeni bir service_key oluştur
     const newServiceKey = await getNextServiceKey();
@@ -296,9 +296,121 @@ const updatedVehicleInfo = async (vasıtaForm, service_key) => {
     };
   } catch (err) {
     console.log(err);
+    return { status: 500, message: "İç Sunucu Hatası" };
   }
 };
 
+//! servis içindeki bir kullanıcıyı yenı bır servıse tasıyacak fonksıyon...
+const moveToDiffService = async (draggedShiftItem, item) => {
+  const {
+    service_key,
+    vehicle,
+    morning_service_time,
+    evening_service_time,
+    start_date,
+    driver_name,
+    start_time,
+    end_date,
+    opproved_time,
+    vehicle_plate_no,
+  } = item;
+  try {
+    await ShiftLog.update(
+      {
+        service_key,
+        vehicle,
+        evening_service_time,
+        morning_service_time,
+        start_date,
+        driver_name,
+        start_time,
+        end_date,
+        opproved_time,
+        vehicle_plate_no,
+      },
+      {
+        where: {
+          shift_uniq_id: draggedShiftItem.shift_uniq_id,
+        },
+      }
+    );
+    return {
+      status: 200,
+      message: `${draggedShiftItem.User.op_username} ${vehicle}'e taşındı.`,
+    };
+  } catch (err) {
+    console.log(err);
+    return { status: 500, message: "İç Sunucu Hatası" };
+  }
+};
+//! Servisten kullanıcı cıkarakcak servis...
+const userOutOfService = async (selectedShift) => {
+  const { shift_uniq_id } = selectedShift;
+  try {
+    await ShiftLog.update(
+      {
+        driver_name: "",
+        driver_no: "",
+        evening_service_time: "",
+        morning_service_time: "",
+        service_key: "",
+        service_time: "",
+        shift_status: "",
+        station_name: "",
+        vehicle: "",
+        vehicle_plate_no: "",
+        shift_status: "3",
+      },
+      {
+        where: {
+          shift_uniq_id,
+        },
+      }
+    );
+    return {
+      status: 200,
+      message: `${selectedShift.User.op_username} ${selectedShift.User.vehidle}'den çıkarıldı`,
+    };
+  } catch (error) {
+    console.log(error);
+    return { status: 500, message: "İç Sunucu Hatası" };
+  }
+};
+//! Servise kullanıcı ekleyecek servis...
+const addUserToService = async (selection_shift, selectedShiftReport) => {
+  console.log(selectedShiftReport);
+  try {
+    for (const shift of selection_shift) {
+      await ShiftLog.update(
+        {
+          driver_name: selectedShiftReport.driver_name,
+          driver_no: selectedShiftReport.driver_no,
+          evening_service_time: selectedShiftReport.evening_service_time,
+          morning_service_time: selectedShiftReport.morning_service_hours,
+          service_key: selectedShiftReport.service_key,
+          service_time: selectedShiftReport.service_time,
+          vehicle: selectedShiftReport.vehicle,
+          vehicle_plate_no: selectedShiftReport.vehicle_plate_no,
+          station_name: selectedShiftReport.station_names?.[0] || null,
+          shift_status:selectedShiftReport.shift_status
+        },
+        {
+          where: {
+            shift_uniq_id: shift.uniq_id,
+          },
+        }
+      );
+    }
+
+    return {
+      status: 200,
+      message: `${selectedShiftReport.vehicle}'e kayıtlar eklendi`,
+    };
+  } catch (err) {
+    console.log(err);
+    return { status: 500, message: "İç Sunucu Hatası" };
+  }
+};
 module.exports = {
   createShift,
   getShiftLogs,
@@ -307,4 +419,7 @@ module.exports = {
   addVehicleInfo,
   savedShiftIndex,
   updatedVehicleInfo,
+  moveToDiffService,
+  userOutOfService,
+  addUserToService,
 };

@@ -48,6 +48,23 @@ function ConfirmShift() {
 
   //! Mesai kaydını onaylayacak istek
   handleApproveShift = async (rows) => {
+    if (rows.length === 0) {
+      toast.warning("İptal etmek ıstedıgınız mesai kaydını seçiniz.");
+      return;
+    }
+
+    // some metounda eger belırtılen kostul saglanıyorsa true doner
+    const hasShiftStatusThree = rows.some(
+      (item) => item.shift_status === "Onay Bekliyor"
+    );
+
+    if (!hasShiftStatusThree) {
+      toast.warning(
+        "Seçtiginiz mesai kaydı onaylanmıs ya da seçilenler arasında onaylanmıs kayıtlar  var."
+      );
+      return; // Eğer bu koşula girerse, fonksiyon devam etmez.
+    }
+
     const shiftIds = rows.map((item) => item.uniq_id);
     try {
       if (confirm("Mesai Kayıtları Onaylansın mı ?")) {
@@ -112,6 +129,7 @@ function ConfirmShift() {
       toast.error("Mesai iptal edilemedi sayfayı yenıleyıp tekrar deneyin.");
     }
   };
+  console.log(selection_shift);
   return (
     <div className=" w-full">
       <div className="bg-white h-[600px] flex">
@@ -232,6 +250,7 @@ function IdariIsler() {
       group: "servis",
     },
   ];
+
   const vasıtInputField = [
     {
       name: "driver_name",
@@ -288,6 +307,7 @@ function IdariIsler() {
       morning_service_time,
       service_time,
       vehicle_plate_no,
+      shift_status
     } = curr;
 
     // Eğer service_key eksikse bu kaydı atla
@@ -313,6 +333,8 @@ function IdariIsler() {
         morning_service_time,
         service_time,
         vehicle_plate_no,
+        shift_status
+        
       };
     }
 
@@ -345,6 +367,7 @@ function IdariIsler() {
     evening_service_time: data.evening_service_time,
     morning_service_time: data.morning_service_time,
     vehicle_plate_no: data.vehicle_plate_no,
+    shift_status:data.shift_status
   }));
 
   //! mesai kaydına servıs bılgılerını ekleyecek fonksıyon...
@@ -366,6 +389,14 @@ function IdariIsler() {
 
     if (isApproved) {
       toast.error("İşleme devam etmek için sadec onaylı kayıtları seçin.");
+      return;
+    }
+
+    const isUseVehicle = result?.some(
+      (item) => item.vehicle === vasıtaForm.vehicle
+    );
+    if (isUseVehicle) {
+      toast.error(`${vasıtaForm.vehicle} kullanılıyor`);
       return;
     }
     try {
@@ -394,7 +425,7 @@ function IdariIsler() {
       console.log(err);
     }
   };
-  console.log(selectedShiftReport);
+
   //! Mesai kaydını ıptal edecek istek
   handleCancelShift = async (rows) => {
     if (rows.length === 0) {
@@ -546,6 +577,58 @@ function IdariIsler() {
     }
   };
 
+  //! Seçili kayıtları belirli bir servise atayacak query...
+  const handleAddUserToService = async () => {
+    if (selectedShiftReport.length !== 1) {
+      toast.error("Kayıtları taşıyacağınız sadece 1 servis seçin");
+      return;
+    }
+    if (selection_shift.length === 0) {
+      toast.error("Servise taşıyacağınız kullanıcıları seçin.");
+      return;
+    }
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/addUserToService`,
+        {
+          selection_shift: selection_shift,
+          selectedShiftReport: selectedShiftReport[0],
+        }
+      );
+
+      if (response.status === 200) {
+        // Backend'den dönen mesajı kontrol et
+        toast.success(response.data.message || "Ekleme işlemi başarılı.");
+        dispatch(fetchShiftLogs());
+        dispatch(setSelectionShift([]));
+        dispatch(setSelectedShiftReport([]));
+        setVasıtaForm({
+          driver_name: "",
+          driver_no: "",
+          vehicle_licance: "",
+          station_name: "",
+          service_time: "12:00",
+          evening_service_time: times[0],
+          morning_service_time: "",
+        });
+      } else {
+        toast.error("Bir hata oluştu.");
+      }
+    } catch (err) {
+      console.log(err);
+      const errorMessage = err.response?.data?.message || "Bir hata oluştu.";
+      toast.error(errorMessage);
+    }
+  };
+  console.log(selection_shift, selectedShiftReport);
+  // secılen kullanıcıyı ıptal edecek fonksıyon...
+  const cancelSelectingShift = (item) => {
+    dispatch(
+      setSelectionShift(
+        selection_shift.filter((selectedRow) => selectedRow.id !== item.id)
+      )
+    );
+  };
   return (
     <div className=" w-full ">
       <div className="h-[600px] flex">
@@ -559,6 +642,12 @@ function IdariIsler() {
               onClick={() => handleCancelShift(selection_shift)}
               type="button"
               className="w-[70%] py-2 bg-red-500 hover:bg-red-600"
+            />
+            <Button
+              children={"Ekle"}
+              onClick={handleAddUserToService}
+              type="button"
+              className="w-[70%] py-2 bg-blue-500 hover:bg-blue-600"
             />
           </div>
           <div className="w-full h-1/3 text-black font-semibold flex flex-col items-center">
@@ -591,10 +680,12 @@ function IdariIsler() {
                 selection_shift.map((item, index) => (
                   <div
                     key={index}
-                    className="flex justify-between px-4 py-3 font-semibold shadow-lg"
+                    className="flex hover:bg-[#D0E8C5] cursor-pointer justify-between px-4 py-3 font-semibold shadow-lg"
                   >
                     <span>{item.name}</span>
-                    <span>X</span>
+                    <button onClick={() => cancelSelectingShift(item)}>
+                      X
+                    </button>
                   </div>
                 ))}
             </div>
@@ -1133,7 +1224,6 @@ function CreateShift() {
 function ShiftManagement() {
   const pathName = usePathname();
   const create_shift_name = pathName.split("/")[3];
-  const dispatch = useDispatch();
 
   return (
     <>

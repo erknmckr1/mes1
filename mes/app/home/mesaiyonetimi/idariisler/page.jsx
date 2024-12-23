@@ -3,7 +3,7 @@ import React from 'react'
 
 function page() {
   return (
-    <div className='bg-[#FFF8DE]'>
+    <div className='bg-[#e0e0e0]'>
       <ShiftManagement/>
     </div>
   )

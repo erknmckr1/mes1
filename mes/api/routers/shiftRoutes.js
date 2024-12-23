@@ -8,6 +8,9 @@ const {
   addVehicleInfo,
   savedShiftIndex,
   updatedVehicleInfo,
+  moveToDiffService,
+  userOutOfService,
+  addUserToService
 } = require("../services/shiftServices");
 
 //! yenı mesaı olusturmak ıcın kullanılacak route...
@@ -98,5 +101,24 @@ router.put("/updatedVehicleInfo", async (req, res) => {
     res.status(500).json({ message: "Sunucu hatası. Lütfen tekrar deneyin." });
   }
 });
+//! servise personel taşıma işlemini gerçekleştirecek route...
+router.put("/moveToDiffService", async (req, res) => {
+  const { draggedShiftItem, item } = req.body;
+  const result = await moveToDiffService(draggedShiftItem, item);
+  res.status(result.status).json(result.message);
+});
 
+//! servisten personel cıkaracak route...
+router.put("/userOutOfService", async (req, res) => {
+  const { selectedShift } = req.body;
+  const result = await userOutOfService(selectedShift);
+  res.status(result.status).json(result.message);
+});
+//! kullanıcıları bır servıse tasıyacak 
+router.put("/addUserToService",async(req,res)=>{
+  const{selection_shift,selectedShiftReport} = req.body;
+  const result = await addUserToService(selection_shift,selectedShiftReport);
+  res.status(result.status).json(result.message);
+
+})
 module.exports = router;
