@@ -11,9 +11,10 @@ import {
 } from "@/redux/shiftSlice";
 import { fetchAllUsers } from "@/redux/userSlice";
 import ShiftTable from "./ShiftTable";
+import UserTable from "./UserTable";
 import { ShiftChart, WeeklyShiftTrendChart } from "./charts/ShiftChart";
 import { usePathname } from "next/navigation";
-import { setSelectionShift } from "@/redux/shiftSlice";
+import { setSelectionShift, setSelectedShiftUser } from "@/redux/shiftSlice";
 import Input from "../ui/Input";
 import { useCallback } from "react";
 let handleApproveShift;
@@ -196,8 +197,8 @@ function IdariIsler() {
     vehicle_licance: "",
     station_name: "",
     service_time: "12:00",
-    evening_service_time: times[0],
-    morning_service_hours: "",
+    evening_service_time: "",
+    morning_service_time: "",
     vehicle: "",
   });
   const vehicles = [
@@ -307,7 +308,7 @@ function IdariIsler() {
       morning_service_time,
       service_time,
       vehicle_plate_no,
-      shift_status
+      shift_status,
     } = curr;
 
     // Eğer service_key eksikse bu kaydı atla
@@ -333,8 +334,7 @@ function IdariIsler() {
         morning_service_time,
         service_time,
         vehicle_plate_no,
-        shift_status
-        
+        shift_status,
       };
     }
 
@@ -367,7 +367,7 @@ function IdariIsler() {
     evening_service_time: data.evening_service_time,
     morning_service_time: data.morning_service_time,
     vehicle_plate_no: data.vehicle_plate_no,
-    shift_status:data.shift_status
+    shift_status: data.shift_status,
   }));
 
   //! mesai kaydına servıs bılgılerını ekleyecek fonksıyon...
@@ -497,7 +497,7 @@ function IdariIsler() {
           station_name: "",
           service_time: "12:00",
           evening_service_time: times[0],
-          morning_service_hours: "",
+          morning_service_time: "",
           vehicle: "",
         });
       } else {
@@ -510,7 +510,7 @@ function IdariIsler() {
           service_time: updatedSelection[0].service_time || "12:00",
           evening_service_time:
             updatedSelection[0].evening_service_time || times[0],
-          morning_service_hours: updatedSelection[0].morning_service_time || "",
+          morning_service_time: updatedSelection[0].morning_service_time || "",
           vehicle: updatedSelection[0].vehicle || "",
         });
       }
@@ -530,7 +530,7 @@ function IdariIsler() {
           station_name: selected.station_names[0] || "", // Array kontrolü
           service_time: selected.service_time || "12:00",
           evening_service_time: selected.evening_service_time || times[0],
-          morning_service_hours: selected.morning_service_time || "",
+          morning_service_time: selected.morning_service_time || "",
           vehicle: selected.vehicle || "",
         });
       } else {
@@ -542,7 +542,7 @@ function IdariIsler() {
           station_name: "",
           service_time: "12:00",
           evening_service_time: times[0],
-          morning_service_hours: "",
+          morning_service_time: "",
           vehicle: "",
         });
       }
@@ -763,14 +763,14 @@ function IdariIsler() {
             </h1>
             <div className="flex flex-col gap-y-1">
               <Input
-                name="morning_service_hours"
+                name="morning_service_time"
                 placeholder={"Sabah Servis Saati"}
                 type={"time"}
                 addProps={"h-[4rem]"}
-                value={vasıtaForm.morning_service_hours}
+                value={vasıtaForm.morning_service_time}
                 onChange={(e) =>
                   handleChange({
-                    name: "morning_service_hours",
+                    name: "morning_service_time",
                     value: e.target.value,
                   })
                 }
@@ -867,7 +867,9 @@ function CreateShift() {
   const [user, setUser] = useState(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const { userInfo, allUser } = useSelector((state) => state.user);
-  const { selection_shift } = useSelector((state) => state.shift);
+  const { selection_shift, selectedShiftUser,usersOnShifts } = useSelector(
+    (state) => state.shift
+  );
   const pathName = usePathname();
   const create_shift_name = pathName.split("/")[3];
   const [selectionModel, setSelectionModel] = useState([]);
@@ -923,15 +925,15 @@ function CreateShift() {
     }
   };
 
-  // Kullanıcı seçildiğinde çalışacak fonksiyon
-  const handleSelectedUser = (user) => {
-    setSelectedUser(user);
-    setFormData({ ...formData, kullanici: user.op_username });
+  // // Kullanıcı seçildiğinde çalışacak fonksiyon
+  // const handleSelectedUser = (user) => {
+  //   setSelectedUser(user);
+  //   setFormData({ ...formData, kullanici: user.op_username });
 
-    // Dropdown'u kapat ama input'taki değeri silme
-    setFilteredUsers([]);
-    setDropdownVisible(false);
-  };
+  //   // Dropdown'u kapat ama input'taki değeri silme
+  //   setFilteredUsers([]);
+  //   setDropdownVisible(false);
+  // };
 
   const times = [
     "22:00",
@@ -1021,27 +1023,24 @@ function CreateShift() {
         toast.error("Başlangıç ve bitiş tarihlerini giriniz.");
         return;
       }
-      if (!user) {
+      if (selectedShiftUser.length === 0 || !selectedShiftUser) {
         toast.error(
-          "Mesai olusturacagınız kullanıcıyı seçip personel ara butonuna tıklayın."
+          "Mesai olusturacagınız kullanıcıları soldaki listeden seçiniz."
         );
       }
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/createShift`,
         {
-          operator_id: user.id_dec,
           created_by: userInfo.id_dec,
           start_date: formData.baslangicTarihi,
           end_date: formData.donusTarihi,
           start_time: formData.baslangicSaati,
           end_time: formData.bitisSaati,
-          route: user.route,
-          stop_name: user.stop_name,
-          address: user.address,
+          selectedShiftUser,
         }
       );
       if (response.status === 200) {
-        toast.success(`${formData.kullanici} için mesai onaya gönderildi.`);
+        toast.success(`${response.data.message}`);
         setFormData({
           kullanici: "",
           baslangicTarihi: "",
@@ -1049,21 +1048,34 @@ function CreateShift() {
           baslangicSaati: "",
           bitisSaati: "",
         });
-        setUser(null);
+        dispatch(setSelectedShiftUser([]));
         dispatch(fetchShiftLogs());
+      } else if (response.status === 206) {
+        toast.info(`${response.data.message}`);
+        setFormData({
+          kullanici: "",
+          baslangicTarihi: "",
+          donusTarihi: "",
+          baslangicSaati: "",
+          bitisSaati: "",
+        });
+        dispatch(setSelectedShiftUser([]));
+        dispatch(fetchShiftLogs());
+      } else if (response.status === 400) {
+        toast.info(`${response.data.message}`);
       }
     } catch (err) {
-      console.log(err);
+      console.log(err.response.data || "HATA");
     }
   };
 
   return (
-    <div className="w-full h-full flex flex-col gap-y-2">
+    <div className="w-full h-full flex flex-col ">
       {/* form komponent... */}
-      <div className="w-auto h-1/4 rounded-md  flex  justify-center text-black bg-white p-1  ">
+      <div className="w-auto h-1/4  rounded-md  flex   text-black   ">
         {/* 1 */}
-        <div className="w-[30%] ">
-          <div className="flex w-full justify-evenly items-center">
+        <div className="w-[30%] border-r border-black ">
+          {/* <div className="flex w-full justify-evenly items-center">
             <div className="relative">
               <label className="block mb-2 font-semibold underline">
                 Kullanıcı İsmi
@@ -1106,115 +1118,162 @@ function CreateShift() {
                 Personel Ara
               </button>
             </div>
-          </div>
-          {user && (
-            <div className="flex justify-evenly  mt-10 w-full">
-              <div>
-                <span className="font-semibold">Personel Ad:</span>
-                <span className="p-2">{user?.op_username}</span>
-              </div>
-              <div>
-                <span className="font-semibold">Personel ID:</span>
-                <span className="p-2">{user?.id_dec}</span>
-              </div>
+          </div> */}
+          <div className="w-full h-44 overflow-y-auto rounded-md p-2">
+            <h1 className="w-full font-bold py-1 text-center text-black bg-[#a6aebf] rounded-t-md">
+              Seçilen Kullanıcılar
+            </h1>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {selectedShiftUser.map((item, index) => (
+                <div
+                  key={index}
+                  className="relative bg-white shadow-md p-1 rounded-md text-center text-black font-medium border border-gray-300"
+                >
+                  <span>{item.op_username}</span>
+                  {/* Kapatma butonu */}
+                  <button
+                    onClick={() =>
+                      dispatch(
+                        setSelectedShiftUser(
+                          selectedShiftUser.filter(
+                            (selectedItem) =>
+                              selectedItem.id_dec !== item.id_dec
+                          )
+                        )
+                      )
+                    }
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-        <div className="w-[30%] px-1 ">
-          <div>
-            <label className="block mb-4 font-semibold underline">
-              Mesai Başlangıç Tarihi:
-            </label>
-            <input
-              type="date"
-              name="baslangicTarihi"
-              className="w-full p-2 border rounded-md"
-              required
-              onChange={handleInputChange}
-              value={formData.baslangicTarihi}
-            />
-          </div>
-          <div>
-            <label className="block mb-4 font-semibold underline">
-              Mesai Bitiş Tarihi:
-            </label>
-            <input
-              type="date"
-              name="donusTarihi"
-              className="w-full p-2 border rounded-md"
-              required
-              onChange={handleInputChange}
-              value={formData.donusTarihi}
-            />
           </div>
         </div>
-        <div className="w-[30%] px-1 ">
-          <div>
-            <label className="block mb-4 font-semibold underline">
-              Mesai Başlangıç Saati
-            </label>
-            <select
-              name="baslangicSaati"
-              className="w-full p-2 border rounded-md"
-              required
-              onChange={handleInputChange}
-              value={formData.baslangicSaati || ""}
-            >
-              <option value="">Başlangıç saati seçin</option>
-              {times.map((time, index) => (
-                <option key={index} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
+        {/* 2 */}
+        <div className="w-[35%] flex flex-col justify-between h-full p-2">
+          {/* Sol taraf */}
+          <div className="w-full flex gap-x-2">
+            {/* Başlangıç Tarihi */}
+            <div className="w-1/2">
+              <label className="block mb-2 font-semibold text-sm">
+                Mesai Başlangıç Tarihi:
+              </label>
+              <input
+                type="date"
+                name="baslangicTarihi"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+                onChange={handleInputChange}
+                value={formData.baslangicTarihi}
+              />
+            </div>
+            {/* Bitiş Tarihi */}
+            <div className="w-1/2">
+              <label className="block mb-2 font-semibold text-sm">
+                Mesai Bitiş Tarihi:
+              </label>
+              <input
+                type="date"
+                name="donusTarihi"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+                onChange={handleInputChange}
+                value={formData.donusTarihi}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block mb-4 font-semibold underline">
-              Mesai Bitiş Saati
-            </label>
-            <select
-              name="bitisSaati"
-              className="w-full p-2 border rounded-md"
-              required
-              onChange={handleInputChange}
-              value={formData.bitisSaati || ""}
-            >
-              <option value="">Bitiş saati seçin</option>
-              {times.map((time, index) => (
-                <option key={index} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
+          {/* Sağ taraf */}
+          <div className="w-full flex gap-x-2">
+            {/* Başlangıç Saati */}
+            <div className="w-1/2">
+              <label className="block mb-2 font-semibold text-sm">
+                Mesai Başlangıç Saati
+              </label>
+              <select
+                name="baslangicSaati"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+                onChange={handleInputChange}
+                value={formData.baslangicSaati || ""}
+              >
+                <option value="">Başlangıç saati seçin</option>
+                {times.map((time, index) => (
+                  <option key={index} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Bitiş Saati */}
+            <div className="w-1/2">
+              <label className="block mb-2 font-semibold text-sm">
+                Mesai Bitiş Saati
+              </label>
+              <select
+                name="bitisSaati"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required
+                onChange={handleInputChange}
+                value={formData.bitisSaati || ""}
+              >
+                <option value="">Bitiş saati seçin</option>
+                {times.map((time, index) => (
+                  <option key={index} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-        <div className="w-[10%]  flex flex-col gap-y-3 justify-center items-center">
+        {/* 3 */}
+        
+        <div className="w-[35%] flex flex-col justify-between items-center gap-y-4">
+          {/* İlk Kart */}
+          <div className="w-[95%] bg-blue-100 border border-blue-300 rounded-lg  shadow-md">
+            <h3 className="text-md font-bold text-blue-700 text-center">
+              Bugünkü Mesai
+            </h3>
+            <p className="text-2xl font-semibold text-center text-blue-800">
+              {/* Placeholder değer */}
+              {usersOnShifts.length || 0}
+            </p>
+            <p className="text-sm text-center text-gray-500">
+              Bugün oluşturulan toplam mesai kaydı.
+            </p>
+          </div>
+          {/* İkinci Kart */}
+          <div className="w-[95%] mb-2   flex  justify-center gap-x-4  items-center">
           <Button
-            className=" bg-green-500 hover:bg-green-500"
+            className=" bg-green-500 hover:bg-green-500 w-1/3"
             children="Oluştur"
             onClick={handleCreateShıft}
           />
           <Button
-            className=" bg-red-500 hover:bg-red-500"
+            className=" bg-red-500 hover:bg-red-500 w-1/3"
             children="İptal"
             onClick={() => handleCancelShift(selection_shift)}
           />
         </div>
+        </div>
       </div>
       {/* table */}
-      <div className="h-3/4 w-auto sm:w-full  bg-white rounded-md flex">
-        <div className="w-2/3 h-full">
-          <ShiftTable />
+      <div className="h-3/4  w-auto sm:w-full rounded-md flex">
+        <div className="w-1/3 h-full">
+          <UserTable />
         </div>
         {/* charts */}
-        <div className="w-1/3 h-full flex  flex-col justify-center items-center ">
-          <div className="h-1/2 flex justify-center items-end">
+        <div className="w-2/3 h-full">
+          <ShiftTable />
+          {/* <div className="h-1/2 flex justify-center items-end">
             {" "}
             <ShiftChart />
           </div>
           <div className="h-1/2 flex justify-center items-center">
             <WeeklyShiftTrendChart />{" "}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

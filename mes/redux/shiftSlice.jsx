@@ -29,7 +29,8 @@ export const shiftSlice = createSlice({
     error: null,
     selection_shift: [],
     selectedShiftReport:[],
-    shiftReportPopup: false
+    shiftReportPopup: false,
+    selectedShiftUser:[]
   },
   reducers: {
     setSelectionShift: (state, action) => {
@@ -40,6 +41,9 @@ export const shiftSlice = createSlice({
     },    
     setShiftReportPopup: (state,action) => {
       state.shiftReportPopup = action.payload
+    },
+    setSelectedShiftUser:(state,action) => {
+      state.selectedShiftUser = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -61,6 +65,6 @@ export const shiftSlice = createSlice({
   },
 });
 
-export const { setSelectionShift,setSelectedShiftReport,setShiftReportPopup } = shiftSlice.actions;
+export const { setSelectionShift,setSelectedShiftReport,setShiftReportPopup,setSelectedShiftUser } = shiftSlice.actions;
 
 export default shiftSlice.reducer;

@@ -16,7 +16,6 @@ const {
 //! yenı mesaı olusturmak ıcın kullanılacak route...
 router.post("/createShift", async (req, res) => {
   const {
-    operator_id,
     created_by,
     start_date,
     end_date,
@@ -25,20 +24,28 @@ router.post("/createShift", async (req, res) => {
     route,
     address,
     stop_name,
+    selectedShiftUser,
   } = req.body;
-  console.log(req.body);
+
+  if (!Array.isArray(selectedShiftUser)) {
+    return res.status(400).json({
+      message: "selectedShiftUser bir dizi olmalıdır.",
+    });
+  }
+
   const result = await createShift(
-    operator_id,
-    created_by,
+    {created_by,
     start_date,
     end_date,
     start_time,
     end_time,
     route,
     address,
-    stop_name
+    stop_name,
+    selectedShiftUser}
   );
-  res.status(result.status).json(result.message);
+
+  res.status(result.status).json({ message: result.message });
 });
 
 //! mesai kaydını iptal edecek iptal edecek route

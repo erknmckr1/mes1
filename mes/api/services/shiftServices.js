@@ -2,41 +2,91 @@ const ShiftLog = require("../../models/ShiftLog");
 const { Op } = require("sequelize");
 const User = require("../../models/User");
 //! Yenı bır mesai verisi olusturacak servis
-async function createShift(
-  operator_id,
+const createShift = async ({
   created_by,
   start_date,
   end_date,
   start_time,
   end_time,
-  route,
-  address,
-  stop_name
-) {
-  try {
-    const result = await ShiftLog.create({
-      operator_id,
-      created_by,
-      start_date,
-      end_date,
-      start_time,
-      end_time,
-      shift_status: "1",
-      route,
-      address,
-      stop_name,
-    });
+  selectedShiftUser,
+}) => {
+  const today = new Date().toISOString().split("T")[0]; // Bugünün tarihi (YYYY-MM-DD)
 
-    if (result) {
-      return { status: 200, message: "Mesai başarıyla onaya gönderildi" };
+  try {
+    let successCount = 0;
+    let errors = [];
+
+    for (const user of selectedShiftUser) {
+      try {
+        const userShift = await ShiftLog.findOne({
+          where: {
+            operator_id: user.id_dec,
+            start_date: {
+              [Op.gte]: today,
+            },
+            shift_status: "1",
+          },
+        });
+        // İlgili personellerin daha once mesaisi olusturulmussa...
+        if (userShift) {
+          errors.push({
+            user: user.op_username,
+            message: "Bu kullanıcı için zaten bir mesai kaydı mevcut.",
+          });
+          continue; // İşleme devam et
+        }
+
+        // Mesai kaydı oluştur
+        await ShiftLog.create({
+          operator_id: user.id_dec,
+          created_by,
+          start_date,
+          end_date,
+          start_time,
+          end_time,
+          shift_status: "1", // Varsayılan başlangıç durumu
+        });
+
+        successCount++;
+      } catch (error) {
+        console.error(`Hata: ${user.op_username}`, error);
+        errors.push({
+          user: user.op_username,
+          message: error.message,
+        });
+      }
+    }
+    console.log(errors);
+    if (successCount === selectedShiftUser.length) {
+      return { status: 200, message: "Tüm mesailer başarıyla oluşturuldu." };
+    } else if (successCount > 0) {
+      return {
+        status: 206,
+        message: `${successCount} mesai başarıyla oluşturuldu, ancak ${errors
+          .map((item) => item.user)
+          .join(
+            ","
+          )} mesai kaydı olusturulamadı. Bugun için daha önceden olusturulmus olabilir..`,
+      };
+    } else if (errors.length > 0) {
+      return {
+        status: 206,
+        message: `${
+          errors.length
+        } mesai oluşturulamadı. Bugün için mesaisi daha once olusturulmus kişiler: ${errors
+          .map((item) => item.user)
+          .join(", ")}`,
+      };
     } else {
-      return { status: 400, message: "Mesai oluşturulamadu." };
+      return { status: 400, message: "Hiçbir mesai oluşturulamadı." };
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return { status: 500, message: "İç sunucu hatası." };
   }
-}
+};
+
+module.exports = { createShift };
 
 //! Tüm mesai verisini çekecek servis...
 async function getShiftLogs() {
@@ -204,6 +254,7 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
       ? "5"
       : null;
 
+    console.log(shift_status);
     if (!shift_status) {
       return {
         status: 400,
@@ -392,7 +443,7 @@ const addUserToService = async (selection_shift, selectedShiftReport) => {
           vehicle: selectedShiftReport.vehicle,
           vehicle_plate_no: selectedShiftReport.vehicle_plate_no,
           station_name: selectedShiftReport.station_names?.[0] || null,
-          shift_status:selectedShiftReport.shift_status
+          shift_status: selectedShiftReport.shift_status,
         },
         {
           where: {

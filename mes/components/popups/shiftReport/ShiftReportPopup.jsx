@@ -241,8 +241,17 @@ function ShiftReportPopup() {
         if (response.status === 200) {
           toast.success(response?.data);
           dispatch(fetchShiftLogs());
+          // Sol tarafı güncellemek için filtreleme store da usersOnShıft ın guncellenmesını (asenkron) beklemeden mevcut usersOnShıft den suruklenen kaydı cıkardık.  
+          const updatedFilteredData = usersOnShifts
+            .filter(
+              (shiftItem) =>
+                shiftItem.service_key === selectedService.service_key &&
+                shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
+            )
+            .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
+
+          setSelectedServiceIndex(updatedFilteredData);
         }
-        console.log(response)
       }
     } catch (err) {
       console.log(err);
@@ -277,9 +286,18 @@ function ShiftReportPopup() {
 
       if (response.status === 200) {
         toast.success(`${response.data}`);
-        setSelectedShift({});
         dispatch(fetchShiftLogs());
-      }
+        // güncel tabloyu tekrardan fıltrele ve set et... 
+        const updatedFilteredData = usersOnShifts
+        .filter(
+          (shiftItem) =>
+            shiftItem.service_key === selectedService.service_key &&
+            shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
+        )
+        .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
+
+      setSelectedServiceIndex(updatedFilteredData);
+    }
     } catch (error) {
       console.log(error);
     }
@@ -323,7 +341,7 @@ function ShiftReportPopup() {
                           onClick={userOutOfService}
                           className="p-2 hover:text-black text-[#eceff3]  hover:bg-gray-300 rounded"
                         >
-                          <MdDeleteOutline  className=" text-xl cursor-pointer"  />
+                          <MdDeleteOutline className=" text-xl cursor-pointer" />
                         </button>
                       </div>
                     </div>

@@ -6,7 +6,9 @@ import { setSelectionShift } from "@/redux/shiftSlice";
 
 function ShiftTable() {
   const { userInfo, allUser } = useSelector((state) => state.user);
-  const { usersOnShifts, selection_shift } = useSelector((state) => state.shift);
+  const { usersOnShifts, selection_shift } = useSelector(
+    (state) => state.shift
+  );
   const dispatch = useDispatch();
 
   const theme = createTheme({
@@ -45,13 +47,13 @@ function ShiftTable() {
             return "Onaylandı";
           } else if (item.shift_status === "4") {
             return "Sabah Servisi";
-          }else if (item.shift_status === "5") {
+          } else if (item.shift_status === "5") {
             return "Akşam Servisi";
           }
         };
         return {
           id: item.shift_uniq_id,
-          service_key:item.service_key,
+          service_key: item.service_key,
           op_id: item.operator_id,
           name: a?.op_username || "Bilinmiyor",
           title: a?.title || "Bilinmiyor",
@@ -114,12 +116,11 @@ function ShiftTable() {
       return "shift-row";
     } else if (row.shift_status === "Onaylandı") {
       return "green-row";
-    }else if (row.shift_status === "Sabah Servisi") {
+    } else if (row.shift_status === "Sabah Servisi") {
       return "bg-[#A6AEBF]";
-    }else if (row.shift_status === "Akşam Servisi") {
+    } else if (row.shift_status === "Akşam Servisi") {
       return "bg-[#C5D3E8]";
     }
-    
   };
 
   return (
@@ -149,6 +150,21 @@ function ShiftTable() {
           pageSizeOptions={[10, 30, 50, 100]}
           onRowClick={handleSelectedRow}
           getRowClassName={getRowClassName}
+          sx={{
+            "& .MuiDataGrid-main": {
+              backgroundColor: "#a6aebf", // Boş alan arka plan rengi
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: "#a6aebf", // Boş alanın scroll kısmı
+            },
+            "& .MuiDataGrid-toolbarContainer": {
+              backgroundColor: "#A6AEBF", // Toolbar kısmının arka plan rengi
+              color: "white", // Toolbar yazı rengi
+            },
+            "& .MuiButtonBase-root": {
+              color: "white", // Toolbar içindeki butonların yazı rengi
+            },
+          }}
         />
       </div>
     </ThemeProvider>
