@@ -65,6 +65,7 @@ function ShiftTable() {
           start_time: item.start_time,
           shift_status: status(),
           uniq_id: item.shift_uniq_id,
+          service_period: item.service_period,
         };
       });
     }
@@ -116,13 +117,13 @@ function ShiftTable() {
       return "shift-row";
     } else if (row.shift_status === "Onaylandı") {
       return "green-row";
-    } else if (row.shift_status === "Sabah Servisi") {
+    } else if (row.service_period === "Aksam") {
       return "bg-[#A6AEBF]";
-    } else if (row.shift_status === "Akşam Servisi") {
+    } else if (row.service_period === "Sabah") {
       return "bg-[#C5D3E8]";
     }
   };
-
+  console.log(selection_shift);
   return (
     <ThemeProvider theme={theme}>
       <div className="w-full h-full rounded-md border-2 transition-all ease-in ">

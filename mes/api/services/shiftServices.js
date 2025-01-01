@@ -222,9 +222,8 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
     vehicle_licance,
     station_name,
     service_time,
-    evening_service_time,
-    morning_service_time,
     vehicle,
+    service_period,
   } = vasıtaForm;
   console.log(vasıtaForm);
   try {
@@ -246,35 +245,24 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
           "Sadece onaylanmış kayıtlara vasıta bilgilerini ekleyebilirsiniz. Sadece onaylı kayıtları seçin.",
       };
     }
-
-    // shift_status belirle
-    const shift_status = morning_service_time
-      ? "4"
-      : evening_service_time
-      ? "5"
-      : null;
-
-    console.log(shift_status);
-    if (!shift_status) {
-      return {
-        status: 400,
-        message: "Geçerli bir sabah veya akşam servis zamanı giriniz.",
-      };
+    let shift_status = "";
+    if (service_period === "Sabah") {
+      shift_status = "4";
+    } else if (service_period === "Aksam") {
+      shift_status = "5";
     }
-
     // Kayıtları güncelle
     await ShiftLog.update(
       {
         driver_name,
         driver_no,
         station_name,
-        evening_service_time,
-        morning_service_time,
         service_time,
         vehicle_plate_no: vehicle_licance,
         vehicle,
         shift_status,
         service_key: newServiceKey,
+        service_period,
       },
       {
         where: {
@@ -330,9 +318,8 @@ const updatedVehicleInfo = async (vasıtaForm, service_key) => {
         vehicle_licance: vasıtaForm.vehicle_licance || null,
         station_name: vasıtaForm.station_name || null,
         service_time: vasıtaForm.service_time || null,
-        evening_service_time: vasıtaForm.evening_service_time || null,
-        morning_service_hours: vasıtaForm.morning_service_time || null,
         vehicle: vasıtaForm.vehicle,
+        service_period: vasıtaForm.service_period || null,
       },
       { where: { service_key } }
     );
@@ -356,8 +343,6 @@ const moveToDiffService = async (draggedShiftItem, item) => {
   const {
     service_key,
     vehicle,
-    morning_service_time,
-    evening_service_time,
     start_date,
     driver_name,
     start_time,
@@ -370,8 +355,6 @@ const moveToDiffService = async (draggedShiftItem, item) => {
       {
         service_key,
         vehicle,
-        evening_service_time,
-        morning_service_time,
         start_date,
         driver_name,
         start_time,
@@ -402,8 +385,7 @@ const userOutOfService = async (selectedShift) => {
       {
         driver_name: "",
         driver_no: "",
-        evening_service_time: "",
-        morning_service_time: "",
+
         service_key: "",
         service_time: "",
         shift_status: "",
@@ -436,8 +418,6 @@ const addUserToService = async (selection_shift, selectedShiftReport) => {
         {
           driver_name: selectedShiftReport.driver_name,
           driver_no: selectedShiftReport.driver_no,
-          evening_service_time: selectedShiftReport.evening_service_time,
-          morning_service_time: selectedShiftReport.morning_service_hours,
           service_key: selectedShiftReport.service_key,
           service_time: selectedShiftReport.service_time,
           vehicle: selectedShiftReport.vehicle,

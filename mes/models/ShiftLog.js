@@ -59,17 +59,14 @@ const ShiftLog = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    evening_service_time: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    morning_service_time: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+    // servisin gelme saati 
     service_time: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    service_period:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
     start_date: {
       // Mesai başlangıç günü

@@ -196,9 +196,8 @@ function IdariIsler() {
     driver_no: "",
     vehicle_licance: "",
     station_name: "",
-    service_time: "12:00",
-    evening_service_time: "",
-    morning_service_time: "",
+    service_time: "12:00", // servisin gelme saati...
+    service_period:"",
     vehicle: "",
   });
   const vehicles = [
@@ -304,8 +303,6 @@ function IdariIsler() {
       start_date,
       driver_name,
       driver_no,
-      evening_service_time,
-      morning_service_time,
       service_time,
       vehicle_plate_no,
       shift_status,
@@ -330,8 +327,6 @@ function IdariIsler() {
         start_date,
         driver_name,
         driver_no,
-        evening_service_time,
-        morning_service_time,
         service_time,
         vehicle_plate_no,
         shift_status,
@@ -364,8 +359,6 @@ function IdariIsler() {
     start_date: data.start_date,
     driver_name: data.driver_name,
     driver_no: data.driver_no,
-    evening_service_time: data.evening_service_time,
-    morning_service_time: data.morning_service_time,
     vehicle_plate_no: data.vehicle_plate_no,
     shift_status: data.shift_status,
   }));
@@ -417,8 +410,6 @@ function IdariIsler() {
           vehicle_licance: "",
           station_name: "",
           service_time: "12:00",
-          evening_service_time: times[0],
-          morning_service_time: "",
         });
       }
     } catch (err) {
@@ -496,8 +487,6 @@ function IdariIsler() {
           vehicle_licance: "",
           station_name: "",
           service_time: "12:00",
-          evening_service_time: times[0],
-          morning_service_time: "",
           vehicle: "",
         });
       } else {
@@ -508,9 +497,6 @@ function IdariIsler() {
           vehicle_licance: updatedSelection[0].vehicle_plate_no || "",
           station_name: updatedSelection[0].station_name[0] || "",
           service_time: updatedSelection[0].service_time || "12:00",
-          evening_service_time:
-            updatedSelection[0].evening_service_time || times[0],
-          morning_service_time: updatedSelection[0].morning_service_time || "",
           vehicle: updatedSelection[0].vehicle || "",
         });
       }
@@ -529,8 +515,6 @@ function IdariIsler() {
           vehicle_licance: selected.vehicle_plate_no || "", // Eğer `vehicle_plate_no` yoksa kontrol edin
           station_name: selected.station_names[0] || "", // Array kontrolü
           service_time: selected.service_time || "12:00",
-          evening_service_time: selected.evening_service_time || times[0],
-          morning_service_time: selected.morning_service_time || "",
           vehicle: selected.vehicle || "",
         });
       } else {
@@ -541,8 +525,6 @@ function IdariIsler() {
           vehicle_licance: "",
           station_name: "",
           service_time: "12:00",
-          evening_service_time: times[0],
-          morning_service_time: "",
           vehicle: "",
         });
       }
@@ -608,8 +590,6 @@ function IdariIsler() {
           vehicle_licance: "",
           station_name: "",
           service_time: "12:00",
-          evening_service_time: times[0],
-          morning_service_time: "",
         });
       } else {
         toast.error("Bir hata oluştu.");
@@ -620,7 +600,7 @@ function IdariIsler() {
       toast.error(errorMessage);
     }
   };
-  console.log(selection_shift, selectedShiftReport);
+
   // secılen kullanıcıyı ıptal edecek fonksıyon...
   const cancelSelectingShift = (item) => {
     dispatch(
@@ -629,6 +609,7 @@ function IdariIsler() {
       )
     );
   };
+  console.log(vasıtaForm)
   return (
     <div className=" w-full ">
       <div className="h-[600px] flex">
@@ -762,37 +743,66 @@ function IdariIsler() {
               Servis Saati
             </h1>
             <div className="flex flex-col gap-y-1">
-              <Input
-                name="morning_service_time"
-                placeholder={"Sabah Servis Saati"}
-                type={"time"}
-                addProps={"h-[4rem]"}
-                value={vasıtaForm.morning_service_time}
-                onChange={(e) =>
-                  handleChange({
-                    name: "morning_service_time",
-                    value: e.target.value,
-                  })
-                }
-              />
+              {/* checkboxlar  */}
+              <div className="flex justify-center py-2 gap-x-2">
+                {/* Sabah Servisi */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="morning_service"
+                    name="service_period"
+                    value="Sabah"
+                    checked={vasıtaForm.service_period === "Sabah"}
+                    onChange={(e) => {
+                      handleChange({
+                        name: "service_period",
+                        value: e.target.checked ? "Sabah" : "",
+                      });
+                      if (e.target.checked) {
+                        document.getElementById(
+                          "evening_service"
+                        ).checked = false; // Akşam servis seçimini kaldır
+                      }
+                    }}
+                    className="mr-2"
+                  />
+                  <label
+                    htmlFor="morning_service"
+                    className="text-sm font-semibold"
+                  >
+                    Sabah Servisi
+                  </label>
+                </div>
 
-              <select
-                name="evening_service_time"
-                className="h-[4rem] w-full border-secondary border"
-                value={vasıtaForm.evening_service_time}
-                onChange={(e) =>
-                  handleChange({
-                    name: "evening_service_time",
-                    value: e.target.value,
-                  })
-                }
-              >
-                {times.map((item, index) => (
-                  <option key={index} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+                {/* Akşam Servisi */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="evening_service"
+                    name="service_period"
+                    value="Aksam"
+                    checked={vasıtaForm.service_period === "Akşam"}
+                    onChange={(e) => {
+                      handleChange({
+                        name: "service_period",
+                        value: e.target.checked ? "Akşam" : "",
+                      });
+                      if (e.target.checked) {
+                        document.getElementById(
+                          "morning_service"
+                        ).checked = false; // Sabah servis seçimini kaldır
+                      }
+                    }}
+                    className="mr-2"
+                  />
+                  <label
+                    htmlFor="evening_service"
+                    className="text-sm font-semibold"
+                  >
+                    Akşam Servisi
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="w-full flex flex-col justify-center gap-y-4 mt-1">
               <Button
@@ -861,13 +871,13 @@ function IdariIsler() {
     </div>
   );
 }
-
+//? mesai olusturma sayfa komponentı...
 function CreateShift() {
   const dispatch = useDispatch();
   const [user, setUser] = useState(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const { userInfo, allUser } = useSelector((state) => state.user);
-  const { selection_shift, selectedShiftUser,usersOnShifts } = useSelector(
+  const { selection_shift, selectedShiftUser, usersOnShifts } = useSelector(
     (state) => state.shift
   );
   const pathName = usePathname();
@@ -1229,7 +1239,7 @@ function CreateShift() {
           </div>
         </div>
         {/* 3 */}
-        
+
         <div className="w-[35%] flex flex-col justify-between items-center gap-y-4">
           {/* İlk Kart */}
           <div className="w-[95%] bg-blue-100 border border-blue-300 rounded-lg  shadow-md">
@@ -1246,17 +1256,17 @@ function CreateShift() {
           </div>
           {/* İkinci Kart */}
           <div className="w-[95%] mb-2   flex  justify-center gap-x-4  items-center">
-          <Button
-            className=" bg-green-500 hover:bg-green-500 w-1/3"
-            children="Oluştur"
-            onClick={handleCreateShıft}
-          />
-          <Button
-            className=" bg-red-500 hover:bg-red-500 w-1/3"
-            children="İptal"
-            onClick={() => handleCancelShift(selection_shift)}
-          />
-        </div>
+            <Button
+              className=" bg-green-500 hover:bg-green-500 w-1/3"
+              children="Oluştur"
+              onClick={handleCreateShıft}
+            />
+            <Button
+              className=" bg-red-500 hover:bg-red-500 w-1/3"
+              children="İptal"
+              onClick={() => handleCancelShift(selection_shift)}
+            />
+          </div>
         </div>
       </div>
       {/* table */}
