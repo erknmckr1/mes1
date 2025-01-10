@@ -55,7 +55,7 @@ function HomeSidebars() {
         break;
     }
   };
-
+  console.log(selectedFlow,selectedManagement);
   //! Logout fonksıyonu...
   const logoutUser = async () => {
     try {
@@ -80,7 +80,8 @@ function HomeSidebars() {
   const onay2 = permissions.includes("2. Onay");
   const mesaiOlusturma = permissions.includes("MesaiOlusturma");
   const mesaiOnaylama = permissions.includes("MesaiOnaylama");
-  console.log(permissions);
+  const mesaidarisler = permissions.includes("Mesaidarisler");
+
   // HandleMesaiClick fonksiyonunu ekleyelim
   const handleMesaiClick = (click) => {
     if (click === "mesaiOlusturma") {
@@ -99,8 +100,8 @@ function HomeSidebars() {
         return;
       }
       window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/mesaiyonetimi/mesaionayla`;
-    }else if (click === "idariisler"){
-      if (!mesaiOnaylama) {
+    } else if (click === "idariisler") {
+      if (!mesaidarisler) {
         toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır!");
         window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home`;
         return;
@@ -185,10 +186,11 @@ function HomeSidebars() {
     // { label: "Raporlar", icon: <TbChartInfographic /> },
   ];
 
+  // alt kategory secımını tutacak state... 
   const handleSelection = (item) => {
     dispatch(setSelectedFlow(item));
   };
-
+  // menu ıtemı tutacak statee ıtemı gonderen fonksıyon... 
   const handleSelectionManagement = (item) => {
     dispatch(setSelectedManagement(item));
   };

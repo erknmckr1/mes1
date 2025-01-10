@@ -6,7 +6,6 @@ import { setSelectedShiftUser } from "@/redux/shiftSlice";
 function UserTable() {
   const { userInfo, allUser } = useSelector((state) => state.user);
   const { selectedShiftUser } = useSelector((state) => state.shift);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const dispatch = useDispatch();
   const theme = createTheme({
     components: {
@@ -50,6 +49,7 @@ function UserTable() {
     stop_name: user.stop_name || "Belirtilmedi", // Null ise varsayılan değer
   }));
 
+  // tabloya tıkladııgmız satırda params nesnesını yolluyoruz. Params ın row ozellıgı tıkladıgımız satırın bılgılerını tutar. 
   const getRowClassName = (params) => {
     const { row } = params;
 
@@ -60,10 +60,10 @@ function UserTable() {
     if (isSelected) {
       return "selected-row";
     } else {
-      return "bg-[#C5D3E8]";
+      return "bg-[#566573]";
     }
   };
-  console.log(selectedShiftUser);
+
   const handleSelectedRow = (params) => {
     const { row } = params;
     const isSelected = selectedShiftUser.some(

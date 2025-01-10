@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import { FaRegSave, FaDownload, FaSearch, FaCalendarAlt } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
 import { RiArrowGoBackLine } from "react-icons/ri";
-import { IoExitOutline } from "react-icons/io5";
+import { RxExit } from "react-icons/rx";
 import axios from "axios";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
@@ -19,11 +19,13 @@ function ShiftReportPopup() {
   const [draggedItemIndex, setDraggedItemIndex] = useState(null); // surukleme esnasında sol tarafdaki tabledan secılenın index'ini tutacak state...
   const [draggedShiftItem, setDraggedShiftItem] = useState({}); // Mesai kayıtları tablosunda (sol taraf) suruklenen kaydın bılgılerını tutacak state
   const [selectedShift, setSelectedShift] = useState({}); // seçilen mesi kaydının bılgısını tutacak state...
+  const [editingCell, setEditingCell] = useState(null); // { rowIndex, columnKey } tutar
+
   const { selectedShiftReport, usersOnShifts } = useSelector(
     (state) => state.shift
   );
   const [serviceDate, setServiceDate] = useState("");
-  const [filteredServiceList, setFilteredServiceList] = useState([]);
+  const [filteredServiceList, setFilteredServiceList] = useState({});
 
   // tablo verısını pdf olarak al...
   const generatePDF = () => {
@@ -56,7 +58,7 @@ function ShiftReportPopup() {
     doc.save("YolcuListesi.pdf");
   };
 
-  // Eger ıdarı ısler komponentınde bır
+  // Kayıtları grupla sağdakı tablo service key e gore grupluyoruz...
   const groupedData = usersOnShifts.reduce((acc, curr) => {
     const {
       service_key,
@@ -124,12 +126,17 @@ function ShiftReportPopup() {
     vehicle_plate_no: data.vehicle_plate_no,
     opproved_time: data.opproved_time,
     end_date: data.end_date,
+    service_time: data.service_time,
   }));
 
   // seçili dataya mı bakılıyor tum dataya mı ?
   const resultDatas = () => {
     return selectedShiftReport.length > 0 ? selectedShiftReport : result;
   };
+
+  const renderData =
+    filteredServiceList.length > 0 ? filteredServiceList : resultDatas();
+  console.log(renderData);
 
   //? SOL TARAFTAKİ TABLE ICIN DRAG DROP OLAYLARI
   // drag drop function sol taraftaki table ıcın...
@@ -195,9 +202,6 @@ function ShiftReportPopup() {
     setSelectedService([]);
   };
 
-  const renderData =
-    filteredServiceList.length > 0 ? filteredServiceList : resultDatas();
-
   //! Kısı sırasını guncellemek ıcın gerekli query...
   const savedShiftIndex = async () => {
     try {
@@ -235,7 +239,7 @@ function ShiftReportPopup() {
         if (response.status === 200) {
           toast.success(response?.data);
           dispatch(fetchShiftLogs());
-          // Sol tarafı güncellemek için filtreleme store da usersOnShıft ın guncellenmesını (asenkron) beklemeden mevcut usersOnShıft den suruklenen kaydı cıkardık.  
+          // Sol tarafı güncellemek için filtreleme store da usersOnShıft ın guncellenmesını (asenkron) beklemeden mevcut usersOnShıft den suruklenen kaydı cıkardık.
           const updatedFilteredData = usersOnShifts
             .filter(
               (shiftItem) =>
@@ -281,36 +285,101 @@ function ShiftReportPopup() {
       if (response.status === 200) {
         toast.success(`${response.data}`);
         dispatch(fetchShiftLogs());
-        // güncel tabloyu tekrardan fıltrele ve set et... 
+        // güncel tabloyu tekrardan fıltrele ve set et...
         const updatedFilteredData = usersOnShifts
-        .filter(
-          (shiftItem) =>
-            shiftItem.service_key === selectedService.service_key &&
-            shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
-        )
-        .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
+          .filter(
+            (shiftItem) =>
+              shiftItem.service_key === selectedService.service_key &&
+              shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
+          )
+          .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
 
-      setSelectedServiceIndex(updatedFilteredData);
-    }
+        setSelectedServiceIndex(updatedFilteredData);
+      }
     } catch (error) {
       console.log(error);
     }
   };
-  console.log(selectedShift);
+
+  //! Bu fonksiyon, düzenlenen hücrenin rowIndex, columnKey, ve value bilgilerini backend'e gönderecek.
+  const updateShiftCell = async (rowIndex, columnKey, value) => {
+    try {
+      const updatedRow = selectedServiceIndex[rowIndex]; // Güncellenen satır
+
+      // Asıl dizide (usersOnShifts) db'den gelen kayıtla karşılaştırma yap
+      const matchedShift = usersOnShifts.find(
+        (item) => item.shift_uniq_id === updatedRow.shift_uniq_id
+      );
+
+      // Eğer güncellenen değer mevcut değerle aynıysa isteği atlama
+      if (matchedShift && matchedShift[columnKey] === value) {
+        console.log("Değer aynı olduğu için güncelleme yapılmadı.");
+        return;
+      }
+
+      // Backend'e göndermek için veriyi hazırlayın
+      const payload = {
+        shift_uniq_id: updatedRow.shift_uniq_id, // Satırdaki benzersiz ID
+        columnKey, // Güncellenen sütun
+        value, // Yeni değer
+      };
+
+      // Backend'e PUT isteği gönder
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/updateShiftCell`,
+        payload
+      );
+
+      if (response.status === 200) {
+        toast.success("Hücre başarıyla güncellendi.");
+        dispatch(fetchShiftLogs());
+      } else {
+        toast.error("Güncelleme sırasında bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("Hücre güncellenirken bir hata oluştu.");
+    }
+  };
+
+  // Edit
+  const handleCellDoubleClick = (rowIndex, columnKey) => {
+    setEditingCell({ rowIndex, columnKey });
+  };
+  // Edit
+  const handleCellChange = (rowIndex, columnKey, value) => {
+    const updatedData = selectedServiceIndex.map((item) => ({
+      ...item,
+      User: { ...item.User }, // Nested nesneleri de kopyala
+    }));
+
+    if (columnKey.includes(".")) {
+      // Eğer nested bir yapıdaysa (ör. item.User.part)
+      const keys = columnKey.split(".");
+      console.log(keys);
+      updatedData[rowIndex][keys[0]][keys[1]] = value;
+    } else {
+      updatedData[rowIndex][columnKey] = value;
+    }
+    setSelectedServiceIndex(updatedData);
+  };
+
   return (
     <div className="w-screen    z-50 h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex  justify-center items-center w-full h-full">
         <div className="h-[95%] w-[95%] bg-[#FFF8DE]  z-50">
           <div className="flex flex-col gap-x-3 w-full h-full">
-            <div className="h-[10%] w-full p-1 flex items-center">
-              <Button
-                className="bg-red-500 hover:bg-red-600"
+            <div className="h-[10%] justify-between w-full p-1 flex items-center px-3">
+              <h1></h1>
+              <h1 className="uppercase text-[34px] ">Durak Düzenleme Ekranı</h1>
+              <RxExit
+                className="text-[25px] cursor-pointer hover:scale-110 hover:text-red-600"
                 onClick={handleClosePopup}
                 children={"Kapat"}
               />
             </div>
             <div className="w-full h-[90%] flex gap-x-3">
-              {/* right side */}
+              {/* left side */}
               <div className="w-2/3 border h-full flex justify-center items-center border-black ">
                 <div className=" border  w-[80%] h-[90%] shadow-2xl shadow-black rounded-md ">
                   <div className="w-full h-full flex flex-col gap-y-1">
@@ -340,32 +409,32 @@ function ShiftReportPopup() {
                       </div>
                     </div>
                     <div className="w-full h-full bg-[#eceff3]">
-                      <table className="w-full  ">
+                      <table className="w-full">
                         <thead className="bg-[#A6AEBF] text-center">
                           <tr>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Sıra
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               ID
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Kullanıcı Adı
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Ünvan
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Bölüm
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Birim
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
+                            <th className="py-3 font-semibold underline border border-slate-400">
                               Durak
                             </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
-                              Adres
+                            <th className="py-3 font-semibold underline border border-slate-400">
+                              Servis Saati
                             </th>
                           </tr>
                         </thead>
@@ -377,9 +446,7 @@ function ShiftReportPopup() {
                               onDragStart={() => handleDragStart(index, item)}
                               onDragOver={handleDragOver}
                               onDrop={() => handleDrop(index)}
-                              onClick={() => {
-                                handleSelectedShıft(item);
-                              }}
+                              onClick={() => handleSelectedShıft(item)}
                               className={`border-b h-8 hover:bg-slate-300 cursor-pointer ${
                                 item.shift_uniq_id ===
                                 selectedShift.shift_uniq_id
@@ -405,11 +472,91 @@ function ShiftReportPopup() {
                               <td className="text-center border border-slate-400">
                                 {item.User.part}
                               </td>
-                              <td className="text-center border border-slate-400">
-                                {item.station_name}
+                              <td
+                                className="text-center border border-slate-400"
+                                onDoubleClick={() =>
+                                  handleCellDoubleClick(index, "station_name")
+                                }
+                              >
+                                {editingCell?.rowIndex === index &&
+                                editingCell?.columnKey === "station_name" ? (
+                                  <input
+                                    type="text"
+                                    value={item.station_name}
+                                    onChange={(e) =>
+                                      handleCellChange(
+                                        index,
+                                        "station_name",
+                                        e.target.value
+                                      )
+                                    }
+                                    onBlur={() => {
+                                      updateShiftCell(
+                                        index,
+                                        "station_name",
+                                        item.station_name
+                                      ); // DB'ye güncelleme isteği gönder
+                                      setEditingCell(null); // Düzenleme modundan çık
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        updateShiftCell(
+                                          index,
+                                          "station_name",
+                                          item.station_name
+                                        ); // DB'ye güncelleme isteği gönder
+                                        setEditingCell(null); // Düzenleme modundan çık
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="w-full border-none focus:outline-none"
+                                  />
+                                ) : (
+                                  item.station_name
+                                )}
                               </td>
-                              <td className="text-center border border-slate-400">
-                                {item.station_name}
+                              <td
+                                className="text-center border border-slate-400"
+                                onDoubleClick={() =>
+                                  handleCellDoubleClick(index, "service_time")
+                                }
+                              >
+                                {editingCell?.rowIndex === index &&
+                                editingCell?.columnKey === "service_time" ? (
+                                  <input
+                                    type="text"
+                                    value={item.service_time}
+                                    onChange={(e) =>
+                                      handleCellChange(
+                                        index,
+                                        "service_time",
+                                        e.target.value
+                                      )
+                                    }
+                                    onBlur={(e) => {
+                                      updateShiftCell(
+                                        index,
+                                        "service_time",
+                                        e.target.value
+                                      ); // Yeni değer gönderilir
+                                      setEditingCell(null); // Düzenleme modundan çık
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        updateShiftCell(
+                                          index,
+                                          "service_time",
+                                          e.target.value
+                                        ); // Yeni değer gönderilir
+                                        setEditingCell(null); // Düzenleme modundan çık
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="w-full border-none focus:outline-none"
+                                  />
+                                ) : (
+                                  item.service_time
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -419,8 +566,8 @@ function ShiftReportPopup() {
                   </div>
                 </div>
               </div>
-              {/* right side */}
               {/* left side */}
+              {/* right side */}
               <div className="w-1/3 h-full border border-black flex justify-center items-center">
                 {/* data list div */}
                 <div className="w-[500px] h-[90%] shadow-2xl shadow-black rounded-md ">
@@ -468,9 +615,6 @@ function ShiftReportPopup() {
                               Araç
                             </th>
                             <th className="py-3 font-semibold underline border border-slate-400 ">
-                              Durak Adı
-                            </th>
-                            <th className="py-3 font-semibold underline border border-slate-400 ">
                               Kişi Sayısı
                             </th>
                             <th className="py-3 font-semibold underline border border-slate-400 ">
@@ -499,9 +643,6 @@ function ShiftReportPopup() {
                                 {item.vehicle}
                               </td>
                               <td className="text-center border border-slate-400 ">
-                                {item.station_names[0]}
-                              </td>
-                              <td className="text-center border border-slate-400 ">
                                 {item.user_count}
                               </td>
                               <td className="text-center border border-slate-400 ">
@@ -516,7 +657,7 @@ function ShiftReportPopup() {
                 </div>
                 {/* data list div */}
               </div>
-              {/* left side  */}
+              {/* right side  */}
             </div>
           </div>
         </div>

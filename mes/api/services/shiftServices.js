@@ -18,20 +18,23 @@ const createShift = async ({
 
     for (const user of selectedShiftUser) {
       try {
+        // Kullanıcının aynı gün içinde shift_status'u 2 (iptal edilmiş) olmayan bir mesai kaydı var mı?
         const userShift = await ShiftLog.findOne({
           where: {
             operator_id: user.id_dec,
-            start_date: {
-              [Op.gte]: today,
+            start_date: today, // Aynı gün için kontrol
+            shift_status: {
+              [Op.ne]: "2", // shift_status 2 değilse
             },
-            shift_status: "1",
           },
         });
-        // İlgili personellerin daha once mesaisi olusturulmussa...
+
+        // Eğer kullanıcı için geçerli bir mesai kaydı varsa, hata listesine ekle ve devam et
         if (userShift) {
           errors.push({
             user: user.op_username,
-            message: "Bu kullanıcı için zaten bir mesai kaydı mevcut.",
+            message:
+              "Bu kullanıcı için zaten aktif bir mesai kaydı mevcut (iptal edilmemiş).",
           });
           continue; // İşleme devam et
         }
@@ -56,7 +59,9 @@ const createShift = async ({
         });
       }
     }
+
     console.log(errors);
+
     if (successCount === selectedShiftUser.length) {
       return { status: 200, message: "Tüm mesailer başarıyla oluşturuldu." };
     } else if (successCount > 0) {
@@ -65,15 +70,13 @@ const createShift = async ({
         message: `${successCount} mesai başarıyla oluşturuldu, ancak ${errors
           .map((item) => item.user)
           .join(
-            ","
-          )} mesai kaydı olusturulamadı. Bugun için daha önceden olusturulmus olabilir..`,
+            ", "
+          )} için mesai kaydı oluşturulamadı. Aynı gün içinde zaten aktif bir mesai kaydı olabilir.`,
       };
     } else if (errors.length > 0) {
       return {
         status: 206,
-        message: `${
-          errors.length
-        } mesai oluşturulamadı. Bugün için mesaisi daha once olusturulmus kişiler: ${errors
+        message: `Hiçbir mesai oluşturulamadı. Aynı gün içinde zaten aktif bir mesai kaydı olan kullanıcılar: ${errors
           .map((item) => item.user)
           .join(", ")}`,
       };
@@ -410,8 +413,9 @@ const userOutOfService = async (selectedShift) => {
   }
 };
 //! Servise kullanıcı ekleyecek servis...
-const addUserToService = async (selection_shift, selectedShiftReport) => {
-  console.log(selectedShiftReport);
+const addUserToService = async (selection_shift, selectedShiftReport,vasıtaForm) => {
+
+  const {station_name,service_time} = vasıtaForm;
   try {
     for (const shift of selection_shift) {
       await ShiftLog.update(
@@ -419,11 +423,12 @@ const addUserToService = async (selection_shift, selectedShiftReport) => {
           driver_name: selectedShiftReport.driver_name,
           driver_no: selectedShiftReport.driver_no,
           service_key: selectedShiftReport.service_key,
-          service_time: selectedShiftReport.service_time,
+          service_time: service_time,
           vehicle: selectedShiftReport.vehicle,
           vehicle_plate_no: selectedShiftReport.vehicle_plate_no,
-          station_name: selectedShiftReport.station_names?.[0] || null,
+          station_name: station_name,
           shift_status: selectedShiftReport.shift_status,
+          service_period: selectedShiftReport.service_period,
         },
         {
           where: {
@@ -442,6 +447,26 @@ const addUserToService = async (selection_shift, selectedShiftReport) => {
     return { status: 500, message: "İç Sunucu Hatası" };
   }
 };
+//! Seçili hücreyi güncelleyecek fonksiyon...
+const updateShiftCell = async (shift_uniq_id, columnKey, value) => {
+  try {
+    await ShiftLog.update(
+      {
+        [columnKey]: value,
+      },
+      {
+        where: {
+          shift_uniq_id,
+        },
+      }
+    );
+
+    return { status: 200, message: `${columnKey} başarıyla güncellendi.` };
+  } catch (error) {
+    console.log(err);
+    return { status: 500, message: "İç Sunucu Hatası" };
+  }
+};
 module.exports = {
   createShift,
   getShiftLogs,
@@ -453,4 +478,5 @@ module.exports = {
   moveToDiffService,
   userOutOfService,
   addUserToService,
+  updateShiftCell,
 };

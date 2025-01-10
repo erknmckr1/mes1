@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Button from "../ui/Button";
+import TabButtons from "../izinYonetimSistemi/parts/TabButtons";
 import {
   fetchShiftLogs,
   setSelectedShiftReport,
@@ -41,6 +42,7 @@ const getApproveButtons = (selection_shift) => [
 function ConfirmShift() {
   const { selection_shift } = useSelector((state) => state.shift);
   const dispatch = useDispatch();
+  // selectedTab stateını tabButtons a yollayacagız...
   const { userInfo } = useSelector((state) => state.user);
   useEffect(() => {
     dispatch(fetchAllUsers());
@@ -135,7 +137,21 @@ function ConfirmShift() {
     <div className=" w-full">
       <div className="bg-white h-[600px] flex">
         <div className="w-[85%] h-full ml-1">
-          <ShiftTable />
+          <div className="h-[10%] w-full">
+            {/* <TabButtons
+              tab={selectedTab}
+              setTab={setSelectedTab}
+              buttons={[
+                { id: "all", label: "Tüm Mesailer" },
+                { id: "pending", label: "Onay Bekleyen" },
+                { id: "approved", label: "Onaylanan" },
+                { id: "cancelled", label: "İptal Edilen" },
+              ]}
+            /> */}
+          </div>
+          <div className="h-[90%]">
+            <ShiftTable />
+          </div>
         </div>
         <div className="w-[15%] h-full ">
           <div className="w-full h-2/3 flex items-center justify-center flex-col gap-y-4 ">
@@ -149,17 +165,17 @@ function ConfirmShift() {
             ))}
           </div>
           <div className="w-full h-1/3 text-black font-semibold flex flex-col items-center">
-            <div className="flex w-[100px] gap-x-3 items-center justify-between">
+            <div className="flex w-[150px] gap-x-3 items-center justify-between">
               <span className="w-4 h-4 bg-red-500 "> </span>
               <span>İptal</span>
             </div>
-            <div className="flex w-[100px] gap-x-3 items-center justify-between">
+            <div className="flex w-[150px] gap-x-3 items-center justify-between">
               <span className="w-4 h-4 bg-green-500 "> </span>
-              <span>Onaylı</span>
+              <span>Onaylandı</span>
             </div>
-            <div className="flex w-[100px] gap-x-3 items-center justify-between">
+            <div className="flex w-[150px] gap-x-3 items-center justify-between">
               <span className="w-4 h-4 bg-blue-500 "> </span>
-              <span>Bekleyen</span>
+              <span>Onay Bekliyor</span>
             </div>
           </div>
         </div>
@@ -190,14 +206,13 @@ function IdariIsler() {
   );
   const { userInfo } = useSelector((state) => state.user);
   const [vehicleType, setVehicleType] = useState("servis");
-  const times = ["Akşam Servis Saati", "12:00", "12:30", "13:00"];
   const [vasıtaForm, setVasıtaForm] = useState({
     driver_name: "",
     driver_no: "",
     vehicle_licance: "",
     station_name: "",
-    service_time: "12:00", // servisin gelme saati...
-    service_period:"",
+    service_time: "", // servisin gelme saati...
+    service_period: "",
     vehicle: "",
   });
   const vehicles = [
@@ -275,12 +290,14 @@ function IdariIsler() {
       type: "text",
       placeholder: "Durak Adı",
       className: `h-[4rem]`,
+      disabled: !!selection_shift,
     },
     {
       name: "service_time",
       type: "time", // Zaman seçimi için doğru tip
       placeholder: "Servis Gelme Saati",
       className: `h-[4rem]`,
+      disabled: !!selection_shift,
     },
   ];
   const dispatch = useDispatch();
@@ -306,6 +323,7 @@ function IdariIsler() {
       service_time,
       vehicle_plate_no,
       shift_status,
+      service_period,
     } = curr;
 
     // Eğer service_key eksikse bu kaydı atla
@@ -330,6 +348,8 @@ function IdariIsler() {
         service_time,
         vehicle_plate_no,
         shift_status,
+        service_period,
+        service_time,
       };
     }
 
@@ -361,8 +381,10 @@ function IdariIsler() {
     driver_no: data.driver_no,
     vehicle_plate_no: data.vehicle_plate_no,
     shift_status: data.shift_status,
+    service_period: data.service_period,
+    service_time: data.service_time,
   }));
-
+ 
   //! mesai kaydına servıs bılgılerını ekleyecek fonksıyon...
   const handleAddVehicleInfo = async () => {
     if (!vasıtaForm.vehicle) {
@@ -371,6 +393,19 @@ function IdariIsler() {
     }
     if (selection_shift.length === 0) {
       toast.error("Vasıta bilgilerini gireceğiniz mesai kayıtlarını seçiniz.");
+      return;
+    }
+    if (!vasıtaForm.service_period) {
+      toast.error("Servisin 'Aksam' yada 'Sabah' olacagını seçiniz");
+      return;
+    }
+
+    if (
+      !vasıtaForm.driver_name ||
+      !vasıtaForm.driver_no ||
+      !vasıtaForm.vehicle_licance
+    ) {
+      toast.error("Sürücü bilgilerini giriniz.");
       return;
     }
 
@@ -409,7 +444,7 @@ function IdariIsler() {
           driver_no: "",
           vehicle_licance: "",
           station_name: "",
-          service_time: "12:00",
+          service_time: "",
         });
       }
     } catch (err) {
@@ -486,8 +521,9 @@ function IdariIsler() {
           driver_no: "",
           vehicle_licance: "",
           station_name: "",
-          service_time: "12:00",
+          service_time: "",
           vehicle: "",
+          service_period: "",
         });
       } else {
         // Eğer seçim 1'e düştüyse formu doldur
@@ -496,8 +532,9 @@ function IdariIsler() {
           driver_no: updatedSelection[0].driver_no || "",
           vehicle_licance: updatedSelection[0].vehicle_plate_no || "",
           station_name: updatedSelection[0].station_name[0] || "",
-          service_time: updatedSelection[0].service_time || "12:00",
+          service_time: updatedSelection[0].service_time || "",
           vehicle: updatedSelection[0].vehicle || "",
+          service_period: updatedSelection[0].service_period || "",
         });
       }
     } else {
@@ -508,14 +545,14 @@ function IdariIsler() {
       // Eğer seçim 1 olduysa formu doldur
       if (updatedSelection.length === 1) {
         const selected = updatedSelection[0]; // Seçili eleman
-
         setVasıtaForm({
           driver_name: selected.driver_name || "", // Null kontrolü
           driver_no: selected.driver_no || "",
           vehicle_licance: selected.vehicle_plate_no || "", // Eğer `vehicle_plate_no` yoksa kontrol edin
           station_name: selected.station_names[0] || "", // Array kontrolü
-          service_time: selected.service_time || "12:00",
+          service_time: selected.service_time || "",
           vehicle: selected.vehicle || "",
+          service_period: selected.service_period || "",
         });
       } else {
         // Eğer seçim birden fazlaysa formu sıfırla
@@ -524,7 +561,7 @@ function IdariIsler() {
           driver_no: "",
           vehicle_licance: "",
           station_name: "",
-          service_time: "12:00",
+          service_time: "",
           vehicle: "",
         });
       }
@@ -569,12 +606,31 @@ function IdariIsler() {
       toast.error("Servise taşıyacağınız kullanıcıları seçin.");
       return;
     }
+
+    // `shift_status` "Onaylandı" olmayan kullanıcıları kontrol et
+    const selectionApproved = selection_shift.find((item) => {
+      return item.shift_status !== "Onaylandı";
+    });
+
+    if (selectionApproved) {
+      toast.error(
+        "Seçtiğiniz kullanıcılar arasında servıse atanmıs olanlar var. Sadece atanmamış kişileri ekleyebilirsiniz."
+      );
+      return;
+    }
+    if (!vasıtaForm.station_name) {
+      toast.error(
+        `${selectedShiftReport[0].vehicle}'e ekleyeceğiniz kayıtlar için durak ismi giriniz`
+      );
+      return;
+    }
     try {
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/addUserToService`,
         {
           selection_shift: selection_shift,
           selectedShiftReport: selectedShiftReport[0],
+          vasıtaForm,
         }
       );
 
@@ -589,7 +645,8 @@ function IdariIsler() {
           driver_no: "",
           vehicle_licance: "",
           station_name: "",
-          service_time: "12:00",
+          service_time: "",
+          service_period: "",
         });
       } else {
         toast.error("Bir hata oluştu.");
@@ -609,7 +666,7 @@ function IdariIsler() {
       )
     );
   };
-  console.log(vasıtaForm)
+
   return (
     <div className=" w-full ">
       <div className="h-[600px] flex">
@@ -733,6 +790,7 @@ function IdariIsler() {
                   onChange={(e) =>
                     handleChange({ name: item.name, value: e.target.value })
                   }
+                  disabled={item.disabled}
                 />
               ))}
             </div>
@@ -781,11 +839,11 @@ function IdariIsler() {
                     id="evening_service"
                     name="service_period"
                     value="Aksam"
-                    checked={vasıtaForm.service_period === "Akşam"}
+                    checked={vasıtaForm.service_period === "Aksam"}
                     onChange={(e) => {
                       handleChange({
                         name: "service_period",
-                        value: e.target.checked ? "Akşam" : "",
+                        value: e.target.checked ? "Aksam" : "",
                       });
                       if (e.target.checked) {
                         document.getElementById(
@@ -874,16 +932,12 @@ function IdariIsler() {
 //? mesai olusturma sayfa komponentı...
 function CreateShift() {
   const dispatch = useDispatch();
-  const [user, setUser] = useState(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const { userInfo, allUser } = useSelector((state) => state.user);
   const { selection_shift, selectedShiftUser, usersOnShifts } = useSelector(
     (state) => state.shift
   );
   const pathName = usePathname();
-  const create_shift_name = pathName.split("/")[3];
-  const [selectionModel, setSelectionModel] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [formData, setFormData] = useState({
     kullanici: "",
@@ -897,24 +951,6 @@ function CreateShift() {
     dispatch(fetchAllUsers());
     dispatch(fetchShiftLogs());
   }, [dispatch]);
-
-  //! Girilen id ile kullanıcı bılgılerını cekcek query
-  const handleSearchUser = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${selectedUser.id_dec}/getuserinfo`
-      );
-      if (response.status === 200) {
-        setUser(response.data);
-        toast.success("Kullanıcı bilgileri başarıyla çekildi.");
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error("Kullanıcı bilgileri çekilemedi. (Yanlış ID)");
-      setUser(null);
-    }
-  };
 
   // Kullanıcı arama input'unda ve dropdown'larda değişiklik olduğunda form verisini günceller
   const handleInputChange = (e) => {
@@ -934,16 +970,6 @@ function CreateShift() {
       }
     }
   };
-
-  // // Kullanıcı seçildiğinde çalışacak fonksiyon
-  // const handleSelectedUser = (user) => {
-  //   setSelectedUser(user);
-  //   setFormData({ ...formData, kullanici: user.op_username });
-
-  //   // Dropdown'u kapat ama input'taki değeri silme
-  //   setFilteredUsers([]);
-  //   setDropdownVisible(false);
-  // };
 
   const times = [
     "22:00",
@@ -1078,57 +1104,13 @@ function CreateShift() {
       console.log(err.response.data || "HATA");
     }
   };
-
+  console.log(selectedShiftUser);
   return (
     <div className="w-full h-full flex flex-col ">
       {/* form komponent... */}
       <div className="w-auto h-1/4  rounded-md  flex   text-black   ">
         {/* 1 */}
         <div className="w-[30%] border-r border-black ">
-          {/* <div className="flex w-full justify-evenly items-center">
-            <div className="relative">
-              <label className="block mb-2 font-semibold underline">
-                Kullanıcı İsmi
-              </label>
-              <input
-                type="text"
-                name="kullanici"
-                className="w-full p-2 border rounded-md"
-                required
-                value={formData.kullanici}
-                onChange={handleInputChange}
-              />
-              {dropdownVisible &&
-                filteredUsers.length > 0 &&
-                formData.kullanici.length > 0 && (
-                  <div className="max-h-[300px] absolute z-50 p-2 overflow-y-scroll left-0 right-0 shadow-xl bg-white transition-all duration-200 ">
-                    {filteredUsers.map((item, index) => (
-                      <div
-                        key={index}
-                        onClick={() => handleSelectedUser(item)}
-                        className="text-black py-1 flex gap-x-5 border-b hover:text-white hover:font-semibold hover:bg-slate-500 cursor-pointer hover:p-2"
-                      >
-                        <span className="w-2 font-semibold">{index + 1}-</span>
-                        <span className="w-24">{item.id_dec}</span>
-                        <span>{item.op_username}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-            </div>
-            <div className="flex flex-col">
-              <span className="block mb-2 font-semibold underline">
-                Kullanıcı Bilgilerini Al
-              </span>
-              <button
-                type="button"
-                onClick={handleSearchUser}
-                className="p-2 bg-slate-600 hover:bg-slate-400 transition-all rounded-md text-white"
-              >
-                Personel Ara
-              </button>
-            </div>
-          </div> */}
           <div className="w-full h-44 overflow-y-auto rounded-md p-2">
             <h1 className="w-full font-bold py-1 text-center text-black bg-[#a6aebf] rounded-t-md">
               Seçilen Kullanıcılar
@@ -1239,7 +1221,6 @@ function CreateShift() {
           </div>
         </div>
         {/* 3 */}
-
         <div className="w-[35%] flex flex-col justify-between items-center gap-y-4">
           {/* İlk Kart */}
           <div className="w-[95%] bg-blue-100 border border-blue-300 rounded-lg  shadow-md">

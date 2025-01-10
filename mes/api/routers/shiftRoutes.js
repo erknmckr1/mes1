@@ -10,7 +10,8 @@ const {
   updatedVehicleInfo,
   moveToDiffService,
   userOutOfService,
-  addUserToService
+  addUserToService,
+  updateShiftCell
 } = require("../services/shiftServices");
 
 //! yenı mesaı olusturmak ıcın kullanılacak route...
@@ -123,9 +124,15 @@ router.put("/userOutOfService", async (req, res) => {
 });
 //! kullanıcıları bır servıse tasıyacak 
 router.put("/addUserToService",async(req,res)=>{
-  const{selection_shift,selectedShiftReport} = req.body;
-  const result = await addUserToService(selection_shift,selectedShiftReport);
+  const{selection_shift,selectedShiftReport,vasıtaForm} = req.body;
+  const result = await addUserToService(selection_shift,selectedShiftReport,vasıtaForm);
   res.status(result.status).json(result.message);
-
+});
+//! Degıstırılen hucreyı guncelleyecek fonksıyon... 
+router.put("/updateShiftCell",async(req,res)=>{
+  const { shift_uniq_id, columnKey, value } = req.body;
+  console.log(req.body)
+  const result = await updateShiftCell(shift_uniq_id, columnKey, value );
+  res.status(result.status).json(result.message);
 })
 module.exports = router;
