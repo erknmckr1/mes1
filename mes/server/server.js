@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3003;
 const cors = require("cors");
+const http = require("http"); // HTTP sunucu oluşturacağız
+const socketIo = require("socket.io"); // Socket.io entegrasyonu
 const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
@@ -39,13 +41,13 @@ const leaveRoutes = require("../api/routers/leaveRoutes");
 const userRoutes = require("../api/routers/userRoutes");
 const orderRoutes = require("../api/routers/orderRoutes");
 const shiftRoutes = require("../api/routers/shiftRoutes");
+const leaveServices = require("../api/services/leaveServices");
 const User = require("../models/User");
 const Role = require("../models/Roles");
 const Permissions = require("../models/Permissions");
 app.use(express.json());
 app.use(cookieParser());
 
-const currentDate = new Date();
 const currentDateTimeOffset = new Date().toISOString();
 
 const corsOptions = {
@@ -64,6 +66,36 @@ const corsOptions = {
 app.use(cors(corsOptions));
 const SECRET_KEY = crypto.randomBytes(32).toString("hex");
 
+// **HTTP Sunucusu ve Socket.io Başlatma**
+//* ✅ Burada HTTP sunucusunu (http.createServer(app)) manuel olarak oluşturduk ve Express uygulamasını bu sunucunun içine verdik.
+//* ✅ Bunun amacı, WebSocket (socket.io gibi) veya diğer HTTP tabanlı protokolleri kullanmak için HTTP sunucusunu doğrudan kontrol edebilmektir.
+//* ✅ Express burada yine çalışıyor, ancak artık varsayılan olarak kendi HTTP sunucusunu başlatmıyor.
+const server = http.createServer(app); // HTTP sunucu oluştur
+
+//*🔹 socketIo(server) ile WebSocket sunucusunu başlatıyoruz ve bunu HTTP sunucumuza (server) bağlıyoruz.
+const io = socketIo(server, {
+  cors: {
+    origin: corsOptions.origin,
+    credentials: true,
+  },
+});
+
+// **Socket.io Bağlantı Dinleyicisi**
+io.on("connection", (socket) => {
+  console.log("Yeni bir kullanıcı bağlandı:", socket.id);
+
+  // Kullanıcı izinleri güncelleme isteği dinleniyor
+  socket.on("refreshLeaves", () => {
+    console.log("İzin tablosunun güncellenmesi istendi.");
+    io.emit("updateLeaveTable"); // Tüm istemcilere izin tablosunun güncellenmesi gerektiğini bildir
+  });
+
+  // Kullanıcı ayrıldığında
+  socket.on("disconnect", () => {
+    console.log("Kullanıcı bağlantıyı kesti:", socket.id);
+  });
+});
+
 //! Sequelize ORM kullanarak bir Microsoft SQL Server veritabanına bağlanma, bağlantıyı doğrulama ve veritabanı modellerini senkronize etme işlemlerini gerçekleştirir.
 sequelize
   .authenticate() // veri tabanına baglantının basrılı olup olmadıgıı kontrol edılır basarılı ıse ısleme devam...
@@ -73,8 +105,9 @@ sequelize
   })
   .then(() => {
     console.log("Veritabani ve tablolar senkronize edildi.");
-    app.listen(port, () => {
+    server.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
+      leaveServices.setSocket(io);
     });
   })
   .catch((err) => {
@@ -150,7 +183,7 @@ app.get("/check-permission", async (req, res) => {
 
     const permissions = user.Role.Permissions.map(
       (permission) => permission.name
-    ); 
+    );
     return res.status(200).json(permissions); // İzinleri döndür
   } catch (err) {
     console.error("Token doğrulama hatası:", err); // Hata logu
@@ -205,7 +238,7 @@ app.get("/getBreakOnUsers", async (req, res) => {
 
 //! Molayı bitirecek metot...
 app.post("/returnToBreak", async (req, res) => {
-  console.log("x")
+  console.log("x");
   const { operator_id, end_time } = req.body;
   console.log("Received request to return from break:", operator_id, end_time);
   try {
@@ -329,7 +362,7 @@ app.post("/createWorkLog", async (req, res) => {
   const currentDateTimeOffset = currentDate.toISOString();
 
   const { work_info, field } = req.body;
-  console.log(work_info)
+  console.log(work_info);
   try {
     let result;
     if (work_info.area_name === "cekic") {
@@ -461,6 +494,6 @@ app.use("/api/user", userRoutes);
 //? Order ıslemlerı ıle ılgılı rotalar (sipariş olustur iptal güncelle vs. bütün iş birimlerinin servislerini içerebilir.)
 app.use("/api/order", orderRoutes);
 
-app.use("/api/shift",shiftRoutes);
+app.use("/api/shift", shiftRoutes);
 
-module.exports = {SECRET_KEY}
+module.exports = { SECRET_KEY, io };

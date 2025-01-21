@@ -16,6 +16,7 @@ const {
   cancelSelectionsLeave,
   createNewLeaveByIK,
   leavesApprovedByTheInfirmary,
+  personelToBeChecked
 } = require("../services/leaveServices");
 
 //! İzin sebeplerini dönen endpoint
@@ -197,7 +198,6 @@ router.get("/confirmSelections", async (req, res) => {
 
 //! Toplu talep iptal route
 router.get("/cancelSelectionsLeave", async (req, res) => {
-  console.log(req.body);
   const { leaveIds, id_dec } = req.query;
   const selections = leaveIds.split(",");
   const result = await cancelSelectionsLeave(selections, id_dec);
@@ -207,9 +207,14 @@ router.get("/cancelSelectionsLeave", async (req, res) => {
 //! Revir tarafından onaylanan izinleri çekecek route...
 router.get("/leavesApprovedByTheInfirmary", async (req, res) => {
   const { id_dec, roleId } = req.query; // Query parametrelerini alıyoruz
-  console.log(req.query); // Kontrol amaçlı log
   const result = await leavesApprovedByTheInfirmary(id_dec, roleId); // Servisi çağırıyoruz
   res.status(result.status).json(result.message); // Sonucu döndürüyoruz
 });
+//! Çıkış yapacak personeli dönen endpoint izinler onaylanmıs ve bana çıkıs yapmaya yaklasan personelleri döner
+router.get("/personelToBeChecked",async(req,res)=>{
+  const {status} = req.query;
+  const result = await personelToBeChecked(status);
+  res.status(result.status).json(result.message);
+})
 
 module.exports = router;

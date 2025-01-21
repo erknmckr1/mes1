@@ -32,7 +32,7 @@ const theme = createTheme({
 
 function JobTable() {
   const dispatch = useDispatch();
-  const { selectedOrder, workList, selectedGroupNo,selectedHammerSectionField } = useSelector(
+  const { selectedOrder, workList, selectedGroupNo,selectedHammerSectionField,selectedMachine } = useSelector(
     (state) => state.order
   );
   const pathName = usePathname();
@@ -119,48 +119,9 @@ function JobTable() {
   }, [areaName, userInfo, dispatch,selectedHammerSectionField]);
 
   const getFilteredRows = () => {
-    if (areaName === "buzlama" && selectedGroupNo.length > 0) {
-      // Buzlama ekranında, seçili gruplara göre filtreleme
-      return workList
-        ?.filter(
-          (item) =>
-            item.work_status !== "4" &&
-            selectedGroupNo.some(
-              (group) => group.group_record_id === item.group_record_id
-            )
-        )
-        .map((item, index) => {
-          const workStartDate = item.work_start_date
-            ? new Date(item.work_start_date)
-            : null;
-          return {
-            id: index,
-            user_id_dec: item.user_id_dec,
-            op_username: item.op_username,
-            order_no: item.order_no,
-            process_id: item.process_id,
-            section: item.section,
-            area_name: item.area_name,
-            process_name: item.process_name,
-            produced_amount: item.produced_amount,
-            production_amount: item.production_amount,
-            work_start_date: workStartDate
-              ? workStartDate.toLocaleString()
-              : null,
-            work_end_date: item.work_end_date,
-            work_finished_op_dec: item.work_finished_op_dec,
-            work_status: item.work_status,
-            uniq_id: item.uniq_id,
-            group_no: item.group_no,
-            group_record_id: item.group_record_id,
-          };
-        });
-    }else if (areaName === "cekic" && selectedHammerSectionField.length > 0){
-      return workList
-      ?.filter(
-        (item) =>
-          item.work_status !== "4" && item.field === selectedHammerSectionField
-      )
+    // Sadece selectedMachine ile filtreleme
+    return workList
+      ?.filter((item) => item.machine_name === selectedMachine.machine_name)
       .map((item, index) => {
         const workStartDate = item.work_start_date
           ? new Date(item.work_start_date)
@@ -187,38 +148,8 @@ function JobTable() {
           group_record_id: item.group_record_id,
         };
       });
-    } else {
-      // Diğer ekranlarda, tüm işleri listeleme (bitmiş olanlar hariç)
-      return workList
-        ?.filter((item) => item.work_status !== "4")
-        .map((item, index) => {
-          const workStartDate = item.work_start_date
-            ? new Date(item.work_start_date)
-            : null;
-          return {
-            id: index,
-            user_id_dec: item.user_id_dec,
-            op_username: item.op_username,
-            order_no: item.order_no,
-            process_id: item.process_id,
-            section: item.section,
-            area_name: item.area_name,
-            process_name: item.process_name,
-            produced_amount: item.produced_amount,
-            production_amount: item.production_amount,
-            work_start_date: workStartDate
-              ? workStartDate.toLocaleString()
-              : null,
-            work_end_date: item.work_end_date,
-            work_finished_op_dec: item.work_finished_op_dec,
-            work_status: item.work_status,
-            uniq_id: item.uniq_id,
-            group_no: item.group_no,
-            group_record_id: item.group_record_id,
-          };
-        });
-    }
   };
+  
   const rows = getFilteredRows();
 
   const getRowClassName = (params) => {
@@ -234,6 +165,8 @@ function JobTable() {
       return "red-row";
     }else if (row.work_status === "6") {
       return "yellow-row";
+    }else if(row.work_status === "0"){
+      return "grey-row";
     }
     return "";
   };

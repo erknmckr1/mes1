@@ -24,7 +24,7 @@ async function getWorksWithoutId(areaName) {
       where: {
         area_name: areaName,
         work_status: {
-          [Op.in]: ["1", "2", "6"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["0", "1", "2", "6"], // '1' veya '2' durumundaki işleri getir
         },
       },
     });
@@ -822,6 +822,24 @@ async function startToProcess({ id_dec, group_record_id }) {
       };
     }
 
+    // Tüm siparişlerin aynı makineye atandığını varsayarak makine adını alıyoruz
+    const machineName = orders[0].machine_name;
+
+    // Makine kontrolü
+    const activeMachine = await WorkLog.findOne({
+      where: {
+        machine_name: machineName,
+        work_status: ["1", "2"], // İşlemde olan ya da durdurulmuş
+      },
+    });
+
+    if (activeMachine) {
+      return {
+        status: 400,
+        message: `Makine (${machineName}) hâlihazırda kullanılıyor. İş başlatılamaz.`,
+      };
+    }
+
     const isActiveOrder = orders.every((item) => item.work_status === "1");
 
     if (isActiveOrder && group.group_status === "3") {
@@ -1376,7 +1394,7 @@ async function finishTheGroup({ groups, id_dec }) {
 
 //! Grubu teslim edecek servis gs-6 ws-4
 async function deliverTheGroup(group, id_dec) {
-  console.log(group)
+  console.log(group);
   try {
     // Grup status "5" değilse işlem yapılmayacak
     if (group.group_status !== "5") {
@@ -1951,7 +1969,6 @@ async function scrapMeasure(formState, user_id, areaName) {
     });
     console.log({ measure: measure });
 
-    
     if (measure && orderId !== "1234567") {
       return {
         status: 400,
@@ -2023,7 +2040,7 @@ async function updateMeasure(formState, uniq_id) {
         entry_measurement: entryGramage,
         exit_measurement: exitGramage,
         measurement_diff: diffirence,
-        gold_pure_scrap
+        gold_pure_scrap,
       },
       {
         where: {

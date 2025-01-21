@@ -6,7 +6,17 @@ const { Op } = require("sequelize");
 const dotenv = require("dotenv");
 const Permission = require("../../models/Permissions");
 const Role = require("../../models/Roles");
+const moment = require("moment-timezone");
 dotenv.config();
+
+let ioInstance = null;
+
+const setSocket = (socketIoInstance) => {
+  if (!ioInstance) {
+    ioInstance = socketIoInstance;
+    console.log("✅ Socket.io leaveServices'e atandı.");
+  }
+};
 
 //! İzin sebeplerini dönecek fonksiyon
 const getLeaveReasons = async () => {
@@ -164,6 +174,12 @@ async function createNewLeaveByIK(
     console.log(result);
 
     if (result) {
+      if (ioInstance) {
+        ioInstance.emit("updateLeaveTable");
+      } else {
+        console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
+      }
+      
       return { status: 200, message: "İzin talebi başarıyla oluşturuldu." };
     } else {
       return { status: 400, message: "İzin talebi oluşturulamadı." };
@@ -312,7 +328,18 @@ async function cancelPendingApprovalLeave({
           },
         }
       );
-      return updatedRowsCount > 0;
+
+      if (updatedRowsCount > 0) {
+        if (ioInstance) {
+          ioInstance.emit("updateLeaveTable");
+        } else {
+          console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
+        }
+        
+        return true;
+      } else {
+        return false;
+      }
     }
   } catch (err) {
     console.error("Error fetching records:", err);
@@ -556,6 +583,12 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     }
 
     await leaveRecord.save();
+    if (ioInstance) {
+      ioInstance.emit("updateLeaveTable");
+    } else {
+      console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
+    }
+    
     return {
       status: 200,
       message: `
@@ -772,6 +805,12 @@ async function confirmSelections(selectionModel, id_dec) {
       );
     }
 
+    if (ioInstance) {
+      ioInstance.emit("updateLeaveTable");
+    } else {
+      console.error("❌ ioInstance tanımlı değil!");
+    }
+    
     return { status: 200, message: "Seçili izin talepleri onaylandı." };
   } catch (error) {
     console.error("Error in confirmSelections function:", error);
@@ -803,6 +842,11 @@ async function cancelSelectionsLeave(selections, id_dec) {
       await leaveRecord.save();
     }
 
+    if (ioInstance) {
+      ioInstance.emit("updateLeaveTable");
+    } else {
+      console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
+    }    
     return { status: 200, message: "İzin talepleri başarıyla iptal edildi." };
   } catch (error) {
     console.error("Error in cancelSelectionsLeave function:", error);
@@ -828,6 +872,11 @@ async function leavesApprovedByTheInfirmary(id_dec, roleId) {
 
     // Eğer sonuç varsa 200, yoksa 404 döndür
     if (result && result.length > 0) {
+      if (ioInstance) {
+        ioInstance.emit("updateLeaveTable");
+      } else {
+        console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
+      }   
       return { status: 200, message: result };
     } else {
       return { status: 404, message: "Onaylanan izin bulunamadı." };
@@ -835,6 +884,34 @@ async function leavesApprovedByTheInfirmary(id_dec, roleId) {
   } catch (err) {
     console.log(err); // Hata durumunu logla
     return { status: 500, message: "İç sunucu hatası." }; // 500 Internal Server Error döndür
+  }
+}
+
+//!
+async function personelToBeChecked(status) {
+  try {
+    const oneHourAgo = moment().subtract(1, "hour").toDate(); // Şu anki zamandan 1 saat önce
+
+    const result = await LeaveRecords.findAll({
+      where: {
+        leave_status: {
+          [Op.in]: [3, 4],
+        },
+        leave_creation_date: {
+          [Op.gt]: oneHourAgo, // 1 saat önceki tarihten büyük olanları al
+        },
+      },
+      order: [["leave_start_date", "DESC"]],
+    });
+
+    if (result.length > 0) {
+      return { status: 200, message: result };
+    } else {
+      return { status: 404, message: "Personel bulunamadı." };
+    }
+  } catch (err) {
+    console.error("Hata:", err);
+    return { status: 500, message: "İç sunucu hatası." };
   }
 }
 
@@ -854,4 +931,6 @@ module.exports = {
   cancelSelectionsLeave,
   createNewLeaveByIK,
   leavesApprovedByTheInfirmary,
+  personelToBeChecked,
+  setSocket
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { CgMenuRight } from "react-icons/cg";
-import { FaEdit, FaPaperPlane } from "react-icons/fa";
+import { FaEdit, FaPaperPlane,FaUserSecret } from "react-icons/fa";
 import { useState } from "react";
 import {
   MdKeyboardArrowDown,
@@ -137,6 +137,11 @@ function HomeSidebars() {
           label: "Personel İzin Olustur",
           icon: <TbNurse />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/personelizinolustur`,
+        },
+        {
+          label: "Çıkış Yapacak P. (Güvenlik)",
+          icon: <FaUserSecret />,
+          href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/güvenlik`,
         },
       ].filter(Boolean), // filter(Boolean) dizideki tüm truthy değerleri (boş olmayan) tutar ve falsy değerleri (boş olan) kaldırır.
     },

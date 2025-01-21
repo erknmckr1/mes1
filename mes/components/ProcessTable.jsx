@@ -83,7 +83,6 @@ function ProcessArea() {
     }
   };
 
-  console.log(machineList);
   const filteredMachine = () => {
     if (!machineList || !selectedProcess) {
       return;
@@ -101,8 +100,20 @@ function ProcessArea() {
   useEffect(() => {
     getProcessList();
     getMachineList();
-  }, [selectedHammerSectionField,pageName]);
+  }, [selectedHammerSectionField, pageName]);
 
+  const handleSelected = (name, item) => {
+    if (name === "process") {
+      const isSelectedProcess =
+        selectedProcess?.process_name === item.process_name;
+      dispatch(setSelectedProcess(isSelectedProcess ? {} : item));
+    } else if (name === "machine") {
+      const isSelectedMachine =
+        selectedMachine?.machine_name === item.machine_name;
+      dispatch(setSelectedMachine(isSelectedMachine ? {} : item));
+    }
+  };
+  
   return (
     <div
       className={`w-full h-full overflow-y-auto transition-all  tablearea ${theme} border-secondary border-2`}
@@ -122,7 +133,7 @@ function ProcessArea() {
             {processList &&
               processList.map((item, index) => (
                 <li
-                  onClick={() => dispatch(setSelectedProcess(item))}
+                  onClick={() => handleSelected("process", item)}
                   key={item.process_id}
                   className={`p-2 hover:bg-green-600 border cursor-pointer  ${
                     selectedProcess.process_name === item.process_name
@@ -152,7 +163,7 @@ function ProcessArea() {
                         ? "bg-green-500"
                         : `listeleman ${theme}`
                     }`}
-                    onClick={() => dispatch(setSelectedMachine(item))}
+                    onClick={() => handleSelected("machine", item)}
                   >
                     {item.machine_name}
                   </li>

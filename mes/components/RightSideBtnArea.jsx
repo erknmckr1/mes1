@@ -553,6 +553,7 @@ function RightSideBtnArea() {
       }
     } catch (err) {
       console.log(err);
+      toast.error(err.response.data || "İşlem sırasında bir hata oluştu.");
       dispatch(setUser(null));
     }
   }
@@ -781,7 +782,6 @@ function RightSideBtnArea() {
   // fire popup ı acacak fonksyon
   const handleOpenFirePopup = () => {
     dispatch(setFirePopup(true));
-    console.log("x");
   };
   //? TASLAMA METOTLARI BİTİŞ
 

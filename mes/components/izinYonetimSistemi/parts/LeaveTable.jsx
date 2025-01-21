@@ -10,6 +10,15 @@ import {
 } from "../../../redux/workFlowManagement";
 import { GiConfirmed, GiCancel } from "react-icons/gi";
 import LeaveRangePicker from "./LeaveRangePicker";
+import io from "socket.io-client"; // 🔹 Socket.io istemcisi ekleniyor
+
+
+const socket = io("http://localhost:3003", {
+  withCredentials: true,
+  transports: ["websocket"],
+});
+
+
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.user);
@@ -19,7 +28,7 @@ function LeaveTable({ status }) {
   const [selectionModel, setSelectionModel] = useState([]);
   const { allUser, permissions } = useSelector((state) => state.user);
 
-  //! Endpointe göre veri çekecek fonksiyon...
+   //! 📌 Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
     const { id_dec, roleId } = userInfo;
     try {
@@ -31,6 +40,7 @@ function LeaveTable({ status }) {
         managerApproved: "/api/leave/getManagerApprovedLeaves",
         alltimeoff: "/api/leave/alltimeoff",
         leavesapprovedbytheinfirmary: "/api/leave/leavesApprovedByTheInfirmary",
+        yaklasanizin: "/api/leave/personelToBeChecked",
       };
       const endpoint = endpointMap[status];
 
@@ -45,6 +55,12 @@ function LeaveTable({ status }) {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
           { params: { id_dec, roleId } }
         );
+      }else if (endpoint === "/api/leave/personelToBeChecked") {
+        response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
+          { params: { status } }
+        );
+
       } else {
         response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
@@ -64,8 +80,18 @@ function LeaveTable({ status }) {
     }
   };
 
+  //! 📌 Sayfa yüklendiğinde ve socket olayını dinleyerek tabloyu güncelle
   useEffect(() => {
     fetchRecords();
+    // 🔹 Socket.io ile backend'deki `updateLeaveTable` olayını dinle
+    socket.on("updateLeaveTable", () => {
+      console.log("İzin tablosu güncellendi.");
+      fetchRecords();
+    });
+
+    return () => {
+      socket.off("updateLeaveTable"); // Temizleme işlemi
+    };
   }, [userInfo, status]);
 
   const rows = records.map((item) => {
@@ -244,6 +270,8 @@ function LeaveTable({ status }) {
       row.leave_status === "İzin iptal edildi."
     ) {
       return "red-row";
+    } else if (status ==="yaklasanizin"){
+      return "blinking-row";
     } else if (
       selectionModel.includes(row.id) &&
       row.leave_status !== "4" &&
@@ -253,7 +281,7 @@ function LeaveTable({ status }) {
     }
     return "";
   };
-
+  console.log(status)
   //! Seçili izin taleplerini toplu onay isteği atacak fonksıyon
   async function handleConfirmSelections() {
     if (confirm("Seçili izin talepleri onaylansın mı ?")) {
@@ -322,7 +350,8 @@ function LeaveTable({ status }) {
         status !== "approved" &&
         status !== "past" &&
         status !== "managerApproved" &&
-        status !== "personnelcreateleave" && (
+        status !== "personnelcreateleave" &&
+        status !== "yaklasanizin" && (
           <div className="flex justify-between items-center px-6 bg-[#C9DABF]">
             {status === "alltimeoff" && <LeaveRangePicker />}
             {/* onay butonları */}

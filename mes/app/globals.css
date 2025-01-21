@@ -67,10 +67,20 @@ body {
 
 }
 
+@keyframes blinking-bg {
+  0% { background-color: yellow; }
+  50% { background-color: white; }
+  100% { background-color: yellow; }
+}
+
 /* .MuiDataGrid-footerContainer{
   display: none !important;
 }  */
 /* GRİD END */
+.blinking-row {
+  animation: blinking-bg 1s infinite;
+}
+
 .selected-row {
   background-color: grey !important;
 }
@@ -94,6 +104,9 @@ body {
 }
 .yellow-row:hover {
   background-color: #f0c819;
+}
+.grey-row {
+  background-color: rgb(185, 183, 183);
 }
 
 /*Tema css */

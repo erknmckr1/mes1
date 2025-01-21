@@ -57,5 +57,13 @@ export const leaveConfig = {
       { id: "2", label: "Revir Tarafından Oluşturulan İzinler" },
     ],
   },
+  "Çıkış Yapacak P. (Güvenlik)": {  
+    tabs: {
+      1: { title: "Çıkış Yapacak Personel Listesi", component: <LeaveTable status="yaklasanizin" /> },
+    },
+    buttons: [
+
+    ],
+   }
   // Diğer flowları gerektiği gibi ekleyin
 };
