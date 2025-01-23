@@ -103,7 +103,7 @@ function RightSideBtnArea() {
       setRetryAction(null); // İşlem tetiklendikten sonra sıfırla
     }
   }, [retryAction, user]);
-  console.log(stopReasonPopup,retryAction)
+
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
     // grub secılı mı ?
@@ -501,6 +501,7 @@ function RightSideBtnArea() {
       }
     } catch (err) {
       console.log(err);
+      toast.error(err.response.data || "İşlem sırasında bir hata oluştu.");
       dispatch(setUser(null));
     }
   };
@@ -511,7 +512,7 @@ function RightSideBtnArea() {
     const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
 
     if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
-      toast.error("Başlatmak için sadece bir makine seçin...");
+      toast.error("Başlatmak için sadece bir grup seçin...");
       dispatch(setUser(null));
       return;
     } else if (group.group_status !== "2") {
@@ -752,12 +753,11 @@ function RightSideBtnArea() {
         err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
       );
       dispatch(setUser(null));
-      dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
-      dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
+    //  dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
+    //  dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
       dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
       dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
-      dispatch(handleGetGroupList());
-      dispatch(setUser(null));
+     // dispatch(handleGetGroupList());
     }
   };
 

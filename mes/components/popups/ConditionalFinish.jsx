@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 import { handleGetGroupList } from "@/redux/orderSlice";
+import { getWorksWithoutId } from "@/redux/orderSlice";
 function ConditionalFinish() {
   const dispatch = useDispatch();
   const [conditionReason, setConditionReason] = useState([]);
@@ -66,6 +67,7 @@ function ConditionalFinish() {
         dispatch(setSelectedOrder([]));
         dispatch(setConditionalFinishPopup(false));
         dispatch(handleGetGroupList());
+        dispatch(getWorksWithoutId({areaName}))
       } else {
         toast.error(response.data || "Şartlı bitirme işlemi başarısız oldu.");
       }

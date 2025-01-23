@@ -452,6 +452,15 @@ function OrderGroupManagement() {
 
   // gruba ekleme popup ını acacak fonksıyon
   const handleOpenGroupNos = () => {
+    if(selectedGroupNo.length === 0){
+      toast.error("İçerisinden sipariş taşıyacağınız grubu seçin");
+      return
+    }
+
+    if(selectedOrderId.length < 1){ 
+      toast.error("Grubu seçtikten sonra sağ tarafa gelen sipariş listesinden taşıyacağınız siparişi seçiniz");
+      return
+    }
     if (
       (selectedGroupNo[0].group_status === "1" ||
         selectedGroupNo[0].group_status === "2") &&
@@ -481,12 +490,11 @@ function OrderGroupManagement() {
       className: "w-[150px] bg-red-500 hover:bg-red-600 sm:py-2 text-sm",
       onClick: handleRemoveOrderFromGroup,
     },
-    
-      //children: "Siparişi Teslim Et",
-      //type: "button",
-      //className: "w-[150px] sm:py-2 text-sm",
-      //onClick: deliverSelectedOrder,
-    
+
+    //children: "Siparişi Teslim Et",
+    //type: "button",
+    //className: "w-[150px] sm:py-2 text-sm",
+    //onClick: deliverSelectedOrder,
   ];
   return (
     <div className="w-screen h-screen top-0 left-0 absolute  text-black font-semibold">

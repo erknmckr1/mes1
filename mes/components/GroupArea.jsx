@@ -24,8 +24,6 @@ function GroupArea() {
     selectedGroupNo,
     buzlamaWork,
     filteredGroup,
-    selectedProcess,
-    selectedMachine,
     selectedHammerSectionField,
     usersJoinedTheField,
     selectedPersonInField,
@@ -56,7 +54,7 @@ function GroupArea() {
       );
     } else {
       updatedSelectedGroupNo = [
-        ...selectedGroupNo,
+       // ...selectedGroupNo,
         { group_record_id, group_status, group_no },
       ];
     }
@@ -78,7 +76,7 @@ function GroupArea() {
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
-
+console.log(filteredGroup,selectedGroupNo)
   //? yenı makıne ıslevı gerceklestıgı zaman son prosesi listele...
   const filteredGroupList = groupList.reduce((acc, group) => {
     const existingGroup = acc.find((g) => g.group_no === group.group_no);

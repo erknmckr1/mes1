@@ -30,6 +30,10 @@ function GroupNos({ fetchBuzlamaWorks, handleGetGroupList }) {
 
   //! Gruba seçili orderları ekleyecek istek
   const handleAddToGroup = async () => {
+    if (selectedGroupNo[0].group_record_id === selectedSendGroup) {
+      toast.error("Bu sipariş zaten taşıman istediğiniz grupta bulunuyor.");
+      return;
+    }
     const soId = JSON.stringify(selectedOrderId);
     try {
       const response = await axios.post(
@@ -57,7 +61,6 @@ function GroupNos({ fetchBuzlamaWorks, handleGetGroupList }) {
     }
   };
 
-  console.log(selectedSendGroup);
   return (
     <div className="absolute w-full h-full top-0 left-0">
       <div className="w-full h-full flex items-center justify-center">
