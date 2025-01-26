@@ -11,7 +11,7 @@ const {
   moveToDiffService,
   userOutOfService,
   addUserToService,
-  updateShiftCell
+  updateShiftCell,
 } = require("../services/shiftServices");
 
 //! yenı mesaı olusturmak ıcın kullanılacak route...
@@ -34,8 +34,8 @@ router.post("/createShift", async (req, res) => {
     });
   }
 
-  const result = await createShift(
-    {created_by,
+  const result = await createShift({
+    created_by,
     start_date,
     end_date,
     start_time,
@@ -43,8 +43,8 @@ router.post("/createShift", async (req, res) => {
     route,
     address,
     stop_name,
-    selectedShiftUser}
-  );
+    selectedShiftUser,
+  });
 
   res.status(result.status).json({ message: result.message });
 });
@@ -58,7 +58,9 @@ router.put("/cancelShift", async (req, res) => {
 
 //! tüm mesai verısını cekecek route...
 router.get("/getShiftLogs", async (req, res) => {
-  const result = await getShiftLogs();
+  const { id_dec, permissions } = req.query;
+  const parsedPermissions = JSON.parse(permissions); // JSON string'i parse et
+  const result = await getShiftLogs(id_dec, parsedPermissions);
   res.status(result.status).json(result.message);
 });
 
@@ -122,17 +124,21 @@ router.put("/userOutOfService", async (req, res) => {
   const result = await userOutOfService(selectedShift);
   res.status(result.status).json(result.message);
 });
-//! kullanıcıları bır servıse tasıyacak 
-router.put("/addUserToService",async(req,res)=>{
-  const{selection_shift,selectedShiftReport,vasıtaForm} = req.body;
-  const result = await addUserToService(selection_shift,selectedShiftReport,vasıtaForm);
+//! kullanıcıları bır servıse tasıyacak
+router.put("/addUserToService", async (req, res) => {
+  const { selection_shift, selectedShiftReport, vasıtaForm } = req.body;
+  const result = await addUserToService(
+    selection_shift,
+    selectedShiftReport,
+    vasıtaForm
+  );
   res.status(result.status).json(result.message);
 });
-//! Degıstırılen hucreyı guncelleyecek fonksıyon... 
-router.put("/updateShiftCell",async(req,res)=>{
+//! Degıstırılen hucreyı guncelleyecek fonksıyon...
+router.put("/updateShiftCell", async (req, res) => {
   const { shift_uniq_id, columnKey, value } = req.body;
-  console.log(req.body)
-  const result = await updateShiftCell(shift_uniq_id, columnKey, value );
+  console.log(req.body);
+  const result = await updateShiftCell(shift_uniq_id, columnKey, value);
   res.status(result.status).json(result.message);
-})
+});
 module.exports = router;

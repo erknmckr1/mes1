@@ -5,23 +5,19 @@ import { useSelector } from "react-redux";
 
 export function ShiftChart() {
   const { usersOnShifts } = useSelector((state) => state.shift);
-  // Sabit x ekseni kategorileri (bölüm isimleri)
-  const defaultSections = [
-    "Montaj",
-    "BilgiIslem",
-    "Atolye",
-    "Boyama",
-    "Yaldız",
-    "Diğer",
-  ];
 
   // Bugünün tarihini YYYY-MM-DD formatında alın
   const today = new Date().toISOString().split("T")[0]; // Örn: "2024-11-22"
 
   // start_date bugünün tarihine eşit olan verileri filtreleyin
   const todayShifts = usersOnShifts.filter(
-    (shift) => shift.start_date === today
+    (shift) => shift.start_date === today && shift.shift_status !== "2"
   );
+
+  // Dinamik olarak x ekseni kategorilerini oluştur
+  const defaultSections = [
+    ...new Set(todayShifts.map((shift) => shift.User?.op_section || "Diğer")),
+  ];
 
   // Veriyi op_section'a göre gruplandır ve sayım yap
   const sectionCounts = todayShifts.reduce((acc, shift) => {
@@ -45,7 +41,7 @@ export function ShiftChart() {
         },
       ]}
       height={300}
-      width={600}
+      width={300}
       xAxis={[
         {
           data: chartData.map((data) => data.section), // Bölüm isimleri (op_section)
@@ -71,7 +67,7 @@ export function WeeklyShiftTrendChart() {
   // Her gün için kaç mesai kaydı olduğunu hesapla
   const dailyShiftCounts = last7Days.map((date) => {
     const count = usersOnShifts.filter(
-      (shift) => shift.start_date === date
+      (shift) => shift.start_date === date && shift.shift_status !== "2"
     ).length;
     return { date, count };
   });

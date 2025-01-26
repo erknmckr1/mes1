@@ -10,8 +10,6 @@ const createShift = async ({
   end_time,
   selectedShiftUser,
 }) => {
-  const today = new Date().toISOString().split("T")[0]; // Bugünün tarihi (YYYY-MM-DD)
-
   try {
     let successCount = 0;
     let errors = [];
@@ -22,7 +20,7 @@ const createShift = async ({
         const userShift = await ShiftLog.findOne({
           where: {
             operator_id: user.id_dec,
-            start_date: today, // Aynı gün için kontrol
+            start_date, // Aynı gün için kontrol
             shift_status: {
               [Op.ne]: "2", // shift_status 2 değilse
             },
@@ -60,8 +58,6 @@ const createShift = async ({
       }
     }
 
-    console.log(errors);
-
     if (successCount === selectedShiftUser.length) {
       return { status: 200, message: "Tüm mesailer başarıyla oluşturuldu." };
     } else if (successCount > 0) {
@@ -92,18 +88,35 @@ const createShift = async ({
 module.exports = { createShift };
 
 //! Tüm mesai verisini çekecek servis...
-async function getShiftLogs() {
+async function getShiftLogs(id_dec, permissions) {
   const today = new Date().toISOString().split("T")[0]; // Bugünün tarihi (YYYY-MM-DD)
   try {
-    const result = await ShiftLog.findAll({
-      where: {
-        shift_status: {
-          [Op.in]: ["1", "3", "4", "5"], // Belirli shift_status değerlerini filtrele
-        },
-        start_date: {
-          [Op.gte]: today, // start_date bugünün tarihi veya sonrası olanları al
-        },
+    // Temel sorgu koşulları
+    const whereConditions = {
+      shift_status: {
+        [Op.in]: ["1", "2", "3", "4", "5"], // Belirli shift_status değerlerini filtrele
       },
+      start_date: {
+        [Op.gte]: today, // Bugün veya sonrası
+      },
+    };
+
+    // Permissions'a göre filtreleme yap
+    if (permissions.includes("Mesaidarisler")) {
+      // Mesaidarisler izni varsa ek bir filtreleme yapma, tüm kayıtları getir
+    } else if (
+      permissions.includes("MesaiOlusturma") ||
+      permissions.includes("MesaiOnaylama")
+    ) {
+      // Mesai oluşturma veya onaylama izni varsa sadece kullanıcıya ait kayıtları getir
+      whereConditions.created_by = id_dec;
+    } else {
+      // İzin yoksa boş bir sonuç döndür veya hata fırlat
+      return { status: 403, message: "Erişim izniniz yok." };
+    }
+    // Veritabanı sorgusu
+    const result = await ShiftLog.findAll({
+      where: whereConditions,
       include: [
         {
           model: User, // User tablosunu dahil et
@@ -120,6 +133,7 @@ async function getShiftLogs() {
       ],
     });
 
+    // Sonuç kontrolü
     if (result.length > 0) {
       return {
         status: 200,
@@ -228,10 +242,30 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
     vehicle,
     service_period,
   } = vasıtaForm;
-  console.log(vasıtaForm);
   try {
     // Yeni bir service_key oluştur
     const newServiceKey = await getNextServiceKey();
+
+    const selectedShifts = await ShiftLog.findAll({
+      where: {
+        shift_uniq_id: shiftUnıqIds,
+      },
+      attributes: ["shift_uniq_id", "start_date"],
+    });
+
+    // selectedShift te servıs olusturalacak kayıların start dateleri birbirinden farklı olmamalı...
+    // new Set([...]) ile unique bir dizi oluşturulur ve bu dizi içindeki elemanlar birbirinden farklı olur.
+    const uniqueDates = [
+      ...new Set(selectedShifts.map((item) => item.start_date)),
+    ];
+
+    if (uniqueDates.length > 1) {
+      return {
+        status: 400,
+        message:
+          "Seçilen kayıtlar farklı tarihlere sahip. Lütfen aynı tarihli kayıtları seçin.",
+      };
+    }
 
     // Onaylanmamış kayıtları kontrol et
     const unapprovedShifts = await ShiftLog.count({
@@ -248,6 +282,8 @@ async function addVehicleInfo(shiftUnıqIds, vasıtaForm) {
           "Sadece onaylanmış kayıtlara vasıta bilgilerini ekleyebilirsiniz. Sadece onaylı kayıtları seçin.",
       };
     }
+
+    // Sabah veya akşam servisine göre shift_status belirle
     let shift_status = "";
     if (service_period === "Sabah") {
       shift_status = "4";
@@ -413,9 +449,12 @@ const userOutOfService = async (selectedShift) => {
   }
 };
 //! Servise kullanıcı ekleyecek servis...
-const addUserToService = async (selection_shift, selectedShiftReport,vasıtaForm) => {
-
-  const {station_name,service_time} = vasıtaForm;
+const addUserToService = async (
+  selection_shift,
+  selectedShiftReport,
+  vasıtaForm
+) => {
+  const { station_name, service_time } = vasıtaForm;
   try {
     for (const shift of selection_shift) {
       await ShiftLog.update(

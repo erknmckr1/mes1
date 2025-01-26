@@ -1,8 +1,11 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setShiftReportPopup, fetchShiftLogs } from "@/redux/shiftSlice";
+import {
+  setShiftReportPopup,
+  fetchShiftLogs,
+  setSelectedShiftReport,
+} from "@/redux/shiftSlice";
 import { useState } from "react";
-import Button from "@/components/ui/Button";
 import { FaRegSave, FaDownload, FaSearch, FaCalendarAlt } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
 import { RiArrowGoBackLine } from "react-icons/ri";
@@ -20,31 +23,54 @@ function ShiftReportPopup() {
   const [draggedShiftItem, setDraggedShiftItem] = useState({}); // Mesai kayıtları tablosunda (sol taraf) suruklenen kaydın bılgılerını tutacak state
   const [selectedShift, setSelectedShift] = useState({}); // seçilen mesi kaydının bılgısını tutacak state...
   const [editingCell, setEditingCell] = useState(null); // { rowIndex, columnKey } tutar
+  const { userInfo, permissions } = useSelector((state) => state.user);
 
   const { selectedShiftReport, usersOnShifts } = useSelector(
     (state) => state.shift
   );
   const [serviceDate, setServiceDate] = useState("");
   const [filteredServiceList, setFilteredServiceList] = useState({});
+  const today = new Date().toISOString().split("T")[0];
+  // Türkçe karakterleri düzeltme fonksiyonu
+  const fixTurkishChars = (str) => {
+    return str
+      .replace(/ı/g, "i") // Küçük ı -> i
+      .replace(/İ/g, "I") // Büyük İ -> I
+      .replace(/ğ/g, "g")
+      .replace(/Ğ/g, "G")
+      .replace(/ş/g, "s")
+      .replace(/Ş/g, "S")
+      .replace(/ç/g, "c")
+      .replace(/Ç/g, "C")
+      .replace(/ö/g, "o")
+      .replace(/Ö/g, "O")
+      .replace(/ü/g, "u")
+      .replace(/Ü/g, "U");
+  };
 
   // tablo verısını pdf olarak al...
   const generatePDF = () => {
     const doc = new jsPDF(); // Yeni PDF belgesi oluştur
-    doc.setFont("times", "normal"); // Times New Roman
-    // PDF başlığı
-    doc.text("Yolcu Listesi", 14, 10);
+    doc.setFont("times", "normal"); // Times New Roman fontu
+    doc.text(`${today}`, 14, 10); // Başlık
     doc.setFont("helvetica", "normal"); // jsPDF'nin varsayılan Türkçe destekli fontu
 
     // Tablo verileri için başlıklar
-    const tableColumn = ["Sıra", "ID", "Kullanıcı Adı", "Durak", "Adres"];
+    const tableColumn = [
+      fixTurkishChars("Sıra"),
+      fixTurkishChars("Kullanıcı Adı"),
+      fixTurkishChars("Durak"),
+      fixTurkishChars("Adres"),
+      fixTurkishChars("Servis Saati"),
+    ];
 
     // Tablo verileri (selectedServiceIndex üzerinden)
     const tableRows = selectedServiceIndex.map((item, index) => [
       index + 1,
-      item.operator_id,
-      item.User.op_username,
-      item.station_name,
-      item.station_name,
+      fixTurkishChars(item.User.op_username),
+      fixTurkishChars(item.station_name),
+      fixTurkishChars(item.station_name),
+      fixTurkishChars(item.service_time),
     ]);
 
     // Tabloyu PDF'e ekle
@@ -55,7 +81,7 @@ function ShiftReportPopup() {
     });
 
     // PDF'i indir
-    doc.save("YolcuListesi.pdf");
+    doc.save(`${today}_servis_listesi.pdf`);
   };
 
   // Kayıtları grupla sağdakı tablo service key e gore grupluyoruz...
@@ -136,7 +162,6 @@ function ShiftReportPopup() {
 
   const renderData =
     filteredServiceList.length > 0 ? filteredServiceList : resultDatas();
-  console.log(renderData);
 
   //? SOL TARAFTAKİ TABLE ICIN DRAG DROP OLAYLARI
   // drag drop function sol taraftaki table ıcın...
@@ -213,7 +238,7 @@ function ShiftReportPopup() {
 
         if (response.status === 200) {
           toast.success("Sıralama başarıyla güncellendi.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
         }
       }
     } catch (err) {
@@ -224,11 +249,24 @@ function ShiftReportPopup() {
   //! Servis degısıklıgını sağlayacak fonksiyon...
   const handleDropToChangeService = async (item) => {
     if (!draggedShiftItem) {
-      toast.error("Tasiyacağınız servis kaydını sürüleyiniz.");
+      toast.error("Taşıyacağınız servis kaydını sürükleyiniz.");
       return;
     }
+    // Aynı tarihli servislere kayıt taşınamaz
+    if (item.start_date !== draggedShiftItem.start_date) {
+      toast.error("Farklı tarihli servislere kayıt taşınamaz.");
+      return;
+    }
+    // Aynı servise aynı saatte kayıt taşınamaz
+    if (item.start_time === draggedShiftItem.start_time) {
+      toast.error(
+        "Mesai baslangıc saatlerı farklı olan kayıtlar aynı servise eklenemez."
+      );
+      return;
+    }
+
     try {
-      if (confirm("Taşinsin mi ?")) {
+      if (confirm("Taşınsın mı?")) {
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/moveToDiffService`,
           {
@@ -238,17 +276,50 @@ function ShiftReportPopup() {
         );
         if (response.status === 200) {
           toast.success(response?.data);
-          dispatch(fetchShiftLogs());
-          // Sol tarafı güncellemek için filtreleme store da usersOnShıft ın guncellenmesını (asenkron) beklemeden mevcut usersOnShıft den suruklenen kaydı cıkardık.
-          const updatedFilteredData = usersOnShifts
-            .filter(
-              (shiftItem) =>
-                shiftItem.service_key === selectedService.service_key &&
-                shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
-            )
-            .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
 
+          // Eski grubu güncelle: Taşınan kaydı eski grubundan kaldır
+          const updatedSelectedShiftReport = selectedShiftReport.map(
+            (group) => {
+              if (group.service_key === selectedService.service_key) {
+                return {
+                  ...group,
+                  shiftIds: group.shiftIds.filter(
+                    (id) => id !== draggedShiftItem.shift_uniq_id
+                  ),
+                  user_count: group.user_count - 1, // Kullanıcı sayısını azalt
+                };
+              }
+              return group;
+            }
+          );
+
+          // Yeni grubu güncelle: Taşınan kaydı yeni gruba ekle
+          const updatedSelectedShiftReportWithNewGroup =
+            updatedSelectedShiftReport.map((group) => {
+              if (group.service_key === item.service_key) {
+                return {
+                  ...group,
+                  shiftIds: [...group.shiftIds, draggedShiftItem.shift_uniq_id], // Yeni kaydı ekle
+                  user_count: group.user_count + 1, // Kullanıcı sayısını artır
+                };
+              }
+              return group;
+            });
+
+          // State'leri güncelle
+          dispatch(
+            setSelectedShiftReport(updatedSelectedShiftReportWithNewGroup)
+          );
+
+          // Sol tarafı güncelle: Taşınan kaydı listeden kaldır
+          const updatedFilteredData = selectedServiceIndex.filter(
+            (shiftItem) =>
+              shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id
+          );
           setSelectedServiceIndex(updatedFilteredData);
+
+          // Verileri yeniden çek
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
         }
       }
     } catch (err) {
@@ -270,7 +341,7 @@ function ShiftReportPopup() {
   //! Kullanıcıyı servisten cıkaracak query...
   const userOutOfService = async () => {
     if (!selectedShift) {
-      toast.error("Servisten cıkaracagınız yolcuyu seçin.");
+      toast.error("Servisten çıkaracağınız yolcuyu seçin.");
       return;
     }
 
@@ -284,23 +355,46 @@ function ShiftReportPopup() {
 
       if (response.status === 200) {
         toast.success(`${response.data}`);
-        dispatch(fetchShiftLogs());
-        // güncel tabloyu tekrardan fıltrele ve set et...
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
+
+        // Güncel tabloyu tekrardan filtrele ve set et...
         const updatedFilteredData = usersOnShifts
           .filter(
             (shiftItem) =>
               shiftItem.service_key === selectedService.service_key &&
-              shiftItem.shift_uniq_id !== draggedShiftItem.shift_uniq_id // Taşınan elemanı hariç tut
+              shiftItem.shift_uniq_id !== selectedShift.shift_uniq_id // Taşınan elemanı hariç tut
           )
           .sort((a, b) => a.shift_index - b.shift_index); // shift_index'e göre sırala
 
         setSelectedServiceIndex(updatedFilteredData);
+        setSelectedShift({});
+
+        // Eğer selectedShiftReport doluysa, onu da güncelle
+        if (selectedShiftReport.length > 0) {
+          const updatedSelectedShiftReport = selectedShiftReport
+            .map((item) => {
+              if (item.service_key === selectedService.service_key) {
+                // Seçili servise ait kayıtları filtrele
+                return {
+                  ...item,
+                  shiftIds: item.shiftIds.filter(
+                    (id) => id !== selectedShift.shift_uniq_id
+                  ),
+                  user_count: item.user_count - 1, // Kullanıcı sayısını azalt
+                };
+              }
+              return item;
+            })
+            .filter((item) => item.user_count > 0); // Kullanıcı sayısı 0 olanları kaldır
+
+          dispatch(setSelectedShiftReport(updatedSelectedShiftReport));
+        }
       }
     } catch (error) {
       console.log(error);
+      toast.error("Kullanıcı servisten çıkarılırken bir hata oluştu.");
     }
   };
-
   //! Bu fonksiyon, düzenlenen hücrenin rowIndex, columnKey, ve value bilgilerini backend'e gönderecek.
   const updateShiftCell = async (rowIndex, columnKey, value) => {
     try {
@@ -332,7 +426,7 @@ function ShiftReportPopup() {
 
       if (response.status === 200) {
         toast.success("Hücre başarıyla güncellendi.");
-        dispatch(fetchShiftLogs());
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
       } else {
         toast.error("Güncelleme sırasında bir hata oluştu.");
       }

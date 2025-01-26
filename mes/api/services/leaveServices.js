@@ -179,7 +179,7 @@ async function createNewLeaveByIK(
       } else {
         console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
       }
-      
+
       return { status: 200, message: "İzin talebi başarıyla oluşturuldu." };
     } else {
       return { status: 400, message: "İzin talebi oluşturulamadı." };
@@ -323,7 +323,7 @@ async function cancelPendingApprovalLeave({
           where: {
             leave_uniq_id: leave_uniq_id,
             leave_status: {
-              [Op.in]: ["1", "2"],
+              [Op.in]: ["1", "2", "3"],
             },
           },
         }
@@ -335,7 +335,7 @@ async function cancelPendingApprovalLeave({
         } else {
           console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
         }
-        
+
         return true;
       } else {
         return false;
@@ -588,7 +588,7 @@ async function approveLeave(id_dec, leave_uniq_id, currentDateTimeOffset) {
     } else {
       console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
     }
-    
+
     return {
       status: 200,
       message: `
@@ -810,7 +810,7 @@ async function confirmSelections(selectionModel, id_dec) {
     } else {
       console.error("❌ ioInstance tanımlı değil!");
     }
-    
+
     return { status: 200, message: "Seçili izin talepleri onaylandı." };
   } catch (error) {
     console.error("Error in confirmSelections function:", error);
@@ -846,7 +846,7 @@ async function cancelSelectionsLeave(selections, id_dec) {
       ioInstance.emit("updateLeaveTable");
     } else {
       console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
-    }    
+    }
     return { status: 200, message: "İzin talepleri başarıyla iptal edildi." };
   } catch (error) {
     console.error("Error in cancelSelectionsLeave function:", error);
@@ -876,7 +876,7 @@ async function leavesApprovedByTheInfirmary(id_dec, roleId) {
         ioInstance.emit("updateLeaveTable");
       } else {
         console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
-      }   
+      }
       return { status: 200, message: result };
     } else {
       return { status: 404, message: "Onaylanan izin bulunamadı." };
@@ -894,9 +894,7 @@ async function personelToBeChecked(status) {
 
     const result = await LeaveRecords.findAll({
       where: {
-        leave_status: {
-          [Op.in]: [3, 4],
-        },
+        leave_status: "3",
         leave_creation_date: {
           [Op.gt]: oneHourAgo, // 1 saat önceki tarihten büyük olanları al
         },
@@ -932,5 +930,5 @@ module.exports = {
   createNewLeaveByIK,
   leavesApprovedByTheInfirmary,
   personelToBeChecked,
-  setSocket
+  setSocket,
 };

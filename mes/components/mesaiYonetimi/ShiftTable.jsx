@@ -65,14 +65,11 @@ function ShiftTable() {
           : usersOnShifts;
 
       // Satırları dönüştür
-      const mappedRows = filteredShifts.map((item) => {
+      const mappedRows = filteredShifts.map((item,index) => {
         const a = allUser.find((u) => u.id_dec === item.operator_id);
         return {
-          id: item.shift_uniq_id, // Benzersiz ID
-          service_key: item.service_key,
-          op_id: item.operator_id,
           name: a?.op_username || "Bilinmiyor",
-          title: a?.title || "Bilinmiyor",
+          id: item.shift_uniq_id, // Benzersiz ID     
           part: a?.part || "Bilinmiyor",
           stop_name: a?.stop_name || "Bilinmiyor",
           address: a?.address || "Bilinmiyor",
@@ -107,18 +104,14 @@ function ShiftTable() {
   }, [usersOnShifts, allUser, url]);
 
   const columns = [
-    { field: "op_id", headerName: "İd", width: 150 },
-    { field: "shift_status", headerName: "Mesai Durumu", width: 200 },
-    { field: "service_key", headerName: "Servis No", width: 150 },
     { field: "name", headerName: "Kullanici İsmi", width: 200 },
-    { field: "title", headerName: "Ünvan", width: 200 },
+    { field: "shift_status", headerName: "Mesai Durumu", width: 200 },
     { field: "stop_name", headerName: "Durak", width: 200 },
     { field: "address", headerName: "Adres", width: 200 },
     { field: "section", headerName: "Bölüm", width: 200 },
     { field: "part", headerName: "Birim", width: 150 },
     { field: "start_shift", headerName: "Baslangıc Tarihi", width: 200 },
     { field: "start_time", headerName: "Baslangıc Saati", width: 200 },
-
   ];
 
   function handleSelectedRow(params) {
@@ -152,6 +145,8 @@ function ShiftTable() {
       return "shift-row";
     } else if (row.shift_status === "Onaylandı") {
       return "green-row";
+    } else if (row.shift_status === "İptal Edildi") {
+      return "red-row";
     } else if (row.shift_status === "Aksam Servisi") {
       return "bg-black";
     } else if (row.shift_status === "Sabah Servisi") {

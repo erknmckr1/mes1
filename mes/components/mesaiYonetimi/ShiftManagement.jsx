@@ -4,7 +4,6 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Button from "../ui/Button";
-import TabButtons from "../izinYonetimSistemi/parts/TabButtons";
 import {
   fetchShiftLogs,
   setSelectedShiftReport,
@@ -40,14 +39,17 @@ const getApproveButtons = (selection_shift) => [
 
 //? Onay ekranı sayfa komponentı...
 function ConfirmShift() {
-  const { selection_shift } = useSelector((state) => state.shift);
+  const { selection_shift, loading } = useSelector((state) => state.shift);
   const dispatch = useDispatch();
   // selectedTab stateını tabButtons a yollayacagız...
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, permissions } = useSelector((state) => state.user);
+
   useEffect(() => {
-    dispatch(fetchAllUsers());
-    dispatch(fetchShiftLogs());
-  }, [dispatch]);
+    if (permissions && permissions.length > 0) {
+      dispatch(fetchAllUsers());
+      dispatch(fetchShiftLogs({ id_dec: userInfo?.id_dec, permissions }));
+    }
+  }, [dispatch, permissions]);
 
   //! Mesai kaydını onaylayacak istek
   handleApproveShift = async (rows) => {
@@ -80,7 +82,7 @@ function ConfirmShift() {
         );
         if (response.status === 200) {
           toast.success("Mesai kaydı başarıyla onaylandı.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
           dispatch(setSelectionShift([]));
         } else if (response === 404) {
           toast.error("Böyle bir mesai kaydı bulunamadı");
@@ -121,7 +123,7 @@ function ConfirmShift() {
 
         if (response.status === 200) {
           toast.success("Mesai kaydı basarıyla iptal edildi.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
           dispatch(setSelectionShift([]));
         } else if (response === 400) {
           toast.error("Böyle bir mesai kaydı bulunamadı");
@@ -133,6 +135,17 @@ function ConfirmShift() {
     }
   };
   console.log(selection_shift);
+
+  // mesaı kaydı cekılırken
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        <p className="ml-4 text-blue-500">Yükleniyor...</p>
+      </div>
+    );
+  }
+
   return (
     <div className=" w-full">
       <div className="bg-white h-[600px] flex">
@@ -201,10 +214,9 @@ function ConfirmShift() {
 function IdariIsler() {
   const pathName = usePathname();
   const create_shift_name = pathName.split("/")[3];
-  const { selection_shift, usersOnShifts, selectedShiftReport } = useSelector(
-    (state) => state.shift
-  );
-  const { userInfo } = useSelector((state) => state.user);
+  const { selection_shift, usersOnShifts, selectedShiftReport, loading } =
+    useSelector((state) => state.shift);
+  const { userInfo, permissions } = useSelector((state) => state.user);
   const [vehicleType, setVehicleType] = useState("servis");
   const [vasıtaForm, setVasıtaForm] = useState({
     driver_name: "",
@@ -215,6 +227,7 @@ function IdariIsler() {
     service_period: "",
     vehicle: "",
   });
+
   const vehicles = [
     {
       name: "Taksi 1",
@@ -266,6 +279,11 @@ function IdariIsler() {
     },
   ];
 
+  const isDisabled =
+    selectedShiftReport &&
+    selectedShiftReport.length === 1 &&
+    selection_shift.length > 0;
+
   const vasıtInputField = [
     {
       name: "driver_name",
@@ -290,18 +308,25 @@ function IdariIsler() {
       type: "text",
       placeholder: "Durak Adı",
       className: `h-[4rem]`,
-      disabled: !!selection_shift,
+      disabled: isDisabled,
     },
     {
       name: "service_time",
       type: "time", // Zaman seçimi için doğru tip
       placeholder: "Servis Gelme Saati",
       className: `h-[4rem]`,
-      disabled: !!selection_shift,
+      disabled: isDisabled,
     },
   ];
   const dispatch = useDispatch();
   const filteredVehicle = vehicles.filter((item) => item.group === vehicleType);
+
+  useEffect(() => {
+    if (permissions && permissions.length > 0) {
+      dispatch(fetchAllUsers());
+      dispatch(fetchShiftLogs({ id_dec: userInfo?.id_dec, permissions }));
+    }
+  }, [dispatch, permissions]);
 
   // Ortak handleChange fonksiyonu
   const handleChange = useCallback(({ name, value }) => {
@@ -310,6 +335,75 @@ function IdariIsler() {
       [name]: value,
     }));
   }, []);
+
+  // servıs atananlar tablosundan satır sececek fonksıyon...
+  const handleSelectedRow = (row) => {
+    const currentSelectedShiftReport = [...selectedShiftReport];
+    // Eğer zaten seçiliyse, seçimi kaldır
+    if (
+      currentSelectedShiftReport
+        .map((item) => item.service_key)
+        .includes(row.service_key)
+    ) {
+      const updatedSelection = currentSelectedShiftReport.filter(
+        (item) => item.service_key !== row.service_key
+      );
+
+      dispatch(setSelectedShiftReport(updatedSelection));
+
+      // Eğer seçim sıfırsa veya birden fazlaysa formu sıfırla
+      if (updatedSelection.length !== 1) {
+        setVasıtaForm({
+          driver_name: "",
+          driver_no: "",
+          vehicle_licance: "",
+          station_name: "",
+          service_time: "",
+          vehicle: "",
+          service_period: "",
+        });
+      } else {
+        // Eğer seçim 1'e düştüyse formu doldur
+        setVasıtaForm({
+          driver_name: updatedSelection[0].driver_name || "",
+          driver_no: updatedSelection[0].driver_no || "",
+          vehicle_licance: updatedSelection[0].vehicle_plate_no || "",
+          station_name: updatedSelection[0].station_name[0] || "",
+          service_time: updatedSelection[0].service_time || "",
+          vehicle: updatedSelection[0].vehicle || "",
+          service_period: updatedSelection[0].service_period || "",
+        });
+      }
+    } else {
+      // Eğer seçim yapılıyorsa, ekle
+      const updatedSelection = [...currentSelectedShiftReport, row];
+      dispatch(setSelectedShiftReport(updatedSelection));
+
+      // Eğer seçim 1 olduysa formu doldur
+      if (updatedSelection.length === 1) {
+        const selected = updatedSelection[0]; // Seçili eleman
+        setVasıtaForm({
+          driver_name: selected.driver_name || "", // Null kontrolü
+          driver_no: selected.driver_no || "",
+          vehicle_licance: selected.vehicle_plate_no || "", // Eğer `vehicle_plate_no` yoksa kontrol edin
+          station_name: selected.station_names[0] || "", // Array kontrolü
+          service_time: selected.service_time || "",
+          vehicle: selected.vehicle || "",
+          service_period: selected.service_period || "",
+        });
+      } else {
+        // Eğer seçim birden fazlaysa formu sıfırla
+        setVasıtaForm({
+          driver_name: "",
+          driver_no: "",
+          vehicle_licance: "",
+          station_name: "",
+          service_time: "",
+          vehicle: "",
+        });
+      }
+    }
+  };
 
   const groupedData = usersOnShifts.reduce((acc, curr) => {
     const {
@@ -384,7 +478,8 @@ function IdariIsler() {
     service_period: data.service_period,
     service_time: data.service_time,
   }));
- 
+
+  console.log(result)
   //! mesai kaydına servıs bılgılerını ekleyecek fonksıyon...
   const handleAddVehicleInfo = async () => {
     if (!vasıtaForm.vehicle) {
@@ -401,11 +496,21 @@ function IdariIsler() {
     }
 
     if (
-      !vasıtaForm.driver_name ||
-      !vasıtaForm.driver_no ||
-      !vasıtaForm.vehicle_licance
+      (!vasıtaForm.driver_name ||
+        !vasıtaForm.driver_no ||
+        !vasıtaForm.vehicle_licance) &&
+      vehicleType !== "taksi"
     ) {
       toast.error("Sürücü bilgilerini giriniz.");
+      return;
+    }
+
+    // tarih ve saat aynı mı ? kontrol et eğer birden fazla değer varsa farklı tarıhler secılmıstır.
+    const uniqueStartShifts  = new Set(selection_shift.map((item) => item.start_date));
+    const uniqueStartTimes = new Set(selection_shift.map((item) => item.start_time));
+
+    if (uniqueStartShifts.size > 1 || uniqueStartTimes.size > 1) {
+      toast.error("Seçili mesai kayıtlarının başlangıç vardiyası ve saati aynı olmalıdır.");
       return;
     }
 
@@ -437,7 +542,7 @@ function IdariIsler() {
       );
       if (response.status === 200) {
         toast.success("Vasıta bilgileri başarıyla güncellendi.");
-        dispatch(fetchShiftLogs());
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
         dispatch(setSelectionShift([]));
         setVasıtaForm({
           driver_name: "",
@@ -449,9 +554,9 @@ function IdariIsler() {
       }
     } catch (err) {
       console.log(err);
+      toast.error(err.response.data || "Bir hata oluştu.");
     }
   };
-
   //! Mesai kaydını ıptal edecek istek
   handleCancelShift = async (rows) => {
     if (rows.length === 0) {
@@ -482,7 +587,7 @@ function IdariIsler() {
 
         if (response.status === 200) {
           toast.success("Mesai kaydı basarıyla iptal edildi.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
           dispatch(setSelectionShift([]));
         } else if (response === 400) {
           toast.error("Böyle bir mesai kaydı bulunamadı");
@@ -491,80 +596,6 @@ function IdariIsler() {
     } catch (err) {
       console.log(err);
       toast.error("Mesai iptal edilemedi sayfayı yenıleyıp tekrar deneyin.");
-    }
-  };
-
-  useEffect(() => {
-    dispatch(fetchAllUsers());
-    dispatch(fetchShiftLogs());
-  }, [dispatch]);
-
-  // servıs atananlar tablosundan satır sececek fonksıyon...
-  const handleSelectedRow = (row) => {
-    const currentSelectedShiftReport = [...selectedShiftReport];
-    // Eğer zaten seçiliyse, seçimi kaldır
-    if (
-      currentSelectedShiftReport
-        .map((item) => item.service_key)
-        .includes(row.service_key)
-    ) {
-      const updatedSelection = currentSelectedShiftReport.filter(
-        (item) => item.service_key !== row.service_key
-      );
-
-      dispatch(setSelectedShiftReport(updatedSelection));
-
-      // Eğer seçim sıfırsa veya birden fazlaysa formu sıfırla
-      if (updatedSelection.length !== 1) {
-        setVasıtaForm({
-          driver_name: "",
-          driver_no: "",
-          vehicle_licance: "",
-          station_name: "",
-          service_time: "",
-          vehicle: "",
-          service_period: "",
-        });
-      } else {
-        // Eğer seçim 1'e düştüyse formu doldur
-        setVasıtaForm({
-          driver_name: updatedSelection[0].driver_name || "",
-          driver_no: updatedSelection[0].driver_no || "",
-          vehicle_licance: updatedSelection[0].vehicle_plate_no || "",
-          station_name: updatedSelection[0].station_name[0] || "",
-          service_time: updatedSelection[0].service_time || "",
-          vehicle: updatedSelection[0].vehicle || "",
-          service_period: updatedSelection[0].service_period || "",
-        });
-      }
-    } else {
-      // Eğer seçim yapılıyorsa, ekle
-      const updatedSelection = [...currentSelectedShiftReport, row];
-      dispatch(setSelectedShiftReport(updatedSelection));
-
-      // Eğer seçim 1 olduysa formu doldur
-      if (updatedSelection.length === 1) {
-        const selected = updatedSelection[0]; // Seçili eleman
-        setVasıtaForm({
-          driver_name: selected.driver_name || "", // Null kontrolü
-          driver_no: selected.driver_no || "",
-          vehicle_licance: selected.vehicle_plate_no || "", // Eğer `vehicle_plate_no` yoksa kontrol edin
-          station_name: selected.station_names[0] || "", // Array kontrolü
-          service_time: selected.service_time || "",
-          vehicle: selected.vehicle || "",
-          service_period: selected.service_period || "",
-        });
-      } else {
-        // Eğer seçim birden fazlaysa formu sıfırla
-        setVasıtaForm({
-          driver_name: "",
-          driver_no: "",
-          vehicle_licance: "",
-          station_name: "",
-          service_time: "",
-          vehicle: "",
-        });
-      }
     }
   };
 
@@ -588,7 +619,7 @@ function IdariIsler() {
 
         if (response.status === 200) {
           toast.success("Servis bilgileri başarıyla güncellendi.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
         }
       }
     } catch (err) {
@@ -637,7 +668,7 @@ function IdariIsler() {
       if (response.status === 200) {
         // Backend'den dönen mesajı kontrol et
         toast.success(response.data.message || "Ekleme işlemi başarılı.");
-        dispatch(fetchShiftLogs());
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
         dispatch(setSelectionShift([]));
         dispatch(setSelectedShiftReport([]));
         setVasıtaForm({
@@ -667,6 +698,16 @@ function IdariIsler() {
     );
   };
 
+  // mesaı kaydı cekılırken
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        <p className="ml-4 text-blue-500">Yükleniyor...</p>
+      </div>
+    );
+  }
+
   return (
     <div className=" w-full ">
       <div className="h-[600px] flex">
@@ -688,7 +729,7 @@ function IdariIsler() {
               className="w-[70%] py-2 bg-blue-500 hover:bg-blue-600"
             />
           </div>
-          <div className="w-full h-1/3 text-black font-semibold flex flex-col items-center">
+          {/* <div className="w-full h-1/3 text-black font-semibold flex flex-col items-center">
             <div className="flex w-[100px] gap-x-3 items-center justify-between">
               <span className="w-4 h-4 bg-red-500 "> </span>
               <span>İptal</span>
@@ -701,7 +742,7 @@ function IdariIsler() {
               <span className="w-4 h-4 bg-blue-500 "> </span>
               <span>Bekleyen</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       {/* chart */}
@@ -933,11 +974,9 @@ function IdariIsler() {
 function CreateShift() {
   const dispatch = useDispatch();
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const { userInfo, allUser } = useSelector((state) => state.user);
-  const { selection_shift, selectedShiftUser, usersOnShifts } = useSelector(
-    (state) => state.shift
-  );
-  const pathName = usePathname();
+  const { userInfo, allUser, permissions } = useSelector((state) => state.user);
+  const { selection_shift, selectedShiftUser, usersOnShifts, loading } =
+    useSelector((state) => state.shift);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [formData, setFormData] = useState({
     kullanici: "",
@@ -948,9 +987,11 @@ function CreateShift() {
   });
 
   useEffect(() => {
-    dispatch(fetchAllUsers());
-    dispatch(fetchShiftLogs());
-  }, [dispatch]);
+    if (permissions && permissions.length > 0) {
+      dispatch(fetchAllUsers());
+      dispatch(fetchShiftLogs({ id_dec: userInfo?.id_dec, permissions }));
+    }
+  }, [dispatch, permissions]);
 
   // Kullanıcı arama input'unda ve dropdown'larda değişiklik olduğunda form verisini günceller
   const handleInputChange = (e) => {
@@ -1010,7 +1051,7 @@ function CreateShift() {
 
         if (response.status === 200) {
           toast.success("Mesai kaydı basarıyla iptal edildi.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
           dispatch(setSelectionShift([]));
         } else if (response === 400) {
           toast.error("Böyle bir mesai kaydı bulunamadı");
@@ -1035,7 +1076,7 @@ function CreateShift() {
         );
         if (response.status === 200) {
           toast.success("Mesai kaydı başarıyla onaylandı.");
-          dispatch(fetchShiftLogs());
+          dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
           dispatch(setSelectionShift([]));
         } else if (response === 404) {
           toast.error("Böyle bir mesai kaydı bulunamadı");
@@ -1085,7 +1126,7 @@ function CreateShift() {
           bitisSaati: "",
         });
         dispatch(setSelectedShiftUser([]));
-        dispatch(fetchShiftLogs());
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
       } else if (response.status === 206) {
         toast.info(`${response.data.message}`);
         setFormData({
@@ -1096,7 +1137,7 @@ function CreateShift() {
           bitisSaati: "",
         });
         dispatch(setSelectedShiftUser([]));
-        dispatch(fetchShiftLogs());
+        dispatch(fetchShiftLogs({ id_dec: userInfo.id_dec, permissions }));
       } else if (response.status === 400) {
         toast.info(`${response.data.message}`);
       }
@@ -1104,7 +1145,17 @@ function CreateShift() {
       console.log(err.response.data || "HATA");
     }
   };
-  console.log(selectedShiftUser);
+
+  // mesaı kaydı cekılırken
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        <p className="ml-4 text-blue-500">Yükleniyor...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col ">
       {/* form komponent... */}

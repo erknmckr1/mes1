@@ -12,12 +12,10 @@ import { GiConfirmed, GiCancel } from "react-icons/gi";
 import LeaveRangePicker from "./LeaveRangePicker";
 import io from "socket.io-client"; // 🔹 Socket.io istemcisi ekleniyor
 
-
 const socket = io("http://localhost:3003", {
   withCredentials: true,
   transports: ["websocket"],
 });
-
 
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
@@ -28,7 +26,7 @@ function LeaveTable({ status }) {
   const [selectionModel, setSelectionModel] = useState([]);
   const { allUser, permissions } = useSelector((state) => state.user);
 
-   //! 📌 Endpointe göre veri çekecek fonksiyon...
+  //! 📌 Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
     const { id_dec, roleId } = userInfo;
     try {
@@ -55,12 +53,10 @@ function LeaveTable({ status }) {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
           { params: { id_dec, roleId } }
         );
-      }else if (endpoint === "/api/leave/personelToBeChecked") {
+      } else if (endpoint === "/api/leave/personelToBeChecked") {
         response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
-          { params: { status } }
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`
         );
-
       } else {
         response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
@@ -92,7 +88,23 @@ function LeaveTable({ status }) {
     return () => {
       socket.off("updateLeaveTable"); // Temizleme işlemi
     };
+  }, [userInfo,status]);
+
+  useEffect(() => {
+    console.log("useEffect (status) çalıştı! Status:", status);
+    fetchRecords();
+  }, [status]);
+  
+  useEffect(() => {
+    console.log("useEffect (userInfo, status) çalıştı!");
+    fetchRecords();
   }, [userInfo, status]);
+  
+  useEffect(() => {
+    console.log("Redux State Güncellendi:", records);
+  }, [records]);
+  
+  
 
   const rows = records.map((item) => {
     const onayci1User = allUser.find((user) => user.id_dec === item.auth1);
@@ -270,7 +282,7 @@ function LeaveTable({ status }) {
       row.leave_status === "İzin iptal edildi."
     ) {
       return "red-row";
-    } else if (status ==="yaklasanizin"){
+    } else if (status === "yaklasanizin") {
       return "blinking-row";
     } else if (
       selectionModel.includes(row.id) &&
@@ -281,7 +293,7 @@ function LeaveTable({ status }) {
     }
     return "";
   };
-  console.log(status)
+
   //! Seçili izin taleplerini toplu onay isteği atacak fonksıyon
   async function handleConfirmSelections() {
     if (confirm("Seçili izin talepleri onaylansın mı ?")) {

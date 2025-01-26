@@ -4,10 +4,13 @@ import axios from "axios";
 // Thunk to fetch shift logs
 export const fetchShiftLogs = createAsyncThunk(
   "shift/getShiftLogs",
-  async (_, thunkAPI) => {
+  async ({ permissions, id_dec }, thunkAPI) => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/getShiftLogs`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/shift/getShiftLogs`,
+        {
+          params: { permissions: JSON.stringify(permissions), id_dec }, // Query string olarak gönder
+        }
       );
       if (Array.isArray(response.data)) {
         return response.data; // Eğer bir dizi ise döndür
@@ -28,9 +31,9 @@ export const shiftSlice = createSlice({
     loading: false,
     error: null,
     selection_shift: [],
-    selectedShiftReport:[],
+    selectedShiftReport: [],
     shiftReportPopup: false,
-    selectedShiftUser:[]
+    selectedShiftUser: [],
   },
   reducers: {
     setSelectionShift: (state, action) => {
@@ -38,13 +41,13 @@ export const shiftSlice = createSlice({
     },
     setSelectedShiftReport: (state, action) => {
       state.selectedShiftReport = action.payload;
-    },    
-    setShiftReportPopup: (state,action) => {
-      state.shiftReportPopup = action.payload
     },
-    setSelectedShiftUser:(state,action) => {
-      state.selectedShiftUser = action.payload
-    }
+    setShiftReportPopup: (state, action) => {
+      state.shiftReportPopup = action.payload;
+    },
+    setSelectedShiftUser: (state, action) => {
+      state.selectedShiftUser = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -65,6 +68,11 @@ export const shiftSlice = createSlice({
   },
 });
 
-export const { setSelectionShift,setSelectedShiftReport,setShiftReportPopup,setSelectedShiftUser } = shiftSlice.actions;
+export const {
+  setSelectionShift,
+  setSelectedShiftReport,
+  setShiftReportPopup,
+  setSelectedShiftUser,
+} = shiftSlice.actions;
 
 export default shiftSlice.reducer;

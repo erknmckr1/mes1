@@ -55,7 +55,7 @@ function HomeSidebars() {
         break;
     }
   };
-  console.log(selectedFlow,selectedManagement);
+
   //! Logout fonksıyonu...
   const logoutUser = async () => {
     try {

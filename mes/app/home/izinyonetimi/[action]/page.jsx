@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 export default function İzinYönetimi() {
   const pathName = usePathname();
   const flow = pathName.split("/")[2];
-console.log(flow)
+
   const { selectedManagement } = useSelector((state) => state.flowmanagement);
   return (
     <div className="w-full h-full flex justify-center p-4">
