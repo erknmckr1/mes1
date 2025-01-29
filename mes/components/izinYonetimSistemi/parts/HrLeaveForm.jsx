@@ -80,6 +80,12 @@ function HrLeaveForm() {
   //! Yeni izin talebi olusturmak ıcın gereklı query
   const handleCreateLeave = async (e) => {
     e.preventDefault();
+
+    if(user === null){
+      toast.error("Kullanıcı bilgileri çekilmedi.");
+      return;
+    }
+    
     const { id_dec, op_username, auth1, auth2 } = user;
     try {
       if (

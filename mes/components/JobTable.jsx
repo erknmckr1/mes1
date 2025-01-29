@@ -119,10 +119,39 @@ function JobTable() {
   }, [areaName, userInfo, dispatch,selectedHammerSectionField]);
 
   const getFilteredRows = () => {
-    // Sadece selectedMachine ile filtreleme
-    return workList
-      ?.filter((item) => item.machine_name === selectedMachine.machine_name)
-      .map((item, index) => {
+    if (areaName === "buzlama") {
+      // Buzlama ekranı için filtreleme yap
+      return workList
+        ?.filter((item) => item.machine_name === selectedMachine.machine_name)
+        .map((item, index) => {
+          const workStartDate = item.work_start_date
+            ? new Date(item.work_start_date)
+            : null;
+          return {
+            id: index,
+            user_id_dec: item.user_id_dec,
+            op_username: item.op_username,
+            order_no: item.order_no,
+            process_id: item.process_id,
+            section: item.section,
+            area_name: item.area_name,
+            process_name: item.process_name,
+            produced_amount: item.produced_amount,
+            production_amount: item.production_amount,
+            work_start_date: workStartDate
+              ? workStartDate.toLocaleString()
+              : null,
+            work_end_date: item.work_end_date,
+            work_finished_op_dec: item.work_finished_op_dec,
+            work_status: item.work_status,
+            uniq_id: item.uniq_id,
+            group_no: item.group_no,
+            group_record_id: item.group_record_id,
+          };
+        });
+    } else if (areaName === "kalite") {
+      // Kalite ekranı için filtreleme yapma, tüm verileri göster
+      return workList?.map((item, index) => {
         const workStartDate = item.work_start_date
           ? new Date(item.work_start_date)
           : null;
@@ -148,6 +177,35 @@ function JobTable() {
           group_record_id: item.group_record_id,
         };
       });
+    } else {
+      // Diğer durumlar için (örneğin "cekic") varsayılan davranış
+      return workList?.map((item, index) => {
+        const workStartDate = item.work_start_date
+          ? new Date(item.work_start_date)
+          : null;
+        return {
+          id: index,
+          user_id_dec: item.user_id_dec,
+          op_username: item.op_username,
+          order_no: item.order_no,
+          process_id: item.process_id,
+          section: item.section,
+          area_name: item.area_name,
+          process_name: item.process_name,
+          produced_amount: item.produced_amount,
+          production_amount: item.production_amount,
+          work_start_date: workStartDate
+            ? workStartDate.toLocaleString()
+            : null,
+          work_end_date: item.work_end_date,
+          work_finished_op_dec: item.work_finished_op_dec,
+          work_status: item.work_status,
+          uniq_id: item.uniq_id,
+          group_no: item.group_no,
+          group_record_id: item.group_record_id,
+        };
+      });
+    }
   };
   
   const rows = getFilteredRows();
@@ -173,7 +231,7 @@ function JobTable() {
 
   return (
     <ThemeProvider theme={theme}>
-      <div className="w-full h-full rounded-md border-2 transition-all ease-in ">
+      <div className="w-full h-full rounded-md border-2 transition-all ease-in-out duration-300">
         <DataGrid
           rows={rows}
           columns={columns}

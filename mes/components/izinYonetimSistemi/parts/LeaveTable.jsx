@@ -19,7 +19,8 @@ const socket = io("http://localhost:3003", {
 
 function LeaveTable({ status }) {
   const dispatch = useDispatch();
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
+  const { isCreateLeavePopup } = useSelector((state) => state.global);
   const { selectedLeaveRow, records, filteredText } = useSelector(
     (state) => state.flowmanagement
   );
@@ -28,8 +29,11 @@ function LeaveTable({ status }) {
 
   //! 📌 Endpointe göre veri çekecek fonksiyon...
   const fetchRecords = async () => {
-    const { id_dec, roleId } = userInfo;
+    // ✅ Öncelikli olarak `user` kullanılmalı, eğer boşsa `userInfo`
+    const activeUser = isCreateLeavePopup && user ? user : userInfo;
     try {
+      const { id_dec, roleId } = activeUser; // Seçili kullanıcıdan ID ve rol bilgisini al
+
       const endpointMap = {
         pending: "/api/leave/getPendingLeaves",
         approved: "/api/leave/getApprovedLeaves",
@@ -88,23 +92,18 @@ function LeaveTable({ status }) {
     return () => {
       socket.off("updateLeaveTable"); // Temizleme işlemi
     };
-  }, [userInfo,status]);
+  }, [userInfo, status]);
 
   useEffect(() => {
     console.log("useEffect (status) çalıştı! Status:", status);
     fetchRecords();
   }, [status]);
-  
+
   useEffect(() => {
     console.log("useEffect (userInfo, status) çalıştı!");
     fetchRecords();
   }, [userInfo, status]);
-  
-  useEffect(() => {
-    console.log("Redux State Güncellendi:", records);
-  }, [records]);
-  
-  
+
 
   const rows = records.map((item) => {
     const onayci1User = allUser.find((user) => user.id_dec === item.auth1);
@@ -206,6 +205,14 @@ function LeaveTable({ status }) {
 
   //! İzni İptal Edecek fonksıyon...
   async function cancelPendingApprovalLeave(row) {
+    const activeUser = user ? user : userInfo;
+
+    if (!activeUser || !activeUser.id_dec) {
+      toast.error("Kullanıcı bilgisi eksik! İşlem gerçekleştirilemedi.");
+      return;
+    }
+
+    
     if (
       confirm(
         `${
@@ -216,12 +223,13 @@ function LeaveTable({ status }) {
       )
     ) {
       try {
+        const { id_dec } = activeUser;
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/cancelPendingApprovalLeave`,
           {
             params: {
               leave_uniq_id: row.leave_uniq_id,
-              id_dec: userInfo.id_dec,
+              id_dec,
             },
           }
         );

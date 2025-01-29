@@ -62,10 +62,10 @@ body {
   border-color: white;
   cursor: pointer;
 }
-.MuiDataGrid-row:hover{
+/* Hücre Hoverr */
+/*.MuiDataGrid-row:hover{
   background-color: rgb(47, 51, 71) !important;
-
-}
+} */
 
 @keyframes blinking-bg {
   0% { background-color: yellow; }

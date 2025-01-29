@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 function IzinForm() {
-  const { userInfo } = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
+  const { isCreateLeavePopup } = useSelector((state) => state.global); // Popup açık mı?
   const [leaveResons, setLeaveReasons] = useState();
   const [selectedReason, setSelectedReason] = useState("");
   const [formData, setFormData] = useState({
@@ -60,7 +61,13 @@ function IzinForm() {
 
   //! Yenı bir izin kaydı olusturacak fonksıyon...
   const handleCreateLeave = async () => {
-    const { id_dec, op_username, auth1, auth2 } = userInfo;
+    // Öncelikli olarak `user` kullanılmalı, eğer boşsa `userInfo`
+    const activeUser = isCreateLeavePopup && user ? user : userInfo;
+
+    if (!activeUser || !activeUser.id_dec) {
+      toast.error("Kullanıcı bilgisi eksik! Lütfen tekrar deneyin.");
+      return;
+    }
     try {
       if (
         formData.baslangicTarihi === "" ||
@@ -84,7 +91,14 @@ function IzinForm() {
       if (confirm("İzin talebinizi oluşturmak istediğinizden emin misiniz?")) {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leave/createNewLeave`,
-          { formData, selectedReason, id_dec, op_username, auth1, auth2 }
+          {
+            formData,
+            selectedReason,
+            id_dec: activeUser.id_dec, // Kullanıcı ID
+            op_username: activeUser.op_username, // Kullanıcı adı
+            auth1: activeUser.auth1, // İlk onaycı
+            auth2: activeUser.auth2, // İkinci onaycı
+          }
         );
 
         if (response.status === 200) {
@@ -164,21 +178,21 @@ function IzinForm() {
           >
             <option value="">Seçiniz:</option>
             {leaveResons &&
-              leaveResons.map((item, index) => {             
-                  if (
-                    item.leave_reason !== "Doktor Sevk" &&
-                    item.leave_reason !== "Doktor Istirahat"
-                  ) {
-                    return (
-                      <option
-                        className="text-[20px]"
-                        key={index}
-                        value={item.leave_reason}
-                      >
-                        {item.leave_reason}
-                      </option>
-                    );
-                  }
+              leaveResons.map((item, index) => {
+                if (
+                  item.leave_reason !== "Doktor Sevk" &&
+                  item.leave_reason !== "Doktor Istirahat"
+                ) {
+                  return (
+                    <option
+                      className="text-[20px]"
+                      key={index}
+                      value={item.leave_reason}
+                    >
+                      {item.leave_reason}
+                    </option>
+                  );
+                }
                 return null;
               })}
           </select>

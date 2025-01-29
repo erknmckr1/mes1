@@ -6,10 +6,11 @@ const globalSlice = createSlice({
     foodPopupState: false,
     isMolaPopup: false,
     theme: "dark",
-    selectedFlow: "", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
+    selectedFlow: "İzin Talebi Oluştur", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
     returnUrl:"sss",
     isSurveyPopup:false,
-    isFirePopup:false
+    isFirePopup:false,
+    isCreateLeavePopup:false
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -34,6 +35,9 @@ const globalSlice = createSlice({
     // Fire giriş ekranının açılıp kapalı olayını tutacak state...
     setFirePopup:(state,action)=>{
       state.isFirePopup = action.payload
+    },
+    setCreateLeavePopup:(state,action)=>{
+      state.isCreateLeavePopup = action.payload
     }
   },
 });
@@ -47,6 +51,7 @@ export const {
   setSelectedFlow,
   setReturnUrl,
   setSurveyPopup,
-  setFirePopup
+  setFirePopup,
+  setCreateLeavePopup
 } = globalSlice.actions;
 export default globalSlice.reducer;

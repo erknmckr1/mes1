@@ -3,7 +3,11 @@ import React from "react";
 import Image from "next/image";
 import Button from "./ui/Button";
 import { useSelector } from "react-redux";
-import { setMolaPopup } from "@/redux/globalSlice";
+import {
+  setMolaPopup,
+  setCreateLeavePopup,
+  setFoodPopupState,
+} from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -12,7 +16,6 @@ import {
   setİsCurrentBreak,
 } from "@/redux/breakOperationsSlice";
 import { toast } from "react-toastify";
-import { setFoodPopupState } from "@/redux/globalSlice";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice";
 
@@ -34,6 +37,9 @@ function LeftSideBtnArea() {
           break;
         case "returnToBreakFunc":
           returnToBreakFunc();
+          break;
+        case "openCreateLeavePopup":
+          dispatch(setCreateLeavePopup(true));
           break;
       }
       setRetryAction(null); // İşlem tamamlandıktan sonra temizle
@@ -136,13 +142,23 @@ function LeftSideBtnArea() {
     }
   };
 
+  // İzin olusturma popup ını acmak için kullanıcı kimliği kontrolü
+  const controllerUserIdForCreateLeavePopup = () => {
+    if (!user || !user.id_dec) {
+      dispatch(setUserIdPopup(true));
+      setRetryAction("openCreateLeavePopup");2
+      
+      return;
+    }
+  };
+
   //! Molaya cıkıs ıcın ıd popup ını acacak ve sonrasında mola popupını acacak fonksıyon..
   const ozelAraWıthId = () => {
     // Kullanıcı kimliği kontrolü
-    console.log("y")
-    console.log(user)
+    console.log("y");
+    console.log(user);
     if (!user || !user.id_dec) {
-      console.log("x")
+      console.log("x");
       dispatch(setUserIdPopup(true));
       setRetryAction("ozelAraWıthId");
       return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
@@ -152,7 +168,9 @@ function LeftSideBtnArea() {
   const funcOzelAra = () => {
     if (areaName === "cekic" || areaName === "buzlama") {
       //ozelAraWıthId();
-      toast.info("Molaya çıkış işlemi şuan da gerçekleştirilemiyor. Üzerinde çalışıyoruz.")
+      toast.info(
+        "Molaya çıkış işlemi şuan da gerçekleştirilemiyor. Üzerinde çalışıyoruz."
+      );
     } else {
       openOzelAra();
     }
@@ -174,14 +192,15 @@ function LeftSideBtnArea() {
       className: "bg-[#E67E22]",
     },
     {
-      onClick: () => {
-        const currentUrl = window.location.href;
-        localStorage.setItem("returnUrl", currentUrl); // LocalStorage'a kaydet
-        window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur?returnUrl=${currentUrl}`;
-      },
+      // onClick: () => {
+      //   const currentUrl = window.location.href;
+      //   localStorage.setItem("returnUrl", currentUrl); // LocalStorage'a kaydet
+      //   window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/izintalebiolustur?returnUrl=${currentUrl}`;
+      // },
       children: "İzin Girişi",
       type: "button",
       disabled: isCurrentBreak,
+      onClick: controllerUserIdForCreateLeavePopup,
     },
     {
       onClick: funcOzelAra,
@@ -191,7 +210,7 @@ function LeftSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: returnToBreakFunc,
+      onClick: returnToBreak,
       children: "Moladan dön",
       type: "button",
       className: "",
