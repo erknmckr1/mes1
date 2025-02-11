@@ -146,7 +146,7 @@ const createCekicWorkLog = async ({
     machine_name,
     uniq_id: newUniqId,
     setup_start_date: currentDateTimeOffset,
-    field, 
+    field,
   });
 };
 
@@ -167,6 +167,23 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     group_record_id,
   } = work_info;
 
+  const existingOrderCount = await WorkLog.count({
+    where: {
+      machine_name,
+      order_no: order_id,
+      work_status: {
+        [Op.in]: ["1","2"], // '1' veya '2' durumundaki işleri getir
+      },
+    },
+  });
+
+  if (area_name === "buzlama" && existingOrderCount) {
+    return {
+      status: 303,
+      message: `${machine_name}'de ${order_id} daha önce başlatılmış.`,
+    };
+  }
+
   // En büyük uniq_id'yi bul ve bir artır
   const latestWorkLog = await WorkLog.findOne({
     order: [["uniq_id", "DESC"]],
@@ -179,16 +196,17 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
   } else {
     newUniqId = "000001"; // Eğer kayıt yoksa ilk ID'yi oluştur
   }
-
+  let result;
   try {
     if (work_status === "0") {
-      const result = await WorkLog.create({
+      result = await WorkLog.create({
         uniq_id: newUniqId,
         user_id_dec: user_id_dec,
         op_username: op_username,
         order_no: order_id,
         section: section,
         area_name: area_name,
+        work_start_date: currentDateTimeOffset,
         work_status: work_status,
         process_id: process_id,
         process_name: process_name,
@@ -197,24 +215,25 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
         group_no,
         group_record_id,
       });
-    } else if (work_status === "1" && area_name === "buzlama") {
-      const result = await WorkLog.create({
-        uniq_id: newUniqId,
-        user_id_dec: user_id_dec,
-        op_username: op_username,
-        order_no: order_id,
-        section: section,
-        area_name: area_name,
-        work_status: work_status,
-        process_id: process_id,
-        process_name: process_name,
-        production_amount: production_amount,
-        machine_name,
-        group_no,
-        group_record_id,
-      });
+      // } else if (work_status === "1" && area_name === "buzlama") {
+      //   result = await WorkLog.create({
+      //     uniq_id: newUniqId,
+      //     user_id_dec: user_id_dec,
+      //     op_username: op_username,
+      //     order_no: order_id,
+      //     section: section,
+      //     work_start_date: currentDateTimeOffset,
+      //     area_name: area_name,
+      //     work_status: work_status,
+      //     process_id: process_id,
+      //     process_name: process_name,
+      //     production_amount: production_amount,
+      //     machine_name,
+      //     group_no,
+      //     group_record_id,
+      //   });
     } else {
-      const result = await WorkLog.create({
+      result = await WorkLog.create({
         uniq_id: newUniqId,
         user_id_dec: user_id_dec,
         op_username: op_username,
@@ -340,7 +359,6 @@ const rWork = async ({
   startedUser,
   selectedOrder,
 }) => {
-  console.log({ rwork: currentDateTimeOffset });
   try {
     const stoppedWork = await StoppedWorksLogs.findOne({
       where: { work_log_uniq_id, stop_end_date: null },
@@ -407,7 +425,7 @@ const rWork = async ({
       } else {
         newUniqId = "000001"; // Eğer kayıt yoksa ilk ID'yi oluştur
       }
-
+      // Buzlama ekranında makine _name de var eger ekran buzlama ise
       const result = await WorkLog.create({
         uniq_id: newUniqId,
         user_id_dec: currentUser,
@@ -419,6 +437,7 @@ const rWork = async ({
         work_start_date: currentDateTimeOffset,
         process_name: selectedOrder.process_name,
         production_amount: selectedOrder.production_amount,
+        machine_name: selectedOrder?.machine_name,
       });
 
       return result;

@@ -20,7 +20,7 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 function StopJobPopup() {
   const dispatch = useDispatch();
   const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
-  const {userInfo,user} = useSelector((state) => state.user);
+  const { userInfo, user } = useSelector((state) => state.user);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
@@ -46,22 +46,39 @@ function StopJobPopup() {
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
     try {
+      let response;
+      const requestData = {
+        order_id: selectedOrder[0].order_no,
+        stop_reason_id: molaSebebi.stop_reason_id,
+        work_log_uniq_id: selectedOrder[0].uniq_id,
+        user_who_stopped: userInfo?.id_dec,
+      };
+
+      if (areaName === "buzlama") {
+        requestData.user_who_stopped = user.id_dec;
+      }
+
       if (selectedOrder.length === 1) {
-        const response = await axios.post(
+        response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
-          {
-            order_id: selectedOrder[0].order_no,
-            stop_reason_id: molaSebebi.stop_reason_id,
-            work_log_uniq_id: selectedOrder[0].uniq_id,
-            user_who_stopped: userInfo?.id_dec,
-          }
+          requestData
         );
 
-        if (response.status === 200) {
-          toast.success(`Siparişi durdurma işlemi başarılı...`);
+        const opt = () => {
+          dispatch(setUser(null));
           dispatch(setStopReasonPopup(false));
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
           dispatch(setSelectedOrder([])); // Seçimi temizle
+          toast.success(`Siparişi durdurma işlemi başarılı...`);
+        };
+
+        if (response.status === 200) {
+          if (areaName === "buzlama") {
+            dispatch(getWorksWithoutId({ areaName }));
+            opt();
+          } else {
+            getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
+            opt();
+          }
         } else {
           toast.error("Sipariş durdurulamadı...");
         }
@@ -127,7 +144,7 @@ function StopJobPopup() {
 
   useEffect(() => {
     getBreakReason();
-  }, []); 
+  }, []);
   const buttons = [
     {
       onClick: () => {
@@ -221,22 +238,26 @@ function StopJobPopup() {
                           ))}
                         </tr>
                       </thead>
-                      {areaName === "kalite" && <tbody className="p-3">
-                        <tr className="bg-gray-100 h-16 text-black text-[23px]">
-                          <th>{userInfo && userInfo.id_dec}</th>
-                          <th>{userInfo && userInfo.op_name}</th>
-                          <th>{molaSebebi.stop_reason_name}</th>
-                          <th>{currentDate}</th>
-                        </tr>
-                      </tbody>}
-                      {areaName === "buzlama" && <tbody className="p-3">
-                        <tr className="bg-gray-100 h-16 text-black text-[23px]">
-                          <th>{user && user.id_dec}</th>
-                          <th>{user && user.op_name}</th>
-                          <th>{molaSebebi.stop_reason_name}</th>
-                          <th>{currentDate}</th>
-                        </tr>
-                      </tbody>}
+                      {areaName === "kalite" && (
+                        <tbody className="p-3">
+                          <tr className="bg-gray-100 h-16 text-black text-[23px]">
+                            <th>{userInfo && userInfo.id_dec}</th>
+                            <th>{userInfo && userInfo.op_name}</th>
+                            <th>{molaSebebi.stop_reason_name}</th>
+                            <th>{currentDate}</th>
+                          </tr>
+                        </tbody>
+                      )}
+                      {areaName === "buzlama" && (
+                        <tbody className="p-3">
+                          <tr className="bg-gray-100 h-16 text-black text-[23px]">
+                            <th>{user && user.id_dec}</th>
+                            <th>{user && user.op_name}</th>
+                            <th>{molaSebebi.stop_reason_name}</th>
+                            <th>{currentDate}</th>
+                          </tr>
+                        </tbody>
+                      )}
                     </table>
                   </div>
                   <div className="w-full h-[15%] ">

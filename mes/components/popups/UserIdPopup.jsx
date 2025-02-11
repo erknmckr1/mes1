@@ -51,7 +51,7 @@ function UserIdPopup() {
                 type="text"
                 value={id}
                 onChange={(e) => setId(e.target.value)}
-                onKeyPress={handleGetUser}
+                onKeyDown={handleGetUser}
                 ref={inputRef}
               />
             

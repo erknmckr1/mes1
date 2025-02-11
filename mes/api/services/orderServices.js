@@ -1053,61 +1053,61 @@ async function restartToMachine(selectedGroup, id_dec, area_name) {
 async function createMeasurementData(measurementsInfo) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    const group = await GroupRecords.findAll({
-      where: {
-        group_no: measurementsInfo.group_no,
-      },
-    });
+    // const group = await GroupRecords.findAll({
+    //   where: {
+    //     group_no: measurementsInfo.group_no,
+    //   },
+    // });
 
-    const sologroup = await GroupRecords.findOne({
-      where: {
-        group_no: measurementsInfo.group_no,
-      },
-    });
+    // const sologroup = await GroupRecords.findOne({
+    //   where: {
+    //     group_no: measurementsInfo.group_no,
+    //   },
+    // });
 
-    if (sologroup.group_status === "3") {
-      return {
-        status: 404,
-        message: "Ölçü alabilmek için önce prosesi bitirin",
-      };
-    }
+    // if (sologroup.group_status === "3") {
+    //   return {
+    //     status: 404,
+    //     message: "Ölçü alabilmek için önce prosesi bitirin",
+    //   };
+    // }
 
-    console.log(group);
+    // console.log(group);
 
-    // Grup statüsü 5 ya da 7 olanların kontrolünü yap
-    const areTheGroupsValid = group.every(
-      (item) => item.group_status === "5" || item.group_status === "7"
-    );
+    // // Grup statüsü 5 ya da 7 olanların kontrolünü yap
+    // const areTheGroupsValid = group.every(
+    //   (item) => item.group_status === "5" || item.group_status === "7"
+    // );
 
-    if (!areTheGroupsValid) {
-      return {
-        status: 404,
-        message:
-          "Grubun diğer prosesleri bitirilmemiş öncelikle o grupları bitirin.",
-      };
-    }
+    // if (!areTheGroupsValid) {
+    //   return {
+    //     status: 404,
+    //     message:
+    //       "Grubun diğer prosesleri bitirilmemiş öncelikle o grupları bitirin.",
+    //   };
+    // }
 
-    if (sologroup.group_status === "3") {
-      return {
-        status: 404,
-        message: "Ölçü alabilmek için önce prosesi bitirin",
-      };
-    }
+    // if (sologroup.group_status === "3") {
+    //   return {
+    //     status: 404,
+    //     message: "Ölçü alabilmek için önce prosesi bitirin",
+    //   };
+    // }
 
-    const measure = await MeasureData.findOne({
-      where: {
-        order_no: measurementsInfo.order_no,
-        group_no: measurementsInfo.group_no,
-        measure_status: "1",
-      },
-    });
+    // const measure = await MeasureData.findOne({
+    //   where: {
+    //     order_no: measurementsInfo.order_no,
+    //     group_no: measurementsInfo.group_no,
+    //     measure_status: "1",
+    //   },
+    // });
 
-    if (measure) {
-      return {
-        status: 400,
-        message: `${measure.order_no} numaralı siparişin daha önce ölçümü alınmış.`,
-      };
-    }
+    // if (measure) {
+    //   return {
+    //     status: 400,
+    //     message: `${measure.order_no} numaralı siparişin daha önce ölçümü alınmış.`,
+    //   };
+    // }
 
     // const allOrderNo = [];
 
@@ -1138,7 +1138,7 @@ async function createMeasurementData(measurementsInfo) {
       data_entry_date: currentDateTimeOffset,
       description: measurementsInfo.description,
       measurement_package: measurementsInfo.measurement_package,
-      group_no: measurementsInfo.group_no,
+      // group_no: measurementsInfo.group_no,
       measure_status: "1",
     });
 
@@ -1967,7 +1967,6 @@ async function scrapMeasure(formState, user_id, areaName) {
     const measure = await PureGoldScrapMeasurements.findOne({
       where: { order_no: orderId },
     });
-    console.log({ measure: measure });
 
     if (measure && orderId !== "1234567") {
       return {
@@ -2061,6 +2060,40 @@ async function updateMeasure(formState, uniq_id) {
 }
 
 //? FİRE İŞLEMLERİ İÇİN GEREKLİ SERVİSLER SON...
+
+//? Toplu sipariş iptal edecek servis
+
+const fwork = async (uniqIds, work_finished_op_dec) => {
+  const work_end_date= new Date().toISOString();
+  try {
+    // Geçersiz veri kontrolü
+    if (!uniqIds || !Array.isArray(uniqIds) || uniqIds.length === 0) {
+      return { status: 400, message: "Bitirilecek siparişleri seçmelisiniz." };
+    }
+
+    if (!work_finished_op_dec) {
+      return { status: 400, message: "Geçerli bir kullanıcı ID gerekli." };
+    }
+
+    // İşleri bitmiş olarak güncelleme
+    const updatedOrders = await WorkLog.update(
+      { work_status: "4",  work_finished_op_dec,work_end_date }, // Doğru kolon ismi
+      { where: { uniq_id: uniqIds } }
+    );
+
+    if (updatedOrders[0] === 0) {
+      return { status: 404, message: "Güncellenecek sipariş bulunamadı." };
+    }
+
+    return {
+      status: 200,
+      message: { success: `${updatedOrders[0]} iş başarıyla bitirildi.` },
+    };
+  } catch (err) {
+    console.error("İş bitirme hatası:", err);
+    return { status: 500, message: "Sunucu hatası, lütfen tekrar deneyin." };
+  }
+};
 
 //? CEKİC BOLUME KATILAM İŞLEMLERİ....
 
@@ -2254,4 +2287,5 @@ module.exports = {
   getPersonInTheField,
   finishedToSetup,
   updateMeasure,
+  fwork,
 };

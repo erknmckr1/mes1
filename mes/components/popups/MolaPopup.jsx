@@ -100,7 +100,7 @@ function MolaPopup() {
 
       if (response.data.isAlreadyOnBreak === false) {
         await dispatch(fetchOnBreakUsers({ areaName }));
-        toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
+        toast.success(`${user.op_name} için mola oluşturuldu.`);
         dispatch(setUser(""));
         dispatch(setMolaPopup(false));
       } else if (response.data.isAlreadyOnBreak === true) {

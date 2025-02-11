@@ -81,6 +81,7 @@ function HomeSidebars() {
   const mesaiOlusturma = permissions.includes("MesaiOlusturma");
   const mesaiOnaylama = permissions.includes("MesaiOnaylama");
   const mesaidarisler = permissions.includes("Mesaidarisler");
+  const guvenlikEkranı = permissions.includes("Guvenlik");
 
   // HandleMesaiClick fonksiyonunu ekleyelim
   const handleMesaiClick = (click) => {
@@ -110,6 +111,7 @@ function HomeSidebars() {
     }
   };
 
+  console.log(permissions)
   const menuItems = [
     {
       label: "İzin Yönetimi",
@@ -138,7 +140,7 @@ function HomeSidebars() {
           icon: <TbNurse />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/personelizinolustur`,
         },
-        {
+        guvenlikEkranı && {
           label: "Çıkış Yapacak P. (Güvenlik)",
           icon: <FaUserSecret />,
           href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/izinyonetimi/güvenlik`,

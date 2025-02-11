@@ -32,9 +32,13 @@ const theme = createTheme({
 
 function JobTable() {
   const dispatch = useDispatch();
-  const { selectedOrder, workList, selectedGroupNo,selectedHammerSectionField,selectedMachine } = useSelector(
-    (state) => state.order
-  );
+  const {
+    selectedOrder,
+    workList,
+    selectedGroupNo,
+    selectedHammerSectionField,
+    selectedMachine,
+  } = useSelector((state) => state.order);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
@@ -102,7 +106,7 @@ function JobTable() {
       } else if (areaName === "buzlama") {
         // ID olmadan tüm siparişleri çek
         dispatch(getWorksWithoutId({ areaName }));
-      }else if (areaName  === "cekic"){
+      } else if (areaName === "cekic") {
         dispatch(getWorksWithoutId({ areaName }));
       }
       console.log("veri çekildi...");
@@ -116,7 +120,7 @@ function JobTable() {
 
     // Bileşen unmount edildiğinde interval'i temizle
     return () => clearInterval(interval);
-  }, [areaName, userInfo, dispatch,selectedHammerSectionField]);
+  }, [areaName, userInfo, dispatch, selectedHammerSectionField]);
 
   const getFilteredRows = () => {
     if (areaName === "buzlama") {
@@ -147,6 +151,7 @@ function JobTable() {
             uniq_id: item.uniq_id,
             group_no: item.group_no,
             group_record_id: item.group_record_id,
+            machine_name: item.machine_name,
           };
         });
     } else if (areaName === "kalite") {
@@ -207,9 +212,8 @@ function JobTable() {
       });
     }
   };
-  
-  const rows = getFilteredRows();
 
+  const rows = getFilteredRows();
   const getRowClassName = (params) => {
     const { row } = params;
     // Seçili satırların stilini belirle
@@ -221,9 +225,9 @@ function JobTable() {
       return "green-row";
     } else if (row.work_status === "2") {
       return "red-row";
-    }else if (row.work_status === "6") {
+    } else if (row.work_status === "6") {
       return "yellow-row";
-    }else if(row.work_status === "0"){
+    } else if (row.work_status === "0") {
       return "grey-row";
     }
     return "";

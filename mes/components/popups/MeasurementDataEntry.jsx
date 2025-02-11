@@ -79,7 +79,6 @@ function MeasurementDataEntry() {
   }, [formState.exitGramage, measure50Cm]); // exitGramage ve measure50Cm her değiştiğinde çalışır
   console.log(isOutOfRange);
 
-
   //! metarıal no ıle olcum verısı cekecek query
   const handleGetMeasureWithMetarialNo = async () => {
     try {
@@ -128,7 +127,7 @@ function MeasurementDataEntry() {
         setOrderData(response.data); // Veriyi state'e setliyoruz
         console.log(response.data.MATERIAL_NO);
 
-        // İkinci API çağrısı - getMetarialMeasureData malzemenın ölçüm aralıgını al. 
+        // İkinci API çağrısı - getMetarialMeasureData malzemenın ölçüm aralıgını al.
         const response2 = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMetarialMeasureData`,
           {
@@ -214,7 +213,7 @@ function MeasurementDataEntry() {
       data_entry_date: "", // İsterseniz burada bir tarih atayabilirsiniz.
       description: orderData?.ITEM_DESCRIPTION,
       measurement_package: formState.quantity,
-      group_no: selectedGroupNo[0].group_no,
+      // group_no: selectedGroupNo[0].group_no,
     };
     try {
       let response;
@@ -480,7 +479,7 @@ function MeasurementDataEntry() {
     }
     return "";
   };
-  
+
   return (
     <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
       <div className="flex items-center justify-center w-full h-full  ">
@@ -555,9 +554,9 @@ function MeasurementDataEntry() {
                     onKeyDown={field.onkeydown}
                   />
                 ))}
-                <span className="text-white font-semibold text-[25px]">
+                {/* <span className="text-white font-semibold text-[25px]">
                   Seçili Grup No: {selectedGroupNo[0].group_no}
-                </span>
+                </span> */}
               </div>
             </div>
             {/* buttons */}

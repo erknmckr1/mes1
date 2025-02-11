@@ -37,7 +37,8 @@ const {
   exitSection,
   getPersonInTheField,
   finishedToSetup,
-  updateMeasure
+  updateMeasure,
+  fwork 
 } = require("../services/orderServices");
 
 //!
@@ -348,11 +349,17 @@ router.put("/deleteScrapMeasure", async (req, res) => {
 //! Fire ölçüm verisini güncelleyecek route...
 router.put("/updateMeasure",async(req,res)=>{
   const {formState,uniq_id} = req.body;
-  console.log(req.body);
   const result = await updateMeasure(formState,uniq_id);
   return res.status(result.status).json(result.message);
 })
 //? FİRE İŞLEMLERİ SON
+
+//? Toplu Sipariş İptal Rotası
+router.put("/fwork", async (req, res) => {
+  const { uniqIds, work_finished_op_dec } = req.body;
+  const result = await fwork(uniqIds, work_finished_op_dec);
+  return res.status(result.status).json(result.message);
+});
 
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ
 //! Bölüme katılma route

@@ -362,7 +362,6 @@ app.post("/createWorkLog", async (req, res) => {
   const currentDateTimeOffset = currentDate.toISOString();
 
   const { work_info, field } = req.body;
-  console.log(work_info);
   try {
     let result;
     if (work_info.area_name === "cekic") {
@@ -374,10 +373,12 @@ app.post("/createWorkLog", async (req, res) => {
     } else {
       result = await createWork({ work_info, currentDateTimeOffset });
     }
+    if(result.status === 303){
+      return res.status(result.status).json(result.message);
+    }
     res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
   } catch (err) {
-    res.status(500).json({ message: "Internal server error." });
-    console.error(err);
+    return res.status(result.status).json(result.message);
   }
 });
 

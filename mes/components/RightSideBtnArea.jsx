@@ -43,7 +43,7 @@ function RightSideBtnArea() {
     selectedHammerSectionField,
     selectedPersonInField,
     read_order,
-    stopReasonPopup 
+    stopReasonPopup,
   } = useSelector((state) => state.order);
 
   const { userInfo, user } = useSelector((state) => state.user);
@@ -89,13 +89,22 @@ function RightSideBtnArea() {
           handleOpenGroupManagementPopup();
           break;
         case "handleOpenStopPopup":
-          handleOpenStopPopup("group");
+          handleOpenStopPopup("order");
           break;
         case "openMeasurementPopup":
           handleOpenMeasurementPopup();
           break;
         case "joinTheSection": // TASLAMA
           joinTheSection();
+          break;
+        case "restartWork":
+          restartWork();
+          break;
+        case "cancelWork":
+          handleCancelWork();
+          break;
+        case "finishwork":
+          handleFinishWork();
           break;
         default:
           break;
@@ -104,36 +113,67 @@ function RightSideBtnArea() {
     }
   }, [retryAction, user]);
 
+  // stop popup'ı aç asagıdakı fonksıyon gruplu ekranlar için...
+  // const handleOpenStopPopup = (actionType) => {
+  //   // grub secılı mı ?
+  //   if (selectedGroupNo.length <= 0 && actionType === "group") {
+  //     toast.error("Durduracağınız grubu seçin.");
+  //     return;
+  //   }
+  //   // grup aktif  mi ?
+  //   if (selectedGroupNo[0]?.group_status !== "3" && actionType === "group") {
+  //     toast.error("Durdurmak için devam eden bir grup seçin");
+  //     return;
+  //   }
+
+  //   if(areaName === "buzlama"){
+  //     if(!user || !user.id_dec){
+
+  //     }
+  //   }
+
+  //   if (actionType === "group") {
+  //     if (!user || !user.id_dec) {
+  //       // Eğer kullanıcı ID yoksa, pop-up aç
+  //       setRetryAction("handleOpenStopPopup"); // Parametreyi kaydediyoruz
+  //       dispatch(setUserIdPopup(true));
+  //       return;
+  //     }
+  //     if (
+  //       selectedGroupNo.length === 1 &&
+  //       selectedGroupNo[0].group_status === "3"
+  //     ) {
+  //       dispatch(setStopReasonPopup({ visible: true, actionType }));
+  //     } else if (selectedGroupNo.length > 1) {
+  //       toast.error("Durdurmak için sadece bir grup seçin.");
+  //     } else {
+  //       toast.error("Aktif bir grup seçin.");
+  //     }
+  //   } else if (actionType === "order") {
+  //     if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
+  //       dispatch(setStopReasonPopup({ visible: true, actionType }));
+  //     } else if (selectedOrder.length > 1) {
+  //       toast.error("Durdurmak için sadece bir sipariş seçin.");
+  //     } else {
+  //       toast.error("Aktif bir sipariş seçin.");
+  //     }
+  //   } else {
+  //     toast.error("Geçersiz işlem.");
+  //     dispatch(setUser(null));
+  //   }
+  // };
+
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
-    // grub secılı mı ?
-    if (selectedGroupNo.length <= 0 && actionType === "group") {
-      toast.error("Durduracağınız grubu seçin.");
+    // Eğer kullanıcı alanı "buzlama" ise ve kullanıcı ID yoksa ID popup'ını aç
+    if (areaName === "buzlama" && (!user || !user.id_dec)) {
+      setRetryAction("handleOpenStopPopup"); // İşlem kaydediliyor
+      dispatch(setUserIdPopup(true));
       return;
     }
-    // grup aktif  mi ?
-    if (selectedGroupNo[0]?.group_status !== "3" && actionType === "group") {
-      toast.error("Durdurmak için devam eden bir grup seçin");
-      return;
-    }
-    if (actionType === "group") {
-      if (!user || !user.id_dec) {
-        // Eğer kullanıcı ID yoksa, pop-up aç
-        setRetryAction("handleOpenStopPopup"); // Parametreyi kaydediyoruz
-        dispatch(setUserIdPopup(true));
-        return;
-      }
-      if (
-        selectedGroupNo.length === 1 &&
-        selectedGroupNo[0].group_status === "3"
-      ) {
-        dispatch(setStopReasonPopup({ visible: true, actionType }));
-      } else if (selectedGroupNo.length > 1) {
-        toast.error("Durdurmak için sadece bir grup seçin.");
-      } else {
-        toast.error("Aktif bir grup seçin.");
-      }
-    } else if (actionType === "order") {
+
+    // Sipariş veya grup seçimine göre kontrol yapalım
+    if (actionType === "order") {
       if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
         dispatch(setStopReasonPopup({ visible: true, actionType }));
       } else if (selectedOrder.length > 1) {
@@ -168,15 +208,28 @@ function RightSideBtnArea() {
   const restartWork = async () => {
     try {
       if (selectedOrder.length === 1 && selectedOrder[0].work_status === "2") {
+        if (areaName === "buzlama" && (!user || !user.id_dec)) {
+          setRetryAction("restartWork");
+          dispatch(setUserIdPopup(true));
+          return;
+        }
         if (confirm("İş tekrardan baslatilsin mi ? ")) {
-          const response = await axios.post(
+          let response;
+          const requestData = {
+            work_log_uniq_id: selectedOrder[0].uniq_id,
+            currentUser: userInfo.id_dec,
+            startedUser: selectedOrder[0].user_id_dec,
+            selectedOrder: selectedOrder[0],
+          };
+
+          if (areaName === "buzlama") {
+            requestData.currentUser = user.id_dec;
+          }
+
+          // API isteği
+          response = await axios.post(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
-            {
-              work_log_uniq_id: selectedOrder[0].uniq_id,
-              currentUser: userInfo.id_dec,
-              startedUser: selectedOrder[0].user_id_dec,
-              selectedOrder: selectedOrder[0],
-            }
+            requestData
           );
 
           if (response.status === 200) {
@@ -189,6 +242,7 @@ function RightSideBtnArea() {
             }
             toast.success("Tekrardan başlatma işlemi başarılı.");
             dispatch(setSelectedOrder([]));
+            dispatch(setUser(null));
           }
         }
       } else if (selectedOrder.length > 1) {
@@ -278,6 +332,52 @@ function RightSideBtnArea() {
     }
   };
 
+  //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
+  const handleFinishWork = async () => {
+    if (!selectedOrder || selectedOrder.length === 0) {
+      toast.error("Bitireceğiniz siparişleri seçin.");
+      return;
+    }
+
+    if (areaName === "buzlama" && (!user || !user.id_dec)) {
+      setRetryAction("finishwork"); // İşlem kaydediliyor
+      dispatch(setUserIdPopup(true));
+      return;
+    }
+
+    const requestData = {
+      uniqIds: selectedOrder.map((order) => order.uniq_id),
+      work_finished_op_dec: user.id_dec,
+    };
+
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/fwork`,
+        requestData
+      );
+
+      if (response.status === 200) {
+        toast.success(`${selectedOrder.length} iş bitirildi.`);
+        dispatch(setSelectedOrder([]));
+        dispatch(setUser(null));
+        dispatch(getWorksWithoutId({ areaName }));
+      }
+    } catch (err) {
+      console.error("İş bitirme hatası:", err);
+      toast.error("İş bitirme sırasında hata oluştu.");
+    }
+  };
+
+  //! Tekli yada coklu ıslemler ıcın ıkı farklı fonksıyon yazdık bunu teke dusur. 
+  const handleFinishedFunc = () => {
+    const isMoreFinish = ["buzlama"].includes(areaName);
+    if (isMoreFinish) {
+      handleFinishWork();
+    } else {
+      handleOpenFinishedPopup();
+    }
+  };
+
   // şartlı bıtırme popupını acacak fonksıyon..
   const handleOpenConditionalFinishPopup = () => {
     // Seçilen sipariş kontrolü
@@ -298,31 +398,52 @@ function RightSideBtnArea() {
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
-      if (selectedOrder.length === 1) {
-        if (confirm("Sipariş iptal edilsin mi ?")) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/cancelWork`,
-            {
-              uniq_id: selectedOrder[0].uniq_id,
-              currentUser: userInfo.id_dec,
-            }
+      // Toplu iptal edilecek ekranları asagıdakı dızıye ekle buzmala ekranında toplu ıptal var kalıtede yok
+      const isMoreCancel = ["buzlama"].includes(areaName);
+
+      // Seçili sipariş kontrolü
+      if (!selectedOrder || selectedOrder.length === 0) {
+        toast.error("İptal etmek için en az bir sipariş seçmelisiniz.");
+        return;
+      }
+
+      if (isMoreCancel && (!user || !user.id_dec)) {
+        setRetryAction("cancelWork");
+        dispatch(setUserIdPopup(true));
+        return;
+      }
+
+      const requestData = {
+        uniq_id: isMoreCancel
+          ? selectedOrder.map((order) => order.uniq_id) // Çoklu sipariş için dizi
+          : selectedOrder[0].uniq_id, // Tek sipariş için string
+      };
+
+      if (areaName === "buzlama") {
+        requestData.currentUser = user.id_dec;
+      }
+
+      if (confirm("Sipariş iptal edilsin mi ?")) {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/cancelWork`,
+          requestData
+        );
+        if (response.status === 200) {
+          toast.success(
+            isMoreCancel
+              ? `${selectedOrder.length} sipariş başarıyla iptal edildi.`
+              : `${selectedOrder[0]?.uniq_id} numaralı sipariş iptal edildi.`
           );
-          if (response.status === 200) {
-            toast.success(
-              `${selectedOrder[0]?.uniq_id} numaralı sipariş iptal edildi...`
-            );
-            dispatch(setSelectedOrder([]));
-            if (areaName === "kalite") {
-              getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-            } else if (areaName === "buzlama") {
-              dispatch(getWorksWithoutId({ areaName }));
-            } else {
-              getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-            }
+          dispatch(setSelectedOrder([]));
+          dispatch(setUser(null));
+          if (areaName === "kalite") {
+            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          } else if (areaName === "buzlama") {
+            dispatch(getWorksWithoutId({ areaName }));
+          } else {
+            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           }
         }
-      } else {
-        toast.error("İptal etmek için sadece 1 sipariş seçin");
       }
     } catch (err) {
       console.log(err);
@@ -753,11 +874,11 @@ function RightSideBtnArea() {
         err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
       );
       dispatch(setUser(null));
-    //  dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
-    //  dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
+      //  dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
+      //  dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
       dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
       dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
-     // dispatch(handleGetGroupList());
+      // dispatch(handleGetGroupList());
     }
   };
 
@@ -770,12 +891,7 @@ function RightSideBtnArea() {
       return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
     }
 
-    if (selectedGroupNo && selectedGroupNo.length === 1) {
-      dispatch(setMeasurementPopup(true));
-    } else {
-      toast.error("Veri girişi yapmak istediğiniz grubu seçin");
-      dispatch(setUser(null));
-    }
+    dispatch(setMeasurementPopup(true));
   };
 
   //? TASLAMA METOTLARI...
@@ -842,7 +958,7 @@ function RightSideBtnArea() {
       console.log(err);
     }
   };
-  //! setup u baslatacak fonksıyon... 
+  //! setup u baslatacak fonksıyon...
   const startToSetup = async () => {
     try {
       if (!read_order) {
@@ -880,24 +996,23 @@ function RightSideBtnArea() {
       console.log(err);
     }
   };
-  //! setup ı bıtırecek işi baslatacak  fonksiyon... 
+  //! setup ı bıtırecek işi baslatacak  fonksiyon...
   const finishedToStop = async () => {
     const onGoingOrder = selectedOrder.every(
       (item) => item.work_status === "6"
     );
-     
+
     if (selectedOrder.length <= 0) {
       toast.error("Setup ı bıtırıp baslatacagınız siparişi seçiniz.");
       dispatch(setUser(null));
       return;
     }
-    if(!onGoingOrder){
+    if (!onGoingOrder) {
       toast.error("Seçilen sipariş setup a başlanmıs bir sipariş olmalıdır.");
-      return
+      return;
     }
-   
-    try {
 
+    try {
       const work_info = {
         user_id_dec: userInfo.id_dec,
         op_username: userInfo.op_username,
@@ -908,27 +1023,26 @@ function RightSideBtnArea() {
         process_id: selectedProcess?.process_id,
         process_name: selectedProcess?.process_name,
         production_amount: selectedOrder[0].production_amount,
-        uniq_id:selectedOrder[0].uniq_id,
+        uniq_id: selectedOrder[0].uniq_id,
       };
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishedToSetup`,
         {
-          work_info
+          work_info,
         }
       );
 
-      if(response.status === 200){
+      if (response.status === 200) {
         toast.success("Setup bitirildi. Sipariş başlatıldı.");
         dispatch(getWorksWithoutId({ areaName }));
         dispatch(setSelectedOrder([]));
       }
-    
     } catch (err) {
       console.log(err);
       toast.error(err?.response.data);
     }
-  }
+  };
   //? CEKİC EKRANI METOTLARI BİTİS...
 
   // Kalite buttons
@@ -948,7 +1062,7 @@ function RightSideBtnArea() {
       disabled: isCurrentBreak,
     },
     {
-      onClick: handleOpenFinishedPopup,
+      onClick: handleFinishedFunc,
       children: "Prosesi Bitir",
       type: "button",
       className: "w-[200px]",
@@ -959,6 +1073,13 @@ function RightSideBtnArea() {
       children: "Sipariş İptal",
       type: "button",
       className: "w-[200px] bg-red-600",
+      disabled: isCurrentBreak,
+    },
+    areaName === "buzlama" && {
+      onClick: handleOpenMeasurementPopup,
+      children: "Ölçüm V. Girişi",
+      type: "button",
+      className: "w-[200px] bg-orange-500 hover:bg-orange-600",
       disabled: isCurrentBreak,
     },
   ];
@@ -1073,28 +1194,32 @@ function RightSideBtnArea() {
       onClick: restartWork,
       children: "Yeniden Başlat",
       type: "button",
-      className: "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
+      className:
+        "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
     {
       onClick: handleOpenFinishedPopup,
       children: "Prosesi Bitir",
       type: "button",
-      className: "w-[140px] sm:px-1 hover:bg-red-500 bg-red-600 sm:py-4 text-sm",
+      className:
+        "w-[140px] sm:px-1 hover:bg-red-500 bg-red-600 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
     {
       onClick: handleCancelWork,
       children: "Sipariş İptal",
       type: "button",
-      className: "w-[140px] sm:px-1 hover:bg-red-500 bg-red-600 sm:py-4 text-sm",
+      className:
+        "w-[140px] sm:px-1 hover:bg-red-500 bg-red-600 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
     {
       onClick: joinTheSection,
       children: "Bölüme Katıl",
       type: "button",
-      className: "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
+      className:
+        "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
     {
@@ -1119,8 +1244,7 @@ function RightSideBtnArea() {
             onClick: finishedToStop,
             children: "Setup Bitir",
             type: "button",
-            className:
-              "w-[140px] sm:px-1 sm:py-4 text-sm",
+            className: "w-[140px] sm:px-1 sm:py-4 text-sm",
             disabled: isCurrentBreak,
           },
         ]
@@ -1139,7 +1263,7 @@ function RightSideBtnArea() {
 
   //? Route gore section un sağ tarafına farklı yapıda render edecegız.
   const renderButtons = () => {
-    if (areaName === "kalite" || areaName === "kurutiras") {
+    if (areaName === "kalite" || areaName === "kurutiras" || "buzlama") {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">
           {buttons_r.map((button, index) => (

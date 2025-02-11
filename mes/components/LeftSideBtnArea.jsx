@@ -28,15 +28,16 @@ function LeftSideBtnArea() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
+  const isWithoutIdReturnToBreakScreen = ["buzlama"];
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
       switch (retryAction) {
-        case "ozelAraWıthId":
+        case "openOzelAra":
           openOzelAra();
           break;
-        case "returnToBreakFunc":
-          returnToBreakFunc();
+        case "returnToBreak":
+          returnToBreak();
           break;
         case "openCreateLeavePopup":
           dispatch(setCreateLeavePopup(true));
@@ -66,6 +67,13 @@ function LeftSideBtnArea() {
   };
 
   const openOzelAra = () => {
+    if(areaName && isWithoutIdReturnToBreakScreen.includes(areaName)){
+      if(!user || !user.id_dec){
+        dispatch(setUserIdPopup(true));
+        setRetryAction("openOzelAra");
+        return;
+      }
+    }
     dispatch(setMolaPopup(true));
   };
 
@@ -86,59 +94,47 @@ function LeftSideBtnArea() {
     // Güncel tarihi ISO 8601 standardında oluşturur
     const end_time = new Date().toISOString();
     try {
-      if (isCurrentBreak) {
+      if (areaName && isWithoutIdReturnToBreakScreen.includes(areaName)) {
+        if (!user || !user.id_dec) {
+          dispatch(setUserIdPopup(true));
+          setRetryAction("returnToBreak");
+          return;
+        }
+
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
-          { operator_id: userInfo.id_dec, end_time }
+          { operator_id: user.id_dec, end_time }
         );
+
         if (response.status === 200) {
-          toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
-          dispatch(setİsCurrentBreak(false));
+          toast.success(`${user.op_name} moladan dönüş işlemi başarılı.`);
+          dispatch(setUser(null));
         }
       } else {
-        toast.error("Kullanıcı molada değil veya bilgiler eksik.");
+        if (!userInfo || !userInfo.id_dec) {
+          toast.error("Kullanıcı bilgileri eksik!");
+          return;
+        }
+
+        if (isCurrentBreak) {
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
+            { operator_id: userInfo.id_dec, end_time }
+          );
+
+          if (response.status === 200) {
+            toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
+            dispatch(setIsCurrentBreak(false));
+          }
+        } else {
+          toast.error("Kullanıcı molada değil veya bilgiler eksik.");
+        }
       }
     } catch (err) {
-      console.log(err);
-      toast.error("Moladan dönüş işlemi başarısız.");
-    }
-  };
-
-  //! Sısteme gırıs yapan kullanıcıdan bagımsız
-  const returnToBreakWıthId = async () => {
-    // Güncel tarihi ISO 8601 standardında oluşturur
-    const end_time = new Date().toISOString();
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
-        { operator_id: user.id_dec, end_time }
-      );
-      if (response.status === 200) {
-        toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
-        dispatch(setİsCurrentBreak(false));
-        dispatch(setUser(""));
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error("Moladan dönüş işlemi başarısız.");
-      dispatch(setUser(""));
-    }
-  };
-
-  const returnToBreakFunc = () => {
-    // Kullanıcı kimliği kontrolü
-    if (!user || !user.id_dec) {
-      dispatch(setUserIdPopup(true));
-      setRetryAction("returnToBreakFunc");
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-
-    // Kimlik varsa ve alan 'cekic' ise ilgili fonksiyonu çağır
-    if (areaName === "cekic" || areaName === "buzlama") {
-      returnToBreakWıthId();
-      console.log(user);
-    } else {
-      returnToBreak();
+      console.error(err);
+      const errorMessage =
+        err.response?.data?.message || "Moladan dönüş işlemi başarısız.";
+      toast.error(errorMessage);
     }
   };
 
@@ -146,33 +142,10 @@ function LeftSideBtnArea() {
   const controllerUserIdForCreateLeavePopup = () => {
     if (!user || !user.id_dec) {
       dispatch(setUserIdPopup(true));
-      setRetryAction("openCreateLeavePopup");2
-      
+      setRetryAction("openCreateLeavePopup");
+      2;
+
       return;
-    }
-  };
-
-  //! Molaya cıkıs ıcın ıd popup ını acacak ve sonrasında mola popupını acacak fonksıyon..
-  const ozelAraWıthId = () => {
-    // Kullanıcı kimliği kontrolü
-    console.log("y");
-    console.log(user);
-    if (!user || !user.id_dec) {
-      console.log("x");
-      dispatch(setUserIdPopup(true));
-      setRetryAction("ozelAraWıthId");
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-  };
-
-  const funcOzelAra = () => {
-    if (areaName === "cekic" || areaName === "buzlama") {
-      //ozelAraWıthId();
-      toast.info(
-        "Molaya çıkış işlemi şuan da gerçekleştirilemiyor. Üzerinde çalışıyoruz."
-      );
-    } else {
-      openOzelAra();
     }
   };
 
@@ -203,7 +176,7 @@ function LeftSideBtnArea() {
       onClick: controllerUserIdForCreateLeavePopup,
     },
     {
-      onClick: funcOzelAra,
+      onClick: openOzelAra,
       children: "Özel araya çık",
       type: "button",
       className: "",
