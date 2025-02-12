@@ -46,52 +46,59 @@ function StopJobPopup() {
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
     try {
-      let response;
+      if (!molaSebebi) {
+        toast.error("Seçili siparişi durdurmak için durdurma nedeni seçiniz.");
+        return;
+      }
+
+      if (selectedOrder.length === 0) {
+        toast.error("Lütfen en az bir sipariş seçin.");
+        return;
+      }
+
       const requestData = {
-        order_id: selectedOrder[0].order_no,
-        stop_reason_id: molaSebebi.stop_reason_id,
-        work_log_uniq_id: selectedOrder[0].uniq_id,
-        user_who_stopped: userInfo?.id_dec,
+        order_id: selectedOrder.map((item) => item.order_no), // Sipariş numaraları array olarak
+        stop_reason_id: molaSebebi.stop_reason_id, // Durdurma nedeni ID
+        work_log_uniq_id: selectedOrder.map((item) => item.uniq_id), // İş kayıtları uniq_id array olarak
+        user_who_stopped: userInfo?.id_dec, // Kullanıcı ID
       };
 
       if (areaName === "buzlama") {
         requestData.user_who_stopped = user.id_dec;
       }
 
-      if (selectedOrder.length === 1) {
-        response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
-          requestData
-        );
+      // API çağrısını yap
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
+        requestData
+      );
 
-        const opt = () => {
-          dispatch(setUser(null));
-          dispatch(setStopReasonPopup(false));
-          dispatch(setSelectedOrder([])); // Seçimi temizle
-          toast.success(`Siparişi durdurma işlemi başarılı...`);
-        };
+      const opt = () => {
+        dispatch(setUser(null));
+        dispatch(setStopReasonPopup({ visible: false })); // Popup kapat
+        dispatch(setSelectedOrder([])); // Seçimi temizle
+        toast.success(`Siparişleri durdurma işlemi başarılı.`);
+      };
 
-        if (response.status === 200) {
-          if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-            opt();
-          } else {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
-            opt();
-          }
+      if (response.status === 200) {
+        if (areaName === "buzlama") {
+          dispatch(getWorksWithoutId({ areaName }));
+          opt();
         } else {
-          toast.error("Sipariş durdurulamadı...");
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile
+          opt();
         }
       } else {
-        toast.error("Durdurmak için sadece bir sipariş seçiniz.");
+        toast.error("Siparişler durdurulamadı.");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       toast.error(
         "Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
       );
     }
   };
+
   //! Makineyi durduracak query (grup işlemi)...
   async function stopToSelectedMachine() {
     try {

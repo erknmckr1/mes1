@@ -360,10 +360,9 @@ app.get("/getOrder", async (req, res) => {
 app.post("/createWorkLog", async (req, res) => {
   const currentDate = new Date();
   const currentDateTimeOffset = currentDate.toISOString();
-
+  let result;
   const { work_info, field } = req.body;
   try {
-    let result;
     if (work_info.area_name === "cekic") {
       result = await createCekicWorkLog({
         work_info,
@@ -373,12 +372,12 @@ app.post("/createWorkLog", async (req, res) => {
     } else {
       result = await createWork({ work_info, currentDateTimeOffset });
     }
-    if(result.status === 303){
+    if (result.status === 303) {
       return res.status(result.status).json(result.message);
     }
     res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
   } catch (err) {
-    return res.status(result.status).json(result.message);
+    res.status(500).json({ message: "İş baslatma sırasında hata olustu" });
   }
 });
 
@@ -424,9 +423,9 @@ app.post("/stopSelectedWork", async (req, res) => {
   }
 });
 
-//! Durdurulan bir işi tekrardan baslatacak metot...
+//! Durdurulan işleri tekrardan başlatacak metot...
 app.post("/restartWork", async (req, res) => {
-  const { work_log_uniq_id, currentUser, startedUser, selectedOrder } =
+  const { work_log_uniq_id, currentUser, startedUser, selectedOrders } =
     req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -435,12 +434,12 @@ app.post("/restartWork", async (req, res) => {
       work_log_uniq_id,
       currentUser,
       startedUser,
-      selectedOrder,
+      selectedOrders,
     });
-    res.status(200).json(result);
+    return res.status(200).json(result);
   } catch (err) {
-    console.log(err);
-    res.status(400).json({ message: err.message });
+    console.error(err);
+    return res.status(400).json({ message: err.message });
   }
 });
 

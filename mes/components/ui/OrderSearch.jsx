@@ -122,7 +122,7 @@ function OrderSearch() {
       }
     } catch (err) {
       console.error("Siparişi çekerken hata:", err);
-      toast.error(err.response.data || "Siparişi çekerken bir hata oluştu.");
+      toast.error(err?.response.data || "Siparişi çekerken bir hata oluştu.");
     }
   };
 
