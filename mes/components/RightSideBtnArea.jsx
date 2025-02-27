@@ -260,6 +260,7 @@ function RightSideBtnArea() {
           startedUser: selectedOrder.map((item) => item.user_id_dec), // Birden fazla iş için liste
           selectedOrders: selectedOrder, // Seçili siparişlerin tamamı
           areaName,
+          field: selectedHammerSectionField,
         };
 
         if (isMoreRestart) {
@@ -388,6 +389,7 @@ function RightSideBtnArea() {
       uniqIds: selectedOrder.map((order) => order.uniq_id),
       work_finished_op_dec: user.id_dec,
       areaName,
+      field: selectedHammerSectionField,
     };
 
     try {
@@ -462,6 +464,7 @@ function RightSideBtnArea() {
           ? selectedOrder.map((order) => order.uniq_id) // Çoklu sipariş için dizi
           : selectedOrder[0].uniq_id, // Tek sipariş için string
         areaName,
+        field:selectedHammerSectionField
       };
 
       if (areaName === "buzlama" || areaName === "cekic") {
@@ -973,6 +976,7 @@ function RightSideBtnArea() {
       !selectedMachine?.machine_name
     ) {
       toast.error("Makine bölümüne katılmak için bir makine seçmelisiniz.");
+      dispatch(setUser(""));
       return;
     }
 

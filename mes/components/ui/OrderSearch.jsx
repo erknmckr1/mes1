@@ -144,14 +144,14 @@ function OrderSearch() {
         } catch (err) {
           console.error("İş başlatma sırasında hata:", err);
           toast.error(
-            err.response.data || "Siparişi çekerken bir hata oluştu."
+            err.response.data.message || "Siparişi çekerken bir hata oluştu."
           );
           dispatch(setUser(null));
         }
       }
     } catch (err) {
       console.error("Siparişi çekerken hata:", err);
-      toast.error(err?.response.data || "Siparişi çekerken bir hata oluştu.");
+      toast.error(err?.response.data.message || "Siparişi çekerken bir hata oluştu.");
       dispatch(setUser(null));
     }
   };

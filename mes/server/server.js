@@ -285,13 +285,14 @@ app.get("/getCancelReason", async (req, res) => {
 
 //! Seçili işi iptal edecek fonksiyon
 app.post("/cancelWork", async (req, res) => {
-  const { uniq_id, currentUser,areaName } = req.body;
+  const { uniq_id, currentUser, areaName, field } = req.body;
   try {
     const result = await cancelWork({
       uniq_id,
       currentDateTimeOffset,
       currentUser,
       area_name: areaName,
+      field,
     });
     // Eğer result bir hata durumu içeriyorsa, status koduna göre döndürün
     if (result.status && result.status !== 200) {
@@ -372,10 +373,10 @@ app.post("/createWorkLog", async (req, res) => {
     // } else {
     result = await createWork({ work_info, currentDateTimeOffset, field });
 
-    if (result.status === 303) {
-      return res.status(result.status).json(result.message);
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
     }
-    res.status(200).json({ message: "İş başlatma işlemi başarılı", result });
+    return res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: "İş baslatma sırasında hata olustu" });
   }
@@ -405,8 +406,14 @@ app.get("/getWorks", async (req, res) => {
 //! Aktif bir işi durduracak metot
 // Endpoint
 app.post("/stopSelectedWork", async (req, res) => {
-  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped,areaName } =
-    req.body;
+  const {
+    order_id,
+    stop_reason_id,
+    work_log_uniq_id,
+    user_who_stopped,
+    areaName,
+    field,
+  } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await stopWork({
@@ -416,6 +423,7 @@ app.post("/stopSelectedWork", async (req, res) => {
       stop_reason_id,
       user_who_stopped,
       area_name: areaName,
+      field,
     });
 
     if (result.status && result.status !== 200) {
@@ -432,8 +440,14 @@ app.post("/stopSelectedWork", async (req, res) => {
 
 //! Durdurulan işleri tekrardan başlatacak metot...
 app.post("/restartWork", async (req, res) => {
-  const { work_log_uniq_id, currentUser, startedUser, selectedOrders,areaName } =
-    req.body;
+  const {
+    work_log_uniq_id,
+    currentUser,
+    startedUser,
+    selectedOrders,
+    areaName,
+    field,
+  } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await rWork({
@@ -443,6 +457,7 @@ app.post("/restartWork", async (req, res) => {
       startedUser,
       selectedOrders,
       area_name: areaName,
+      field,
     });
     if (result.status && result.status !== 200) {
       return res.status(result.status).json({ message: result.message });

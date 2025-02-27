@@ -358,8 +358,8 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec,areaName } = req.body;
-  const result = await fwork(uniqIds, work_finished_op_dec,areaName);
+  const { uniqIds, work_finished_op_dec,areaName,field } = req.body;
+  const result = await fwork(uniqIds, work_finished_op_dec,areaName,field);
   return res.status(result.status).json(result.message);
 });
 

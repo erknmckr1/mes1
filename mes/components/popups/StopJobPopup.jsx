@@ -25,7 +25,7 @@ function StopJobPopup() {
   const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
   const [molaSebebi, setMolaSebebii] = useState("");
-  const { selectedOrder, selectedGroupNo } = useSelector(
+  const { selectedOrder, selectedGroupNo,selectedHammerSectionField } = useSelector(
     (state) => state.order
   );
 
@@ -62,7 +62,8 @@ function StopJobPopup() {
         stop_reason_id: molaSebebi.stop_reason_id, // Durdurma nedeni ID
         work_log_uniq_id: selectedOrder.map((item) => item.uniq_id), // İş kayıtları uniq_id array olarak
         user_who_stopped: userInfo?.id_dec, // Kullanıcı ID
-        areaName
+        areaName,
+        field:selectedHammerSectionField
       };
 
       if (isStopScreen) {

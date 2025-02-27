@@ -2064,7 +2064,7 @@ async function updateMeasure(formState, uniq_id) {
 
 //? Toplu sipariş iptal edecek servis
 
-const fwork = async (uniqIds, work_finished_op_dec, areaName) => {
+const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
   const work_end_date = new Date().toISOString();
   try {
     // Geçersiz veri kontrolü
@@ -2109,7 +2109,14 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName) => {
           message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
         };
       }
+      if (isSectionParticipated.field !== field) {
+        return {
+          status: 400,
+          message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
+        };
+      }
     }
+
     // bölüm ?
 
     const orders = await WorkLog.findAll({

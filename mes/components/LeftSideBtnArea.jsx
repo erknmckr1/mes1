@@ -28,7 +28,7 @@ function LeftSideBtnArea() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
-  const isWithoutIdReturnToBreakScreen = ["buzlama","cekic","kalite"];
+  const isWithoutIdReturnToBreakScreen = ["buzlama", "cekic", "kalite"];
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
@@ -67,8 +67,8 @@ function LeftSideBtnArea() {
   };
 
   const openOzelAra = () => {
-    if(areaName && isWithoutIdReturnToBreakScreen.includes(areaName)){
-      if(!user || !user.id_dec){
+    if (areaName && isWithoutIdReturnToBreakScreen.includes(areaName)) {
+      if (!user || !user.id_dec) {
         dispatch(setUserIdPopup(true));
         setRetryAction("openOzelAra");
         return;
@@ -132,7 +132,7 @@ function LeftSideBtnArea() {
       }
     } catch (err) {
       console.error(err);
-      dispatch(setUser(null))
+      dispatch(setUser(null));
       const errorMessage =
         err.response?.data?.message || "Moladan dönüş işlemi başarısız.";
       toast.error(errorMessage);
@@ -177,10 +177,10 @@ function LeftSideBtnArea() {
     },
     {
       onClick: openOzelAra,
-      children: "Özel araya çık",
+      children: "Araya Çık",
       type: "button",
       className: "",
-     // disabled: isCurrentBreak,
+      // disabled: isCurrentBreak,
     },
     {
       onClick: returnToBreak,

@@ -20,7 +20,12 @@ const getCancelReason = async ({ area_name }) => {
 };
 
 //! Seçili siparişi iptal edecek servis grup olayı bu serviste yok...
-const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser,area_name }) => {
+const cancelWork = async ({
+  uniq_id,
+  currentDateTimeOffset,
+  currentUser,
+  area_name,
+}) => {
   try {
     // Bölüme katılacak kullanıcı molada mı ?
     const isBreakUser = await BreakLog.findOne({
@@ -39,24 +44,30 @@ const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser,area_nam
 
     //MOLA
 
-      // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-  if (area_name === "cekic") {
-    const isSectionParticipated = await SectionParticiptionLogs.findOne({
-      where: {
-        operator_id: currentUser,
-        exit_time: null,
-        area_name,
-      },
-    });
+    // Bölümde mi ? şimdilik sadece cekic bölümüne özel
+    if (area_name === "cekic") {
+      const isSectionParticipated = await SectionParticiptionLogs.findOne({
+        where: {
+          operator_id: currentUser,
+          exit_time: null,
+          area_name,
+        },
+      });
 
-    if (!isSectionParticipated) {
-      return {
-        status: 400,
-        message: "Bölüme katılım sağlamadan prosesi iptal  edemezsiniz.",
-      };
+      if (!isSectionParticipated) {
+        return {
+          status: 400,
+          message: "Bölüme katılım sağlamadan prosesi iptal  edemezsiniz.",
+        };
+      }
+      if (isSectionParticipated.field !== field) {
+        return {
+          status: 400,
+          message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
+        };
+      }
     }
-  }
-  // bölüm ?
+    // bölüm ?
 
     const result = await WorkLog.update(
       {
@@ -241,6 +252,39 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
+    // Eğer "cekic" ekranındaysak, kullanıcının bölüme katılımını kontrol et
+    if (area_name === "cekic") {
+      try {
+        const isSectionParticipated = await SectionParticiptionLogs.findOne({
+          where: {
+            operator_id: user_id_dec,
+            exit_time: null,
+            area_name: area_name,
+          },
+        });
+  
+        if (!isSectionParticipated) {
+          return {
+            status: 400,
+            message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
+          };
+        }
+  
+        // Eğer kullanıcı bölüme katıldıysa ancak yanlış field içinde ise
+        if (isSectionParticipated.field !== field) {
+          return {
+            status: 400,
+            message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
+          };
+        }
+      } catch (err) {
+        return {
+          status: 500,
+          message: "Bölüm katılım durumu kontrol edilirken bir hata meydana geldi.",
+        };
+      }
+    }
+
   // En büyük uniq_id'yi bul ve bir artır
   let newUniqId;
   try {
@@ -339,6 +383,7 @@ const stopWork = async ({
   user_who_stopped,
   group_record_id,
   area_name,
+  field,
 }) => {
   // Molada ise hata nesnesi döndür
   const isBreakUser = await BreakLog.findOne({
@@ -371,6 +416,12 @@ const stopWork = async ({
       return {
         status: 400,
         message: "Bölüme katılım sağlamadan işi durduramazsınız.",
+      };
+    }
+    if (isSectionParticipated.field !== field) {
+      return {
+        status: 400,
+        message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
       };
     }
   }
@@ -409,6 +460,7 @@ const rWork = async ({
   startedUser,
   selectedOrders,
   area_name,
+  field,
 }) => {
   try {
     // İŞLEMİ YAPACAK KULLANICI MOLADA MI ?
@@ -433,7 +485,7 @@ const rWork = async ({
         where: {
           operator_id: currentUser,
           exit_time: null,
-          area_name
+          area_name,
         },
       });
 
@@ -441,6 +493,13 @@ const rWork = async ({
         return {
           status: 400,
           message: "Bölüme katılım sağlamadan işi yeniden başlatamazsınız.",
+        };
+      }
+
+      if (isSectionParticipated.field !== field) {
+        return {
+          status: 400,
+          message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
         };
       }
     }
