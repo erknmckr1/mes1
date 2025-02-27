@@ -1,4 +1,5 @@
 const BreakReason = require("../models/BreakReason");
+const SectionParticiptionLogs = require("../models/SectionParticiptionLogs");
 const BreakLog = require("../models/BreakLog");
 const pool = require("../lib/dbConnect");
 const sequelize = require("../lib/dbConnect");
@@ -46,15 +47,36 @@ const getBreakReasonLog = async () => {
 //! Belirli bir kullanıcıyı molada mı dıye sorgulayacak query... Eğer yoksa yenı bır log atacak
 //! varsa mevcut logu donecek...
 const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
-  const { area_name, operator_id, break_reason_id, op_name, section } = startLog;
+  const { area_name, operator_id, break_reason_id, op_name, section } =
+    startLog;
   try {
     // Kullanıcı molada mı onu kontrol ediyoruz...
     const isStart = await BreakLog.findOne({
       where: {
         operator_id: operator_id,
-        end_date: null
+        end_date: null,
       },
     });
+
+    const isSectionParticipated = await SectionParticiptionLogs.findOne({
+      where: {
+        operator_id,
+        exit_time: null,
+      },
+    });
+
+    //? Eğer bir kullanıcı zaten bir bölümde çalışıyorsa molaya çıkacağı zaman bölümdeki çıkış zamanını güncelle
+    if (isSectionParticipated) {
+      const sectionParticipated = await SectionParticiptionLogs.update(
+        { exit_time: currentDateTimeOffset },
+        {
+          where: {
+            exit_time: null,
+            operator_id: operator_id,
+          },
+        }
+      );
+    }
 
     // Molada değilse yeni mola oluştur
     if (!isStart) {
@@ -82,7 +104,7 @@ const onBreakUsers = async (areaName) => {
     const isBreakUsers = await BreakLog.findAll({
       where: {
         end_date: null,
-        area_name:areaName
+        area_name: areaName,
       },
     });
     return isBreakUsers;
@@ -92,8 +114,13 @@ const onBreakUsers = async (areaName) => {
 };
 //! Giriş yapan kullancı moladaysa moladan donus ıcın gereklı fonksıyon. end_time doldugu zaman mola
 //! bitmiş sayılacak...
-const returnToBreak = async ({ operator_id, end_time, }) => {
-  console.log('Updating break for operator:', operator_id, 'with end time:', end_time);
+const returnToBreak = async ({ operator_id, end_time }) => {
+  console.log(
+    "Updating break for operator:",
+    operator_id,
+    "with end time:",
+    end_time
+  );
 
   try {
     // Güncelleme işlemini gerçekleştirin
@@ -107,7 +134,7 @@ const returnToBreak = async ({ operator_id, end_time, }) => {
       }
     );
 
-    console.log('Update result:', result);
+    console.log("Update result:", result);
 
     // Güncellenen kayıtları kontrol et
     const updatedRecords = await BreakLog.findAll({
@@ -118,10 +145,10 @@ const returnToBreak = async ({ operator_id, end_time, }) => {
     });
 
     if (updatedRecords.length > 0) {
-      console.log('Records successfully updated:', updatedRecords);
+      console.log("Records successfully updated:", updatedRecords);
       return updatedRecords.length; // Güncelleme başarılı, güncellenen kayıt sayısını döner
     } else {
-      console.log('No records found with updated end_date');
+      console.log("No records found with updated end_date");
       return 0; // Güncelleme başarısız
     }
   } catch (err) {
@@ -129,7 +156,6 @@ const returnToBreak = async ({ operator_id, end_time, }) => {
     throw err;
   }
 };
-
 
 module.exports = {
   getBreakReason,

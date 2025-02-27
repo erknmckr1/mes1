@@ -47,9 +47,9 @@ function OrderSearch() {
       toast.error("Sipariş no giriniz...");
       return;
     }
+    const isReadIdScreen = ["cekic", "buzlama"].includes(areaName);
 
-    // Eğer "buzlama" ekranındaysak ve kullanıcı ID eksikse, popup aç
-    if (areaName === "buzlama" && (!user || !user.id_dec)) {
+    if (isReadIdScreen && (!user || !user.id_dec)) {
       setRetryAction("createOrder"); // İşlem kaydediliyor
       dispatch(setUserIdPopup(true));
       return; // Kullanıcı giriş yapana kadar devam etme
@@ -79,7 +79,10 @@ function OrderSearch() {
           machine_name: selectedMachine?.machine_name,
         };
 
-        if (areaName === "buzlama") {
+        if (
+          areaName === "buzlama" ||
+          (areaName === "cekic" && selectedHammerSectionField === "makine")
+        ) {
           if (!selectedProcess || !selectedMachine) {
             toast.error("Sipariş başlatmadan önce proses ve makine seçin.");
             dispatch(setUser(null));
@@ -87,15 +90,38 @@ function OrderSearch() {
           }
         }
 
+        if (areaName === "cekic") {
+          if (!selectedHammerSectionField) {
+            toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
+            return;
+          }
+        }
+
         // `process_id` kontrolü
-        if (!selectedProcess?.process_id) {
-          toast.error("Sipariş başlatmadan önce process seçiniz.");
-          return;
+        if (areaName === "kalite" && !selectedProcess) {
+          toast.error("Sipariş başlatmadan önce proses seçin.");
+          dispatch(setUser(null));
         }
 
         if (areaName === "buzlama") {
           work_info.user_id_dec = user.id_dec;
           work_info.op_username = user.op_username;
+        } else if (
+          areaName === "cekic" &&
+          selectedHammerSectionField !== "makine"
+        ) {
+          work_info.user_id_dec = user.id_dec;
+          work_info.op_username = user.op_username;
+          work_info.work_status = "1";
+          work_info.field = selectedHammerSectionField;
+        } else if (
+          areaName === "cekic" &&
+          selectedHammerSectionField === "makine"
+        ) {
+          work_info.user_id_dec = user.id_dec;
+          work_info.op_username = user.op_username;
+          work_info.work_status = "0";
+          work_info.field = selectedHammerSectionField;
         }
 
         // İş başlatma isteği
@@ -107,22 +133,26 @@ function OrderSearch() {
 
           if (workLogResponse.status === 200) {
             toast.success("İş başarıyla başlatıldı.");
-            if (areaName === "buzlama") {
+            if (isReadIdScreen) {
               dispatch(getWorksWithoutId({ areaName }));
               dispatch(setUser(null));
             } else {
               getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+              dispatch(setSelectedProcess(""));
             }
-            dispatch(setSelectedProcess(""));
           }
         } catch (err) {
           console.error("İş başlatma sırasında hata:", err);
-          toast.error(err.response.data || "Siparişi çekerken bir hata oluştu.");
+          toast.error(
+            err.response.data || "Siparişi çekerken bir hata oluştu."
+          );
+          dispatch(setUser(null));
         }
       }
     } catch (err) {
       console.error("Siparişi çekerken hata:", err);
       toast.error(err?.response.data || "Siparişi çekerken bir hata oluştu.");
+      dispatch(setUser(null));
     }
   };
 
@@ -152,105 +182,74 @@ function OrderSearch() {
     }
   };
 
-  //! Cekic ekranı ıcın setuplu ekran iş okutulacak fonksıyon...
-  const handleCreateOrderCekic = async () => {
-    if (!order_id) {
-      toast.error("Sipariş no giriniz...");
-      return;
-    }
-
-    if (!selectedHammerSectionField) {
-      toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
-      return;
-    }
-
-    try {
-      // Sipariş bilgilerini getir
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
-        { params: { id: order_id } }
-      );
-
-      if (response.status === 200) {
-        dispatch(setReadOrder(response.data));
-        setOrderId("");
-        // Makine seçimi yapılmışsa
-        if (selectedHammerSectionField === "makine") {
-          toast.success(
-            "Sipariş başarıyla okutuldu. Proses ve makine seçip setup başlatabilirsiniz."
-          );
-          return;
-        }
-
-        const work_info = {
-          user_id_dec: userInfo.id_dec,
-          op_username: userInfo.op_username,
-          order_id: response.data.ORDER_ID, // response'dan gelen sipariş bilgileri kullanılıyor
-          section: sectionName,
-          area_name: areaName,
-          work_status: "1",
-          process_id: selectedProcess?.process_id,
-          process_name: selectedProcess?.process_name,
-          production_amount: response.data.PRODUCTION_AMOUNT,
-        };
-
-        // İş başlatma isteği gönder
-        const workLogResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
-          { work_info, field: selectedHammerSectionField }
-        );
-
-        if (workLogResponse.status === 200) {
-          toast.success("İş başarıyla başlatıldı.");
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          dispatch(setSelectedProcess(""));
-          dispatch(setSelectedMachine(""));
-        }
-      }
-    } catch (err) {
-      console.error("İş başlatma sırasında hata:", err);
-      toast.error("İş başlatma sırasında bir hata oluştu.");
-    }
-  };
-
-  // const handleStartBatchOrders = async () => {
-  //   if (orderList.length === 0) {
-  //     toast.error("Toplu işleme başlatmak için sipariş ekleyiniz.");
+  // //! Cekic ekranı ıcın setuplu ekran iş okutulacak fonksıyon...
+  // const handleCreateOrderCekic = async () => {
+  //   if (!order_id) {
+  //     toast.error("Sipariş no giriniz...");
   //     return;
   //   }
 
-  //   const work_info_list = orderList.map(order => ({
-  //     user_id_dec: userInfo.id_dec,
-  //     op_username: userInfo.op_username,
-  //     order_id: order.ORDER_ID,
-  //     section: sectionName,
-  //     area_name: areaName,
-  //     work_status: "1",
-  //     process_id: selectedProcess?.process_id,
-  //     process_name: selectedProcess?.process_name,
-  //     production_amount: order.PRODUCTION_AMOUNT,
-  //   }));
+  //   if (!selectedHammerSectionField) {
+  //     toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
+  //     return;
+  //   }
 
   //   try {
-  //     const response = await axios.post(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBatchWorkLogs`,
-  //       { work_info_list }
+  //     // Sipariş bilgilerini getir
+  //     const response = await axios.get(
+  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
+  //       { params: { id: order_id } }
   //     );
 
   //     if (response.status === 200) {
-  //       toast.success("Toplu iş başarıyla başlatıldı.");
-  //       getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-  //       setOrderList([]);
+  //       dispatch(setReadOrder(response.data));
+  //       setOrderId("");
+  //       // Makine seçimi yapılmışsa
+  //       if (selectedHammerSectionField === "makine") {
+  //         toast.success(
+  //           "Sipariş başarıyla okutuldu. Proses ve makine seçip setup başlatabilirsiniz."
+  //         );
+  //         return;
+  //       }
+
+  //       const work_info = {
+  //         user_id_dec: userInfo.id_dec,
+  //         op_username: userInfo.op_username,
+  //         order_id: response.data.ORDER_ID, // response'dan gelen sipariş bilgileri kullanılıyor
+  //         section: sectionName,
+  //         area_name: areaName,
+  //         work_status: "1",
+  //         process_id: selectedProcess?.process_id,
+  //         process_name: selectedProcess?.process_name,
+  //         production_amount: response.data.PRODUCTION_AMOUNT,
+  //       };
+
+  //       // İş başlatma isteği gönder
+  //       const workLogResponse = await axios.post(
+  //         `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
+  //         { work_info, field: selectedHammerSectionField }
+  //       );
+
+  //       if (workLogResponse.status === 200) {
+  //         toast.success("İş başarıyla başlatıldı.");
+  //         getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+  //         dispatch(setSelectedProcess(""));
+  //         dispatch(setSelectedMachine(""));
+  //       }
   //     }
   //   } catch (err) {
-  //     console.error("Toplu iş başlatma sırasında hata:", err);
-  //     toast.error("Toplu iş başlatma sırasında bir hata oluştu.");
+  //     console.error("İş başlatma sırasında hata:", err);
+  //     toast.error("İş başlatma sırasında bir hata oluştu.");
   //   }
   // };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      if (areaName === "kalite" || areaName === "buzlama") {
+      if (
+        areaName === "kalite" ||
+        areaName === "buzlama" ||
+        areaName === "cekic"
+      ) {
         handleGetOrder();
       } else if (areaName === "") {
         handleAddOrderToList();

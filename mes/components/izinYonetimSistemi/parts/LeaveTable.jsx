@@ -80,29 +80,32 @@ function LeaveTable({ status }) {
     }
   };
 
-  //! 📌 Sayfa yüklendiğinde ve socket olayını dinleyerek tabloyu güncelle
+  //? SOCKET CALISMIYOR ÜZERİNDE ÇALIŞ...
   useEffect(() => {
-    fetchRecords();
-    // 🔹 Socket.io ile backend'deki `updateLeaveTable` olayını dinle
+    fetchRecords(); // İlk yüklemede veya status değişince çalışır
+    let intervalId;
+    if (status === "yaklasanizin") {
+      intervalId = setInterval(() => {
+        fetchRecords();
+      }, 180000); // 3 dakika (180,000 ms)
+    }
+  
+    return () => {
+      if (intervalId) clearInterval(intervalId); // Temizleme işlemi
+    };
+  }, [status, userInfo]); // Kullanıcı veya status değişirse çalıştır
+  
+  //! 📌 Socket.io ile veri güncellenince tabloyu güncelle
+  useEffect(() => {
     socket.on("updateLeaveTable", () => {
-      console.log("İzin tablosu güncellendi.");
+      console.log("✅ İzin tablosu güncellendi (Socket tarafından)");
       fetchRecords();
     });
-
+  
     return () => {
       socket.off("updateLeaveTable"); // Temizleme işlemi
     };
-  }, [userInfo, status]);
-
-  useEffect(() => {
-    console.log("useEffect (status) çalıştı! Status:", status);
-    fetchRecords();
-  }, [status]);
-
-  useEffect(() => {
-    console.log("useEffect (userInfo, status) çalıştı!");
-    fetchRecords();
-  }, [userInfo, status]);
+  }, []);
 
 
   const rows = records.map((item) => {

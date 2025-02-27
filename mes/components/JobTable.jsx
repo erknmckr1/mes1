@@ -54,10 +54,10 @@ function JobTable() {
       dispatch(setSelectedOrder(updatedSelection));
     } else {
       // Seçili değilse, ekle
-      if (areaName === "kalite" || areaName === "cekic") {
+      if (areaName === "kalite") {
         // Kalite ekranında sadece tek seçim yapılabilir
         dispatch(setSelectedOrder([params.row]));
-      } else if (areaName === "buzlama") {
+      } else if (areaName === "buzlama" || areaName === "cekic") {
         // Buzlama ekranında çoklu seçim yapılabilir
         dispatch(setSelectedOrder([...selectedOrder, params.row]));
       }
@@ -182,6 +182,41 @@ function JobTable() {
           group_record_id: item.group_record_id,
         };
       });
+    } else if (areaName === "cekic") {
+      return workList
+        ?.filter(
+          (item) =>
+            selectedHammerSectionField === "makine"
+              ? item.machine_name === selectedMachine.machine_name // Eğer "makine" ise machine_name ile filtrele
+              : item.field === selectedHammerSectionField // Değilse field ile filtrele
+        )
+        .map((item, index) => {
+          const workStartDate = item.work_start_date
+            ? new Date(item.work_start_date)
+            : null;
+          return {
+            id: index,
+            user_id_dec: item.user_id_dec,
+            op_username: item.op_username,
+            order_no: item.order_no,
+            process_id: item.process_id,
+            section: item.section,
+            area_name: item.area_name,
+            process_name: item.process_name,
+            produced_amount: item.produced_amount,
+            production_amount: item.production_amount,
+            work_start_date: workStartDate
+              ? workStartDate.toLocaleString()
+              : null,
+            work_end_date: item.work_end_date,
+            work_finished_op_dec: item.work_finished_op_dec,
+            work_status: item.work_status,
+            uniq_id: item.uniq_id,
+            group_no: item.group_no,
+            group_record_id: item.group_record_id,
+            field: item?.field,
+          };
+        });
     } else {
       // Diğer durumlar için (örneğin "cekic") varsayılan davranış
       return workList?.map((item, index) => {
@@ -225,10 +260,16 @@ function JobTable() {
       return "green-row";
     } else if (row.work_status === "2") {
       return "red-row";
+    }
+    else if (row.work_status === "0") {
+      return "bg-[#138d75]";
     } else if (row.work_status === "6") {
       return "yellow-row";
     } else if (row.work_status === "0") {
       return "grey-row";
+    }
+    else if (row.work_status === "7") {
+      return "bg-blue-600";
     }
     return "";
   };

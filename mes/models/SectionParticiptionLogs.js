@@ -28,6 +28,10 @@ const SectionParticiptionLogs = sequelize.define("SectionParticiptionLogs", {
     type:DataTypes.STRING,
     allowNull:true
   },
+  machine_name:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
   join_time: {
     type: DataTypes.DATE,
     allowNull: true,

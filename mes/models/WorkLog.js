@@ -118,6 +118,14 @@ const WorkLog = sequelize.define('WorkLog', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  setup_start_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  setup_end_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   cancel_reason_id: {
     type: DataTypes.STRING(6),
     allowNull: true

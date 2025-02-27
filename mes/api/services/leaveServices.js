@@ -872,11 +872,6 @@ async function leavesApprovedByTheInfirmary(id_dec, roleId) {
 
     // Eğer sonuç varsa 200, yoksa 404 döndür
     if (result && result.length > 0) {
-      if (ioInstance) {
-        ioInstance.emit("updateLeaveTable");
-      } else {
-        console.error("❌ ioInstance tanımlı değil! setSocket çağrıldı mı?");
-      }
       return { status: 200, message: result };
     } else {
       return { status: 404, message: "Onaylanan izin bulunamadı." };
@@ -895,7 +890,7 @@ async function personelToBeChecked(status) {
     const result = await LeaveRecords.findAll({
       where: {
         leave_status: "3",
-        leave_creation_date: {
+        leave_start_date: {
           [Op.gt]: oneHourAgo, // 1 saat önceki tarihten büyük olanları al
         },
       },

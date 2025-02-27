@@ -6,7 +6,8 @@ const Processes = require("../models/Processes");
 const Machines = require("../models/Machines");
 const WorkLog = require("../models/WorkLog");
 const StoppedWorksLogs = require("../models/StoppedWorksLog");
-
+const BreakLog = require("../models/BreakLog");
+const SectionParticiptionLogs = require("../models/SectionParticiptionLogs");
 //! Parametreye gore iptal sebeblerini cekecek query ( parametre url route dan alıyoruz.)
 const getCancelReason = async ({ area_name }) => {
   try {
@@ -19,8 +20,44 @@ const getCancelReason = async ({ area_name }) => {
 };
 
 //! Seçili siparişi iptal edecek servis grup olayı bu serviste yok...
-const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser }) => {
+const cancelWork = async ({ uniq_id, currentDateTimeOffset, currentUser,area_name }) => {
   try {
+    // Bölüme katılacak kullanıcı molada mı ?
+    const isBreakUser = await BreakLog.findOne({
+      where: {
+        operator_id: currentUser,
+        end_date: null,
+      },
+    });
+
+    if (isBreakUser) {
+      return {
+        status: 400,
+        message: "Moladayken siparişi iptal edemezsiniz.",
+      };
+    }
+
+    //MOLA
+
+      // Bölümde mi ? şimdilik sadece cekic bölümüne özel
+  if (area_name === "cekic") {
+    const isSectionParticipated = await SectionParticiptionLogs.findOne({
+      where: {
+        operator_id: currentUser,
+        exit_time: null,
+        area_name,
+      },
+    });
+
+    if (!isSectionParticipated) {
+      return {
+        status: 400,
+        message: "Bölüme katılım sağlamadan prosesi iptal  edemezsiniz.",
+      };
+    }
+  }
+  // bölüm ?
+
     const result = await WorkLog.update(
       {
         work_status: "3",
@@ -165,6 +202,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     production_amount,
     group_no,
     group_record_id,
+    field,
   } = work_info;
 
   // Eğer "buzlama" ekranındaysak ve machine_name boşsa hata döndür
@@ -220,23 +258,30 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
+  const workInfo = {
+    uniq_id: newUniqId,
+    user_id_dec,
+    op_username,
+    order_no: order_id,
+    section,
+    area_name,
+    work_start_date: currentDateTimeOffset,
+    work_status,
+    process_id,
+    process_name,
+    production_amount,
+    machine_name,
+    group_no,
+    group_record_id,
+  };
+
+  if (area_name === "cekic") {
+    workInfo.field = field;
+    workInfo.work_start_date = null;
+  }
+
   try {
-    const newWorkLog = await WorkLog.create({
-      uniq_id: newUniqId,
-      user_id_dec: user_id_dec,
-      op_username: op_username,
-      order_no: order_id,
-      section: section,
-      area_name: area_name,
-      work_start_date: currentDateTimeOffset,
-      work_status: work_status,
-      process_id: process_id,
-      process_name: process_name,
-      production_amount: production_amount,
-      machine_name,
-      group_no,
-      group_record_id,
-    });
+    const newWorkLog = await WorkLog.create(workInfo);
 
     return {
       status: 200,
@@ -295,63 +340,65 @@ const stopWork = async ({
   group_record_id,
   area_name,
 }) => {
-  try {
-    // İlgili uniq id ile olusturulmus bir stop işlemi var mı?
-    const existingLogs = await StoppedWorksLogs.findAll({
+  // Molada ise hata nesnesi döndür
+  const isBreakUser = await BreakLog.findOne({
+    where: {
+      operator_id: user_who_stopped,
+      end_date: null,
+    },
+  });
+  if (isBreakUser) {
+    return {
+      status: 400,
+      message:
+        "Moladayken prosesi durduramazsınız. Moladan dönüş işlemini gerçekleştirip tekrar deneyin.",
+    };
+  }
+
+  // İlgili uniq id ile zaten durdurulmuş iş kontrolü
+
+  // Bölümde mi ? şimdilik sadece cekic bölümüne özel
+  if (area_name === "cekic") {
+    const isSectionParticipated = await SectionParticiptionLogs.findOne({
       where: {
-        work_log_uniq_id,
-        stop_end_date: null,
+        operator_id: user_who_stopped,
+        exit_time: null,
+        area_name,
       },
     });
 
-    if (existingLogs.length > 0) {
-      return res.status(400).json({ message: "Bazı işler zaten durdurulmuş!" });
+    if (!isSectionParticipated) {
+      return {
+        status: 400,
+        message: "Bölüme katılım sağlamadan işi durduramazsınız.",
+      };
     }
-
-    // İlgili uniq id ile durdurma kaydı olustur...
-    // if (group_record_id) {
-    //   await StoppedWorksLogs.create({
-    //     order_id,
-    //     stop_start_date: currentDateTimeOffset,
-    //     work_log_uniq_id,
-    //     stop_reason_id,
-    //     user_who_stopped,
-    //     group_record_id,
-    //     area_name,
-    //   });
-    // } else {
-    //   await StoppedWorksLogs.create({
-    //     order_id,
-    //     stop_start_date: currentDateTimeOffset,
-    //     work_log_uniq_id,
-    //     stop_reason_id,
-    //     user_who_stopped,
-    //   });
-    // }
-
-    // stop kaydını olusturduktan sonra durdurulan işin work_status degerını guncelle...
-    //? Tüm işleri durdurma kaydı oluştur
-    const stopLogs = work_log_uniq_id.map((id, index) => ({
-      order_id: order_id[index],
-      stop_start_date: currentDateTimeOffset,
-      work_log_uniq_id: id,
-      stop_reason_id,
-      user_who_stopped,
-    }));
-
-    //?  Tek tek SQL sorguları yerine bulkCreate() ile toplu veri eklendi.
-    await StoppedWorksLogs.bulkCreate(stopLogs);
-
-    // Tüm durdurulan siparişlerin `work_status` değerini güncelle
-    await WorkLog.update(
-      { work_status: "2" },
-      { where: { uniq_id: work_log_uniq_id } }
-    );
-
-    return { message: "İş başariyla durduruldu." };
-  } catch (err) {
-    throw err;
   }
+  // bölüm ?
+
+  const existingLogs = await StoppedWorksLogs.findAll({
+    where: {
+      work_log_uniq_id,
+      stop_end_date: null,
+    },
+  });
+  if (existingLogs.length > 0) {
+    return { status: 400, message: "Bazı işler zaten durdurulmuş!" };
+  }
+
+  const stopLogs = work_log_uniq_id.map((id, index) => ({
+    order_id: order_id[index],
+    stop_start_date: currentDateTimeOffset,
+    work_log_uniq_id: id,
+    stop_reason_id,
+    user_who_stopped,
+  }));
+  await StoppedWorksLogs.bulkCreate(stopLogs);
+  await WorkLog.update(
+    { work_status: "2" },
+    { where: { uniq_id: work_log_uniq_id } }
+  );
+  return { status: 200, message: "İş başarıyla durduruldu." };
 };
 
 //! Seçili işleri yeniden başlatacak query...
@@ -361,8 +408,43 @@ const rWork = async ({
   currentUser,
   startedUser,
   selectedOrders,
+  area_name,
 }) => {
   try {
+    // İŞLEMİ YAPACAK KULLANICI MOLADA MI ?
+    const isBreakUser = await BreakLog.findOne({
+      where: {
+        operator_id: currentUser,
+        end_date: null,
+      },
+    });
+
+    if (isBreakUser) {
+      return {
+        status: 400,
+        message:
+          "Moladayken işleri başlatamazsınız. Moladan dönüş işlemini gerçekleştirip tekrar deneyin.",
+      };
+    }
+    // MOLA
+    // Bölümde mi ? şimdilik sadece cekic bölümüne özel
+    if (area_name === "cekic") {
+      const isSectionParticipated = await SectionParticiptionLogs.findOne({
+        where: {
+          operator_id: currentUser,
+          exit_time: null,
+          area_name
+        },
+      });
+
+      if (!isSectionParticipated) {
+        return {
+          status: 400,
+          message: "Bölüme katılım sağlamadan işi yeniden başlatamazsınız.",
+        };
+      }
+    }
+    // bölüm ?
     // Seçilen tüm işlerin gerçekten durdurulmuş olup olmadığını kontrol et
     const stoppedWorks = await StoppedWorksLogs.findAll({
       where: {

@@ -9,6 +9,9 @@ import {
   setSelectedHammerSectionField,
   getJoinTheField,
   setSelectedPersonInField,
+  setSelectedMachine,
+  setSelectedProcess,
+   
 } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 function GroupArea() {
@@ -27,6 +30,8 @@ function GroupArea() {
     selectedHammerSectionField,
     usersJoinedTheField,
     selectedPersonInField,
+    workList,
+    selectedMachine,
   } = useSelector((state) => state.order);
 
   useEffect(() => {
@@ -76,7 +81,6 @@ function GroupArea() {
     dispatch(setSelectedGroupNos(updatedSelectedGroupNo));
     dispatch(setFilteredGroup(newFilteredGroup));
   };
-console.log(filteredGroup,selectedGroupNo)
   //? yenı makıne ıslevı gerceklestıgı zaman son prosesi listele...
   const filteredGroupList = groupList.reduce((acc, group) => {
     const existingGroup = acc.find((g) => g.group_no === group.group_no);
@@ -98,6 +102,8 @@ console.log(filteredGroup,selectedGroupNo)
   // cekic alanı sececek fonksıyon...
   const handleSelectedArea = (name) => {
     dispatch(setSelectedHammerSectionField(name));
+    dispatch(setSelectedMachine(""));
+    dispatch(setSelectedProcess(""));
   };
 
   const handleSelectedPersonInField = useCallback(
@@ -110,13 +116,16 @@ console.log(filteredGroup,selectedGroupNo)
     },
     [dispatch, selectedPersonInField]
   );
-  
+  console.log(usersJoinedTheField);
   useEffect(() => {
     const filtered = usersJoinedTheField.filter((item) => {
+      if (selectedHammerSectionField === "makine") {
+        return item.machine_name === selectedMachine.machine_name; // makine seçiliyse
+      }
       return item.field === selectedHammerSectionField;
     });
     setFilteredPersonInField(filtered);
-  }, [selectedHammerSectionField, usersJoinedTheField]);
+  }, [selectedHammerSectionField, usersJoinedTheField,selectedMachine]);
 
   const renderArea = () => {
     if (areaName === "buzlama") {

@@ -38,7 +38,9 @@ const {
   getPersonInTheField,
   finishedToSetup,
   updateMeasure,
-  fwork 
+  fwork,
+  startToSetup,
+  startToProces,
 } = require("../services/orderServices");
 
 //!
@@ -347,25 +349,32 @@ router.put("/deleteScrapMeasure", async (req, res) => {
 });
 
 //! Fire ölçüm verisini güncelleyecek route...
-router.put("/updateMeasure",async(req,res)=>{
-  const {formState,uniq_id} = req.body;
-  const result = await updateMeasure(formState,uniq_id);
+router.put("/updateMeasure", async (req, res) => {
+  const { formState, uniq_id } = req.body;
+  const result = await updateMeasure(formState, uniq_id);
   return res.status(result.status).json(result.message);
-})
+});
 //? FİRE İŞLEMLERİ SON
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec } = req.body;
-  const result = await fwork(uniqIds, work_finished_op_dec);
+  const { uniqIds, work_finished_op_dec,areaName } = req.body;
+  const result = await fwork(uniqIds, work_finished_op_dec,areaName);
   return res.status(result.status).json(result.message);
 });
 
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ
+//! Start to setup route
+router.put("/start-to-setup", async (req, res) => {
+  const { workIds,operator_id } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  const result = await startToSetup(workIds, currentDateTimeOffset,operator_id);
+  return res.status(result.status).json(result.message);
+});
 //! Bölüme katılma route
 router.post("/join-section", async (req, res) => {
-  const { section, areaName, user_id, field } = req.body;
-  const result = await joinSection(section, areaName, user_id, field);
+  const { section, areaName, user_id, field,machine_name } = req.body;
+  const result = await joinSection(section, areaName, user_id, field,machine_name);
   return res.status(result.status).json(result.message);
 });
 //! Bölümden ayrılma route
@@ -387,11 +396,25 @@ router.get("/getPersonInTheField", async (req, res) => {
 });
 //! Setup ı bıtırıp işi baslatacak route...
 router.post("/finishedToSetup", async (req, res) => {
-  const { work_info } = req.body;
-  const currentDateTimeOffset = new Date().toISOString(); // currentDateTimeOffset tanımlandı
-  const result = await finishedToSetup(work_info, currentDateTimeOffset);
+  const { workIds,operator_id } = req.body; // Gelen veriyi diziden alıyoruz
+  const currentDateTimeOffset = new Date().toISOString();
+  if (!workIds || workIds.length === 0) {
+    return res.status(400).json({ message: "Güncellenecek iş bulunamadı." });
+  }
+
+  const result = await finishedToSetup(workIds, currentDateTimeOffset,operator_id);
   return res.status(result.status).json(result.message);
 });
+//! prosese baslatma route...
+router.put("/startToProces", async (req, res) => {
+  const { workIds, user_id_dec,area_name } = req.body;
+  if (!user_id_dec) {
+    return res.status(400).json("Kullanıcı ID bulunamadı.");
+  }
+  const result = await startToProces(workIds, user_id_dec,area_name);
+  return res.status(result.status).json(result.message);
+});
+
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ SON...
 
 module.exports = router;

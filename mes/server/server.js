@@ -285,17 +285,17 @@ app.get("/getCancelReason", async (req, res) => {
 
 //! Seçili işi iptal edecek fonksiyon
 app.post("/cancelWork", async (req, res) => {
-  const { uniq_id, currentUser } = req.body;
+  const { uniq_id, currentUser,areaName } = req.body;
   try {
     const result = await cancelWork({
       uniq_id,
       currentDateTimeOffset,
       currentUser,
+      area_name: areaName,
     });
-    if (result) {
-      res.status(200).json({ message: "İş silme işlemi başarılı..." });
-    } else {
-      res.status(404).json({ message: "İş bulunamadı..." });
+    // Eğer result bir hata durumu içeriyorsa, status koduna göre döndürün
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
     }
   } catch (err) {
     console.log(err);
@@ -363,15 +363,15 @@ app.post("/createWorkLog", async (req, res) => {
   let result;
   const { work_info, field } = req.body;
   try {
-    if (work_info.area_name === "cekic") {
-      result = await createCekicWorkLog({
-        work_info,
-        currentDateTimeOffset,
-        field,
-      });
-    } else {
-      result = await createWork({ work_info, currentDateTimeOffset });
-    }
+    // if (work_info.area_name === "cekic") {
+    //   result = await createCekicWorkLog({
+    //     work_info,
+    //     currentDateTimeOffset,
+    //     field,
+    //   });
+    // } else {
+    result = await createWork({ work_info, currentDateTimeOffset, field });
+
     if (result.status === 303) {
       return res.status(result.status).json(result.message);
     }
@@ -403,11 +403,11 @@ app.get("/getWorks", async (req, res) => {
 });
 
 //! Aktif bir işi durduracak metot
+// Endpoint
 app.post("/stopSelectedWork", async (req, res) => {
-  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped } =
+  const { order_id, stop_reason_id, work_log_uniq_id, user_who_stopped,areaName } =
     req.body;
   const currentDateTimeOffset = new Date().toISOString();
-  console.log(req.body);
   try {
     const result = await stopWork({
       work_log_uniq_id,
@@ -415,17 +415,24 @@ app.post("/stopSelectedWork", async (req, res) => {
       order_id,
       stop_reason_id,
       user_who_stopped,
+      area_name: areaName,
     });
+
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
     return res.status(200).json(result);
   } catch (err) {
     console.log(err.message);
-    return res.status(400).json({ message: err.message });
+    return res
+      .status(500)
+      .json({ message: "Sunucu hatası. İş durdurulamadı." });
   }
 });
 
 //! Durdurulan işleri tekrardan başlatacak metot...
 app.post("/restartWork", async (req, res) => {
-  const { work_log_uniq_id, currentUser, startedUser, selectedOrders } =
+  const { work_log_uniq_id, currentUser, startedUser, selectedOrders,areaName } =
     req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -435,7 +442,11 @@ app.post("/restartWork", async (req, res) => {
       currentUser,
       startedUser,
       selectedOrders,
+      area_name: areaName,
     });
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
     return res.status(200).json(result);
   } catch (err) {
     console.error(err);

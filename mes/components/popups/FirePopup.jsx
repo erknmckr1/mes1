@@ -14,12 +14,12 @@ import { setSelectedOrder } from "@/redux/orderSlice";
 
 function FirePopup() {
   const [formState, setFormState] = useState({
-    orderId: "", // String olarak kalıyor
-    goldSetting: 0, // Sayısal başlangıç değeri
-    entryGramage: 0.0, // Sayısal başlangıç değeri
-    exitGramage: 0.0, // Sayısal başlangıç değeri
-    gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-    diffirence: 0.0, // Sayısal başlangıç değeri
+    orderId: "",
+    goldSetting: "",
+    entryGramage: "",
+    exitGramage: "",
+    gold_pure_scrap: "",
+    diffirence: "",
   });
 
   const [selectedRow, setSelectedRow] = useState(null);
@@ -39,25 +39,26 @@ function FirePopup() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Eğer sayı beklenen bir alan ise değeri sayıya çeviriyoruz
-    const convertedValue =
-      name === "diffirence" ||
-      name === "goldSetting" ||
-      name === "entryGramage" ||
-      name === "gold_pure_scrap" ||
-      name === "exitGramage"
-        ? parseFloat(value) || 0 // Eğer geçerli bir sayı değilse 0 yap
-        : value; // Diğer alanlar için olduğu gibi bırak
+    // Sadece sayısal değerler ve ondalık ayracı kabul et
+    const filteredValue = value.replace(/[^0-9.]/g, "");
 
+    // Eğer sayı beklenen bir alan ise, filtrelenmiş değeri atayın
     const newFormState = {
       ...formState,
-      [name]: convertedValue,
+      [name]: filteredValue, // Filtrelenmiş değeri doğrudan atayın
     };
 
     // Eğer giriş ya da çıkış ölçüsü değiştiyse farkı hesapla
     if (name === "entryGramage" || name === "exitGramage") {
-      const diff = newFormState.entryGramage - newFormState.exitGramage;
-      newFormState.diffirence = diff;
+      const entry =
+        newFormState.entryGramage === ""
+          ? 0
+          : parseFloat(newFormState.entryGramage);
+      const exit =
+        newFormState.exitGramage === ""
+          ? 0
+          : parseFloat(newFormState.exitGramage);
+      newFormState.diffirence = entry - exit;
     }
 
     // Has fire değerini hesapla
@@ -376,7 +377,7 @@ function FirePopup() {
       name: "orderId",
       placeholder: "Sipariş Barkodunu Okutunuz",
       type: "text",
-      value: formState.orderId || "", // Eğer undefined ise "" kullan
+      value: formState.orderId || "", // Boş string kullan
       onkeydown: handleKeyDown,
       className: `h-[4rem]`,
     },
@@ -384,37 +385,35 @@ function FirePopup() {
       name: "goldSetting",
       placeholder: "Ayar Giriniz",
       type: "number",
-      value: formState.goldSetting || "",
+      value: formState.goldSetting || "", // Boş string kullan
       className: `h-[4rem]`,
     },
     {
       name: "entryGramage",
       placeholder: "Giriş Ölçüsünü Giriniz",
-      type: "number",
-      value: formState.entryGramage || "",
+      type: "text",
+      value: formState.entryGramage || "", // Boş string kullan
       className: `h-[4rem]`,
     },
     {
       name: "exitGramage",
       placeholder: "Çıkış Ölçüsünü Giriniz",
-      type: "number",
-      value: formState.exitGramage || "",
+      type: "text",
+      value: formState.exitGramage || "", // Boş string kullan
       className: `h-[4rem]`,
     },
     {
       name: "gold_pure_scrap",
       placeholder: "Has Fire",
       type: "number",
-      value: formState.gold_pure_scrap || "",
-      className: `
-            h-[4rem] 
-          `,
+      value: formState.gold_pure_scrap || "", // Boş string kullan
+      className: `h-[4rem]`,
     },
     {
       name: "diffirence",
       placeholder: "Fark",
       type: "number",
-      value: formState.diffirence || "",
+      value: formState.diffirence || "", // Boş string kullan
       className: `h-[4rem]`,
     },
   ];

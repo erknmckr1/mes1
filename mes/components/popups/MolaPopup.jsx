@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { setUser } from "@/redux/userSlice";
+import{ getJoinTheField } from "@/redux/orderSlice";
 import {
   fetchOnBreakUsers,
   setİsCurrentBreak,
@@ -26,6 +27,7 @@ function MolaPopup() {
   const closeMolaPopup = () => {
     dispatch(setMolaPopup(false));
     setAraSebebi("");
+    dispatch(setUser(null));
   };
 
   //! Ara sebeplerini getiren metot
@@ -103,6 +105,7 @@ function MolaPopup() {
         toast.success(`${user.op_name} için mola oluşturuldu.`);
         dispatch(setUser(""));
         dispatch(setMolaPopup(false));
+        dispatch(getJoinTheField({ areaName }))
       } else if (response.data.isAlreadyOnBreak === true) {
         toast.error("Bu kullanici zateb molada...");
         dispatch(setUser(""));
@@ -115,7 +118,7 @@ function MolaPopup() {
   };
 
   const createBreakFunc = () => {
-    if (areaName === "cekic" || areaName === "buzlama") {
+    if (areaName === "cekic" || areaName === "buzlama" || areaName === "kalite") {
       createBreakWıthId(araSebebi);
     } else {
       createBreak(userInfo, araSebebi);
@@ -206,7 +209,7 @@ function MolaPopup() {
                       <tbody className="p-3">
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
                           <th>
-                            {areaName === "cekic" || areaName === "buzlama"
+                            {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite"
                               ? user && user.id_dec
                               : userInfo && userInfo.id_dec}
                           </th>

@@ -45,6 +45,7 @@ function StopJobPopup() {
 
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
+    const isStopScreen = ["buzlama", "cekic"].includes(areaName);
     try {
       if (!molaSebebi) {
         toast.error("Seçili siparişi durdurmak için durdurma nedeni seçiniz.");
@@ -61,9 +62,10 @@ function StopJobPopup() {
         stop_reason_id: molaSebebi.stop_reason_id, // Durdurma nedeni ID
         work_log_uniq_id: selectedOrder.map((item) => item.uniq_id), // İş kayıtları uniq_id array olarak
         user_who_stopped: userInfo?.id_dec, // Kullanıcı ID
+        areaName
       };
 
-      if (areaName === "buzlama") {
+      if (isStopScreen) {
         requestData.user_who_stopped = user.id_dec;
       }
 
@@ -79,9 +81,8 @@ function StopJobPopup() {
         dispatch(setSelectedOrder([])); // Seçimi temizle
         toast.success(`Siparişleri durdurma işlemi başarılı.`);
       };
-
       if (response.status === 200) {
-        if (areaName === "buzlama") {
+        if (isStopScreen) {
           dispatch(getWorksWithoutId({ areaName }));
           opt();
         } else {
@@ -94,8 +95,12 @@ function StopJobPopup() {
     } catch (err) {
       console.error(err);
       toast.error(
-        "Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
+        err?.response.data.message ||
+          "Sipariş durdurma işlemi başarısız oldu. Lütfen tekrar deneyin."
       );
+      dispatch(setUser(null));
+      dispatch(setStopReasonPopup({ visible: false })); // Popup kapat
+      dispatch(setSelectedOrder([])); // Seçimi temizle
     }
   };
 
@@ -255,7 +260,7 @@ function StopJobPopup() {
                           </tr>
                         </tbody>
                       )}
-                      {areaName === "buzlama" && (
+                      {(areaName === "buzlama" || areaName === "cekic") && (
                         <tbody className="p-3">
                           <tr className="bg-gray-100 h-16 text-black text-[23px]">
                             <th>{user && user.id_dec}</th>

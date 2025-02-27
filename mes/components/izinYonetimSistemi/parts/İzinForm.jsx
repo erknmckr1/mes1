@@ -43,7 +43,7 @@ function IzinForm() {
       izinSebebi: e.target.value,
     });
   };
-
+  
   //todo bırden fazla elemanlı bır nesnenın oncekı verılerını degıstırmeden ılgılı elemanı guncellemek ıcın olusturdugumuz fonksıyon...
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -201,7 +201,7 @@ function HomeSidebars() {
   const handleSelectionManagement = (item) => {
     dispatch(setSelectedManagement(item));
   };
-
+  console.log(selectedFlow)
   return (
     <div className="relative h-full">
       <button
