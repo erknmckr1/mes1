@@ -2192,8 +2192,7 @@ async function joinSection(section, areaName, user_id, field, machine_name) {
       return {
         status: 409, // 409: Conflict durumu daha uygun
         message: `${
-          isJoinUserField.dataValues.field &&
-          isJoinUserField.dataValues.machine_name
+          isJoinUserField.dataValues.field
         } bölümüne katılım sağlamışsınız. Önce bu bölümden ayrılıp tekrar deneyin.`,
       };
     }
@@ -2332,7 +2331,7 @@ async function finishedToSetup(workIds, currentDateTimeOffset, operator_id) {
       {
         work_status: "7",
         setup_end_date: currentDateTimeOffset,
-        setup_start_id: operator_id,
+        setup_end_id: operator_id,
       },
       {
         where: {

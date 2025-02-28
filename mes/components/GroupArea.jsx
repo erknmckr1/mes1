@@ -119,9 +119,9 @@ function GroupArea() {
   console.log(usersJoinedTheField);
   useEffect(() => {
     const filtered = usersJoinedTheField.filter((item) => {
-      if (selectedHammerSectionField === "makine") {
-        return item.machine_name === selectedMachine.machine_name; // makine seçiliyse
-      }
+      // if (selectedHammerSectionField === "makine") {
+      //   return item.machine_name === selectedMachine.machine_name; // makine seçiliyse
+      // }
       return item.field === selectedHammerSectionField;
     });
     setFilteredPersonInField(filtered);

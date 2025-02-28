@@ -25,6 +25,7 @@ const cancelWork = async ({
   currentDateTimeOffset,
   currentUser,
   area_name,
+  field
 }) => {
   try {
     // Bölüme katılacak kullanıcı molada mı ?
@@ -81,7 +82,7 @@ const cancelWork = async ({
         },
       }
     );
-    return result;
+    return { status: 200, message: "Sipariş başarıyla iptal edildi." };
   } catch (err) {
     console.log(err);
     throw err;

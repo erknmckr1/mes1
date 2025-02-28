@@ -47,7 +47,7 @@ function BreakTable() {
             const formattedTime = date.toLocaleTimeString(); // Saati formatlar
 
             return (
-              <tr className="bg-green-600 w-full  text-white font-semibold flex justify-between" key={index}>
+              <tr className={`${user.break_reason_id === "000003" ? "bg-secondary" : "bg-green-600"}  w-full  text-white font-semibold flex justify-between`} key={index}>
                 <td className="px-6 py-3 whitespace-nowrap">{user.operator_id}</td>
                 <td className="px-6 py-3 whitespace-nowrap">{user.op_name}</td>
                 <td className="px-6 py-3 whitespace-nowrap">

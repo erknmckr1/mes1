@@ -56,7 +56,7 @@ const corsOptions = {
     "http://192.168.3.5:3000",
     "http://192.168.3.7:3000",
     "http://localhost:3002",
-    "http://192.168.0.78:3000",
+    "http://192.168.0.76:3000",
     "http://192.168.1.246:3000",
   ], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
@@ -238,7 +238,6 @@ app.get("/getBreakOnUsers", async (req, res) => {
 
 //! Molayı bitirecek metot...
 app.post("/returnToBreak", async (req, res) => {
-  console.log("x");
   const { operator_id, end_time } = req.body;
   console.log("Received request to return from break:", operator_id, end_time);
   try {
@@ -298,6 +297,7 @@ app.post("/cancelWork", async (req, res) => {
     if (result.status && result.status !== 200) {
       return res.status(result.status).json({ message: result.message });
     }
+    return res.status(result.status).json(result.message);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Sunucu hatası. İş silinemedi." });

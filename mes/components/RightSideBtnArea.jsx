@@ -464,7 +464,7 @@ function RightSideBtnArea() {
           ? selectedOrder.map((order) => order.uniq_id) // Çoklu sipariş için dizi
           : selectedOrder[0].uniq_id, // Tek sipariş için string
         areaName,
-        field:selectedHammerSectionField
+        field: selectedHammerSectionField,
       };
 
       if (areaName === "buzlama" || areaName === "cekic") {
@@ -494,9 +494,10 @@ function RightSideBtnArea() {
         }
       }
     } catch (err) {
-      console.log(err);
+      console.error("İş iptal hatası:", err);
       toast.error(
-        err.response.data.message ||
+        err.response?.data?.message ||
+          err.message ||
           "Sipariş iptal edilemedi. Lütfen tekrar deneyin."
       );
       dispatch(setUser(null));
@@ -971,14 +972,14 @@ function RightSideBtnArea() {
     }
 
     // Eğer seçilen alan "makine" ise, makine adı seçilmesi zorunlu
-    if (
-      selectedHammerSectionField === "makine" &&
-      !selectedMachine?.machine_name
-    ) {
-      toast.error("Makine bölümüne katılmak için bir makine seçmelisiniz.");
-      dispatch(setUser(""));
-      return;
-    }
+    // if (
+    //   selectedHammerSectionField === "makine" &&
+    //   !selectedMachine?.machine_name
+    // ) {
+    //   toast.error("Makine bölümüne katılmak için bir makine seçmelisiniz.");
+    //   dispatch(setUser(""));
+    //   return;
+    // }
 
     try {
       const response = await axios.post(
