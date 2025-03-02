@@ -39,7 +39,7 @@ function Section() {
             <div className=" w-[80%] h-full  flex justify-between ">
               {/* left side mola area w-1/2  */}
               <div className="w-1/2 h-full p-1">
-                {areaName === "kalite" || areaName ==="buzlama"  ? (
+                {areaName === "kalite" || areaName ==="buzlama" || areaName === "kurutiras"  ? (
                   <BreakTable />
                 ) : (
                   <div className="w-full h-full flex">

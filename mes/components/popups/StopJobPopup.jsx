@@ -45,7 +45,7 @@ function StopJobPopup() {
 
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
-    const isStopScreen = ["buzlama", "cekic"].includes(areaName);
+    const isStopScreen = ["buzlama", "cekic","kurutiras"].includes(areaName);
     try {
       if (!molaSebebi) {
         toast.error("Seçili siparişi durdurmak için durdurma nedeni seçiniz.");
@@ -261,7 +261,7 @@ function StopJobPopup() {
                           </tr>
                         </tbody>
                       )}
-                      {(areaName === "buzlama" || areaName === "cekic") && (
+                      {(areaName === "buzlama" || areaName === "cekic" || areaName === "kurutiras") && (
                         <tbody className="p-3">
                           <tr className="bg-gray-100 h-16 text-black text-[23px]">
                             <th>{user && user.id_dec}</th>

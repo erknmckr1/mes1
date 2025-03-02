@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic"]; // Kullanıcı ID isteyen ekranlar
 
 const globalSlice = createSlice({
   name: global,
@@ -10,7 +11,9 @@ const globalSlice = createSlice({
     returnUrl:"sss",
     isSurveyPopup:false,
     isFirePopup:false,
-    isCreateLeavePopup:false
+    isCreateLeavePopup:false,
+    isRequiredUserId:false,
+    areaName:""
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -38,6 +41,10 @@ const globalSlice = createSlice({
     },
     setCreateLeavePopup:(state,action)=>{
       state.isCreateLeavePopup = action.payload
+    },
+    setAreaName:(state,action)=>{
+      state.areaName = action.payload;
+      state.isRequiredUserId = requiredUserIdScreens.includes(action.payload);
     }
   },
 });
@@ -52,6 +59,7 @@ export const {
   setReturnUrl,
   setSurveyPopup,
   setFirePopup,
-  setCreateLeavePopup
+  setCreateLeavePopup,
+  setAreaName,
 } = globalSlice.actions;
 export default globalSlice.reducer;

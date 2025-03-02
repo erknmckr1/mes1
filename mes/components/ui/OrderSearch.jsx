@@ -47,7 +47,7 @@ function OrderSearch() {
       toast.error("Sipariş no giriniz...");
       return;
     }
-    const isReadIdScreen = ["cekic", "buzlama"].includes(areaName);
+    const isReadIdScreen = ["cekic", "buzlama","kurutiras"].includes(areaName);
 
     if (isReadIdScreen && (!user || !user.id_dec)) {
       setRetryAction("createOrder"); // İşlem kaydediliyor
@@ -80,7 +80,7 @@ function OrderSearch() {
         };
 
         if (
-          areaName === "buzlama" ||
+          areaName === "buzlama" || areaName === "kurutiras" ||
           (areaName === "cekic" && selectedHammerSectionField === "makine")
         ) {
           if (!selectedProcess || !selectedMachine) {
@@ -101,6 +101,7 @@ function OrderSearch() {
         if (areaName === "kalite" && !selectedProcess) {
           toast.error("Sipariş başlatmadan önce proses seçin.");
           dispatch(setUser(null));
+          return
         }
 
         if (areaName === "buzlama") {
@@ -248,7 +249,8 @@ function OrderSearch() {
       if (
         areaName === "kalite" ||
         areaName === "buzlama" ||
-        areaName === "cekic"
+        areaName === "cekic" ||
+        areaName === "kurutiras"
       ) {
         handleGetOrder();
       } else if (areaName === "") {

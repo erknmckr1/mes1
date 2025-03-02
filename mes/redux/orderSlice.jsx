@@ -109,7 +109,7 @@ const orderSlice = createSlice({
     measurementEntryPopup: false,
     selectedHammerSectionField: "", // Cekic ekranındaki alan ismini tutacak state...
     usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
-    selectedPersonInField:"" // alana katılmıs secılmıs kullanıyı tutacak state...
+    selectedPersonInField:"", // alana katılmıs secılmıs kullanıyı tutacak state...
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -264,7 +264,7 @@ export const {
   setMeasurementPopup,
   setConditionalFinishPopup,
   setSelectedHammerSectionField,
-  setSelectedPersonInField
+  setSelectedPersonInField,
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

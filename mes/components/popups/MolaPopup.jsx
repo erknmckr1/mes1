@@ -209,12 +209,12 @@ function MolaPopup() {
                       <tbody className="p-3">
                         <tr className="bg-gray-100 h-16 text-black text-[23px]">
                           <th>
-                            {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite"
+                            {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite" || areaName === "kurutiras"
                               ? user && user.id_dec
                               : userInfo && userInfo.id_dec}
                           </th>
                           <th>
-                            {areaName === "cekic" || areaName === "buzlama"
+                             {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite" || areaName === "kurutiras"
                               ? user && user.op_username
                               : userInfo && userInfo.op_username}
                           </th>

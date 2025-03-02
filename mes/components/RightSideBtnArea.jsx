@@ -28,7 +28,7 @@ import axios from "axios";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice"; // buzlama gıbı ekranlarda operasyon oncesı ıd sorulacaksa bu state ı kullanıyoruz.
-import { setFirePopup } from "@/redux/globalSlice";
+import { setFirePopup  } from "@/redux/globalSlice";
 
 function RightSideBtnArea() {
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
@@ -45,13 +45,12 @@ function RightSideBtnArea() {
     read_order,
     stopReasonPopup,
   } = useSelector((state) => state.order);
-
+  const { isRequiredUserId } = useSelector((state) => state.global);
   const { userInfo, user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const pathName = usePathname();
   const section = pathName.split("/")[2];
   const areaName = pathName.split("/")[3];
-
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
       switch (retryAction) {
@@ -174,9 +173,8 @@ function RightSideBtnArea() {
 
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
-    const isMoreStop = ["buzlama", "cekic"]; // Toplu durdurma yapılacak alanlar
     // Eğer kullanıcı alanı "buzlama" ise ve kullanıcı ID yoksa ID popup'ını aç
-    if (isMoreStop && (!user || !user.id_dec)) {
+    if (isRequiredUserId && (!user || !user.id_dec)) {
       setRetryAction("handleOpenStopPopup"); // İşlem kaydediliyor
       dispatch(setUserIdPopup(true));
       return;
@@ -223,7 +221,7 @@ function RightSideBtnArea() {
 
   //! Seçili ve durdurulmuş siparişi yeniden başlat...
   const restartWork = async () => {
-    const isMoreRestart = ["buzlama", "cekic"]; // Toplu restart yapılabilecek alanlar
+   
     try {
       if (selectedOrder.length === 0) {
         toast.error("Durdurulmuş bir iş seçiniz...");
@@ -231,7 +229,7 @@ function RightSideBtnArea() {
       }
 
       // Eğer kalite ekranındaysak sadece tek bir iş seçilmesine izin ver
-      if (!isMoreRestart.includes(areaName) && selectedOrder.length > 1) {
+      if (!isRequiredUserId && selectedOrder.length > 1) {
         toast.error("Bu ekranda yalnızca 1 iş yeniden başlatılabilir.");
         return;
       }
@@ -246,7 +244,7 @@ function RightSideBtnArea() {
       }
 
       // Eğer buzlama alanındaysa ve kullanıcı tanımlı değilse, kullanıcı girişi iste
-      if (isMoreRestart && (!user || !user.id_dec)) {
+      if (isRequiredUserId && (!user || !user.id_dec)) {
         setRetryAction("restartWork");
         dispatch(setUserIdPopup(true));
         return;
@@ -263,7 +261,7 @@ function RightSideBtnArea() {
           field: selectedHammerSectionField,
         };
 
-        if (isMoreRestart) {
+        if (isRequiredUserId) {
           requestData.currentUser = user.id_dec;
         }
 
@@ -276,7 +274,7 @@ function RightSideBtnArea() {
         if (response.status === 200) {
           if (areaName === "kalite") {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama" || areaName === "cekic") {
+          } else if (isRequiredUserId) {
             dispatch(getWorksWithoutId({ areaName }));
           } else {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
@@ -377,9 +375,7 @@ function RightSideBtnArea() {
       return;
     }
 
-    const isMoreFinish = ["buzlama", "cekic"].includes(areaName);
-
-    if (isMoreFinish && (!user || !user.id_dec)) {
+    if (isRequiredUserId && (!user || !user.id_dec)) {
       setRetryAction("finishwork"); // İşlem kaydediliyor
       dispatch(setUserIdPopup(true));
       return;
@@ -416,7 +412,7 @@ function RightSideBtnArea() {
 
   //! Tekli yada coklu ıslemler ıcın ıkı farklı fonksıyon yazdık bunu teke dusur.
   const handleFinishedFunc = () => {
-    const isMoreFinish = ["buzlama"].includes(areaName);
+    const isMoreFinish = ["buzlama","kurutiras"].includes(areaName);
     if (isMoreFinish) {
       handleFinishWork();
     } else {
@@ -444,8 +440,6 @@ function RightSideBtnArea() {
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
-      // Toplu iptal edilecek ekranları asagıdakı dızıye ekle buzmala ekranında toplu ıptal var kalıtede yok
-      const isMoreCancel = ["buzlama", "cekic"].includes(areaName);
 
       // Seçili sipariş kontrolü
       if (!selectedOrder || selectedOrder.length === 0) {
@@ -453,21 +447,22 @@ function RightSideBtnArea() {
         return;
       }
 
-      if (isMoreCancel && (!user || !user.id_dec)) {
+      if (isRequiredUserId && (!user || !user.id_dec)) {
         setRetryAction("cancelWork");
         dispatch(setUserIdPopup(true));
         return;
       }
 
       const requestData = {
-        uniq_id: isMoreCancel
+        uniq_id: isRequiredUserId
           ? selectedOrder.map((order) => order.uniq_id) // Çoklu sipariş için dizi
           : selectedOrder[0].uniq_id, // Tek sipariş için string
         areaName,
         field: selectedHammerSectionField,
+        currentUser:userInfo.id_dec
       };
 
-      if (areaName === "buzlama" || areaName === "cekic") {
+      if (isRequiredUserId) {
         requestData.currentUser = user.id_dec;
       }
 
@@ -478,7 +473,7 @@ function RightSideBtnArea() {
         );
         if (response.status === 200) {
           toast.success(
-            isMoreCancel
+            isRequiredUserId
               ? `${selectedOrder.length} sipariş başarıyla iptal edildi.`
               : `${selectedOrder[0]?.uniq_id} numaralı sipariş iptal edildi.`
           );
@@ -1177,7 +1172,7 @@ function RightSideBtnArea() {
 
   //? CEKİC EKRANI METOTLARI BİTİS...
 
-  // Kalite buttons
+  // Kalite buttons || kurutiras
   const buttons_r = [
     {
       onClick: restartWork,

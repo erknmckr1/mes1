@@ -57,7 +57,11 @@ function JobTable() {
       if (areaName === "kalite") {
         // Kalite ekranında sadece tek seçim yapılabilir
         dispatch(setSelectedOrder([params.row]));
-      } else if (areaName === "buzlama" || areaName === "cekic") {
+      } else if (
+        areaName === "buzlama" ||
+        areaName === "cekic" ||
+        areaName === "kurutiras"
+      ) {
         // Buzlama ekranında çoklu seçim yapılabilir
         dispatch(setSelectedOrder([...selectedOrder, params.row]));
       }
@@ -100,13 +104,12 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
+      const isWithoutId = ["buzlama", "kurutiras", "cekic"].includes(areaName);
       if (areaName === "kalite" && userInfo) {
         // ID ile siparişleri çek
         getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
-      } else if (areaName === "buzlama") {
+      } else if (isWithoutId) {
         // ID olmadan tüm siparişleri çek
-        dispatch(getWorksWithoutId({ areaName }));
-      } else if (areaName === "cekic") {
         dispatch(getWorksWithoutId({ areaName }));
       }
       console.log("veri çekildi...");
@@ -260,15 +263,13 @@ function JobTable() {
       return "green-row";
     } else if (row.work_status === "2") {
       return "red-row";
-    }
-    else if (row.work_status === "0") {
+    } else if (row.work_status === "0") {
       return "bg-[#138d75]";
     } else if (row.work_status === "6") {
       return "yellow-row";
     } else if (row.work_status === "0") {
       return "grey-row";
-    }
-    else if (row.work_status === "7") {
+    } else if (row.work_status === "7") {
       return "bg-blue-600";
     }
     return "";

@@ -28,7 +28,7 @@ function LeftSideBtnArea() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
-  const isWithoutIdReturnToBreakScreen = ["buzlama", "cekic", "kalite"];
+  const isWithoutIdReturnToBreakScreen = ["buzlama", "cekic", "kalite","kurutiras"];
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
