@@ -36,6 +36,7 @@ function MeasurementDataEntry() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo, user } = useSelector((state) => state.user);
+  const { theme } = useSelector((state) => state.global);
 
   const handleClosePopup = () => {
     dispatch(setMeasurementPopup(false));
@@ -311,7 +312,7 @@ function MeasurementDataEntry() {
     }
   };
 
-  const theme = createTheme({
+  const themes = createTheme({
     components: {
       MuiDataGrid: {
         styleOverrides: {
@@ -453,13 +454,13 @@ function MeasurementDataEntry() {
   const buttons = [
     {
       children: "Kaydet",
-      type: "button",
+      type: "submit",
       className: "w-[150px] sm:py-2 text-sm",
       onClick: handleSumbit,
     },
     {
       children: "Sil",
-      type: "button",
+      type: "delete",
       className: "w-[150px] sm:py-2 text-sm bg-red-500 hover:bg-red-600",
       onClick: handleDeletedMeasure,
     },
@@ -477,28 +478,33 @@ function MeasurementDataEntry() {
     if (selectedRow?.some((item) => item.id === row.id)) {
       return "selected-row";
     }
-    return "";
+    return "default-row"; // Seçili olmayan satırlar için yeni sınıf
   };
 
   return (
-    <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
-      <div className="flex items-center justify-center w-full h-full  ">
-        <div className="md:w-[1600px] w-[800px] h-[850px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
-          {/* header */}
-          <header className="h-[10%] w-full bg-secondary">
-            <div className="w-full h-full flex items-center justify-between">
-              <div className="w-1/4 h-full flex gap-x-10 text-[30px] justify-center items-center">
-                <h1 className="text-[25px] text-white underline tracking-wider  font-semibold">
+    <div
+      className={`w-screen h-screen top-0 left-0 absolute z-50 text-black font-semibold bg-black bg-opacity-75 ${
+        theme === "dark" ? "dark-mode" : "light-mode"
+      }`}
+    >
+      <div className="flex items-center justify-center w-full h-full">
+        <div
+          className={`md:w-[1600px] w-[800px] h-[850px]   popup-content  p-6 rounded-xl shadow-2xl relative `}
+        >
+          {/* Header */}
+          <header className="popup-header">
+            <div className="w-full h-full flex items-center justify-between px-6">
+              <div className="w-1/4 flex gap-x-10 text-[30px] justify-center items-center">
+                <h1 className="text-[28px] text-white uppercase tracking-wide font-bold">
                   Ölçüm Veri Girişi
                 </h1>
               </div>
-              <div className="w-1/2 h-full flex gap-x-10 text-[25px] justify-center items-center">
-                <span className="text-red-500 text-[50px] font-semibold">
+              <div className="w-1/2 flex gap-x-10 text-[25px] justify-center items-center">
+                <span className="text-red-600 text-[30px] font-semibold">
                   {isOutOfRange ? "Ölçüm verisi aralık dışında" : ""}
                 </span>
               </div>
-
-              <div className="w-1/4 h-full flex gap-x-10 text-[22px] justify-center items-center">
+              <div className="w-1/4 flex gap-x-10 text-[20px] text-white justify-center items-center">
                 {measure50Cm && (
                   <span>Alt Limit: {`${measure50Cm?.lowerLimit} gr`}</span>
                 )}
@@ -508,73 +514,72 @@ function MeasurementDataEntry() {
               </div>
             </div>
           </header>
-          <section className="h-[60%] w-full">
-            <ThemeProvider theme={theme}>
+
+          {/* Data Table */}
+          <section className="h-[60%] w-full popup-table p-4">
+            <ThemeProvider theme={themes}>
               <div style={{ height: "100%", width: "100%" }}>
                 <DataGrid
                   rows={rows}
                   columns={columns}
                   pageSize={5}
                   rowHeight={70}
-                  disableRowSelectionOnClick // Seçimi devre dışı bırakır
+                  disableRowSelectionOnClick
                   getRowClassName={getRowClassName}
                   onRowClick={(params) => handleRowSelection(params)}
                   sx={{
                     "& .MuiDataGrid-row": {
-                      color: "white", // Satır metinlerini beyaz yapar
+                      color: "white",
                     },
                     "& .MuiDataGrid-cell": {
-                      borderColor: "#fff", // Hücre sınır rengini koyu yapar
+                      borderColor: "#fff",
                     },
                   }}
                 />
               </div>
             </ThemeProvider>
           </section>
-          <footer className="h-[30%] w-full">
-            <div className="h-[70%] w-full">
-              {/* inputs */}
-              <div className="h-full grid grid-cols-6 gap-4 p-4">
-                {inputFields.map((field, index) => (
-                  <Input
-                    key={index}
-                    type={field.type}
-                    name={field.name}
-                    placeholder={field.placeholder}
-                    addProps={field.className}
-                    touched={field.name === "entryGramage"} // Example of using touched and errorMessage
-                    errorMessage={
-                      field.name === "entryGramage" &&
-                      formState.entryGramage <= 0
-                        ? "Değer sıfırdan büyük olmalı"
-                        : ""
-                    }
-                    value={field.value}
-                    onChange={handleChange}
-                    onKeyDown={field.onkeydown}
-                  />
-                ))}
-                {/* <span className="text-white font-semibold text-[25px]">
-                  Seçili Grup No: {selectedGroupNo[0].group_no}
-                </span> */}
-              </div>
+
+          {/* Footer */}
+          <footer className="h-[30%] w-full px-6 py-4">
+            {/* Input Fields */}
+            <div className="h-[70%] grid grid-cols-6 gap-4">
+              {inputFields.map((field, index) => (
+                <input
+                  key={index}
+                  type={field.type}
+                  name={field.name}
+                  placeholder={field.placeholder}
+                  className="p-3 popup-input text-white rounded-lg focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
+                  value={field.value}
+                  onChange={handleChange}
+                  onKeyDown={field.onkeydown}
+                />
+              ))}
             </div>
-            {/* buttons */}
-            <div className="h-[30%] w-full flex items-center justify-center gap-x-10">
+
+            {/* Buttons */}
+            <div className="h-[30%] flex items-center justify-center gap-x-6 mt-4">
               {buttons.map((button, index) => (
-                <Button
+                <button
+                  key={index}
                   onClick={button.onClick}
                   type={button.type}
-                  className={button.className}
-                  children={button.children}
-                  key={index}
-                />
+                  className={`popup-button  rounded-lg text-white font-semibold transition-all duration-300 ${
+                    button.type === "submit"
+                      ? "primary shadow-md"
+                      : button.type === "delete"
+                      ? "danger shadow-md"
+                      : "bg-gray-600 hover:bg-gray-700"
+                  }`}
+                >
+                  {button.children}
+                </button>
               ))}
             </div>
           </footer>
         </div>
       </div>
-      <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
   );
 }

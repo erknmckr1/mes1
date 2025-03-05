@@ -17,7 +17,15 @@ function FinishedWorkPopup() {
   const [repairAmount, setRepairAmount] = useState(0);
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
-  const [repairReasons, setRepairReasons] = useState(["", "", "", "","","",""]);
+  const [repairReasons, setRepairReasons] = useState([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [desc, setDesc] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
 
@@ -25,11 +33,11 @@ function FinishedWorkPopup() {
   const dispatch = useDispatch();
   const { selectedOrder } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
+  const { theme } = useSelector((state) => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
 
-
-  // Tamır kısmında bolumu secerken tetıklenecek change eventı 
+  // Tamır kısmında bolumu secerken tetıklenecek change eventı
   const handleChange = (event) => {
     setSelectedArea(event.target.value);
   };
@@ -48,8 +56,7 @@ function FinishedWorkPopup() {
     }
   };
 
-  const areas = ["YALDIZ", "CİLA", "LAZER","TAMİR TEZGAHI","MİNE","MONTAJ"];
-
+  const areas = ["YALDIZ", "CİLA", "LAZER", "TAMİR TEZGAHI", "MİNE", "MONTAJ"];
 
   useEffect(() => {
     getRepairReason();
@@ -69,6 +76,12 @@ function FinishedWorkPopup() {
         newReasons[index] = selectedReason.repair_reason;
         return newReasons;
       });
+    }else if (selectedReason === undefined){
+      setRepairReasons((prev) => {
+        const newReasons = [...prev];
+        newReasons[index] = "";
+        return newReasons;
+      });
     }
   };
 
@@ -76,9 +89,8 @@ function FinishedWorkPopup() {
   const finishedWork = async () => {
     try {
       if (finishedAmount > 0) {
-
-        // tamir miktarı gırılmısse tamır nedenı secılmedıyse uyarı ver... 
-        if (repairAmount > 0 && !repairReasons.some(reason => reason)) {
+        // tamir miktarı gırılmısse tamır nedenı secılmedıyse uyarı ver...
+        if (repairAmount > 0 && !repairReasons.some((reason) => reason)) {
           toast.error("Lütfen tamir nedeni giriniz.");
           return;
         }
@@ -91,14 +103,14 @@ function FinishedWorkPopup() {
             produced_amount: finishedAmount,
             repair_amount: repairAmount,
             scrap_amount: scrapAmount,
-            repair_reason:JSON.stringify(repairReasons),
+            repair_reason: JSON.stringify(repairReasons),
             repair_reason_1: repairReasons[0],
             repair_reason_2: repairReasons[1],
             repair_reason_3: repairReasons[2],
             repair_reason_4: repairReasons[3],
             scrap_reason: selectedScrapReason?.repair_reason,
             repair_section: selectedArea,
-            end_desc: desc
+            end_desc: desc,
           }
         );
         // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
@@ -133,7 +145,7 @@ function FinishedWorkPopup() {
     {
       onClick: finishedWork,
       children: "Prosesi Bitir",
-      type: "button",
+      type: "submit",
       className: "bg-red-600 hover:bg-red-500",
     },
   ];
@@ -144,144 +156,141 @@ function FinishedWorkPopup() {
         setRepairAmount("");
         setScrapAmount("");
       }
-    }
+    };
     showMore();
-  }, [finishedAmount])
+  }, [finishedAmount]);
 
   return (
-    <div className="w-screen h-screen top-0 left-0 absolute">
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="w-[1800px] h-[900px] bg-black border-2 border-white p-3 static z-50 rounded-md">
-          <div className="w-full h-full">
-            {/* title */}
-            <div className="h-[100px] text-[50px] font-semibold flex justify-center items-center text-white bg-secondary">
-              <span>Siparişi Bitir</span>
-            </div>
-            {/* parametreler... */}
-            <div className="w-full h-auto flex flex-col gap-y-10 mt-4">
-              {/* inputlar... */}
-              <div className="w-full justify-evenly flex p-1 ">
-                <Input
-                  addProps="h-20 text-[30px] text-center font-semibold text-black"
-                  placeholder="Sağlam Çıkan Ürün (gr)"
-                  value={finishedAmount}
-                  onChange={(e) => setFinishedAmount(e.target.value)}
-                  type="number"
-                />
-                {/* <Input
-                  addProps="h-20 text-[30px] text-center font-semibold text-black"
-                  placeholder="Hurda Çıkan Ürün (gr)"
-                  value={finishedAmount > 0 ? scrapAmount : ""}
-                  onChange={(e) => setScrapAmount(e.target.value)}
-                  disabled={finishedAmount > 0 ? false : true}
-                /> */}
-                <Input
-                  addProps="h-20 text-[30px] text-center font-semibold text-black"
-                  placeholder="Tamire Gidecek Ürün (gr)"
-                  value={finishedAmount > 0 ? repairAmount : ""}
-                  onChange={(e) => setRepairAmount(e.target.value)}
-                  disabled={finishedAmount > 0 ? false : true}
-                  type="number"
-                />
-              </div>
-              {/* tamir nedenleri && hurda nedenlerı */}
-              <div className="h-full w-full flex gap-x-1">
-                {repairAmount > 0 && (
-                  <div className="w-2/3 border">
-                    <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
-                      Tamir Nedenleri
-                    </div>
-                    <div className="w-full h-[500px] mt-1 overflow-y-auto">
-                      {/* repair reason inputları */}
-                      <div className="w-full h-1/3 flex p-1 gap-x-1">
-                        {repairReasons.map((reason, index) => (
-                          <Input
-                            key={index}
-                            addProps="h-20 text-[30px] text-center font-semibold text-black"
-                            placeholder={`${index + 1}. Neden`}
-                            onChange={(e) =>
-                              updateRepairReason(index, e.target.value)
-                            }
-                            type="number"
-                            disabled={index > 0 && !repairReasons[index - 1]}
-                          />
-                        ))}
-                      </div>
-                      {/* nedenlerı kullanıcıya gosterecek alan.. . */}
-                      <div className="w-full h-1/2 flex flex-col gap-y-3 justify-evenly ">
-                        <span className="text-center underline uppercase text-red-600 font-semibold text-[20px]">
-                          Nedenleri sırayla giriniz
-                        </span>
-                        {/*  */}
-                        <div className="w-full flex justify-between p-1">
-                          {repairReasons.map((reason, index) => (
-                            <span
-                              key={index}
-                              className="h-10 w-[135px] text-[15px] text-white text-center font-semibold"
-                            >
-                              {index + 1}. {reason}
-                            </span>
-                          ))}
-                        </div>
-                        {/* Tamire gidecek bölümün secılecegı dropdown... */}
-                        <div className="text-center px-10 text-black flex flex-col gap-y-3">
-                          <select
-                            className="w-full py-3 text-[20px] rounded-md text-center"
-                            name="areas"
-                            id="areas"
-                            value={selectedArea}
-                            onChange={handleChange}
+    <div
+      className={`fixed w-screen h-screen top-0 left-0 flex items-center justify-center bg-black bg-opacity-75 z-[9999] ${
+        theme === "dark" ? "dark-mode" : "light-mode"
+      }`}
+    >
+      {/* Popup İçeriği */}
+      <div className="w-[90%] max-w-[1800px] h-[90%] max-h-[900px] popup-content shadow-2xl rounded-xl p-6 relative flex flex-col">
+        {/* Başlık */}
+        <div className="popup-header h-[20%] text-white font-bold text-6xl flex items-center justify-center rounded-t-xl shadow-md">
+          Siparişi Bitir
+        </div>
 
-                          >
-                            <option value="">Tamire gidilecek bölüm</option>
-                            {areas.map((item, index) => (
-                              <option className="" key={index} value={item}>
-                                {item}
-                              </option>
-                            ))}
-                          </select>
-                          <p className="text-white font-semibold">
-                            Seçilen Bölüm: {selectedArea}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {/* Açıklama alanı */}
-                {finishedAmount > 0 && (
-                  <div className="w-1/3">
-                    <div className="w-full p-2 bg-secondary font-semibold text-[25px] text-center">
-                      Açıklama Alanı
-                    </div>
-                    <div className="w-full h-[500px] mt-1 overflow-y-auto text-black">
-                      <textarea
-                        className="w-full h-[500px] placeholder:text-[40px] text-[35px] font-semibold bg-[#F8F9F9]"
-                        placeholder="Açıklama Giriniz"
-                        onChange={(e) => { setDesc(e.target.value) }}
-                        value={desc}
+        {/* İçerik Alanı */}
+        <div className="flex flex-col gap-y-10 mt-6">
+          {/* Input Alanı */}
+          <div className="flex justify-evenly w-full">
+            <Input
+              addProps="h-20 text-[30px] text-center font-semibold text-black"
+              placeholder="Sağlam Çıkan Ürün (gr)"
+              value={finishedAmount}
+              onChange={(e) => setFinishedAmount(e.target.value)}
+              type="number"
+            />
+            <Input
+              addProps="h-20 text-[30px] text-center font-semibold text-black"
+              placeholder="Tamire Gidecek Ürün (gr)"
+              value={finishedAmount > 0 ? repairAmount : ""}
+              onChange={(e) => setRepairAmount(e.target.value)}
+              disabled={finishedAmount > 0 ? false : true}
+              type="number"
+            />
+          </div>
+
+          {/* Tamir Nedenleri ve Açıklama Alanı */}
+          <div className="flex gap-x-4">
+            {repairAmount > 0 && (
+              <div className="w-2/3 popup-table">
+                <div className="popup-table-header text-center py-2 text-xl">
+                  Tamir Nedenleri
+                </div>
+                <div className="popup-table-body">
+                  <div className="flex p-2 gap-x-2">
+                    {repairReasons.map((reason, index) => (
+                      <Input
+                        key={index}
+                        addProps="h-20 text-[30px] text-center font-semibold text-white popup-input"
+                        placeholder={`${index + 1}. Neden`}
+                        onChange={(e) =>
+                          updateRepairReason(index, e.target.value)
+                        }
+                        type="number"
+                        disabled={index > 0 && !repairReasons[index - 1]}
                       />
-                    </div>
+                    ))}
                   </div>
-                )}
+
+                  {/* Seçili Nedenler */}
+                  <div className="flex flex-wrap gap-3 mt-4 text-center">
+                    {repairReasons.map((reason, index) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-md shadow-md"
+                      >
+                        {index + 1}. {reason}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Tamire Gidecek Bölüm Seçimi */}
+                  <div className="mt-6">
+                    <select
+                      className="popup-select"
+                      name="areas"
+                      id="areas"
+                      value={selectedArea}
+                      onChange={handleChange}
+                    >
+                      <option value="">Tamire gidilecek bölüm</option>
+                      {areas.map((item, index) => (
+                        <option key={index} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedArea && <p className="text-white font-semibold mt-2 p-2">
+                      Seçilen Bölüm: {selectedArea}
+                    </p>}
+                  </div>
+                </div>
               </div>
-            </div>
-            {/* butonlar */}
-            <div className="flex gap-x-10 justify-center items-center mt-3">
-              {buttons.map((item, index) => (
-                <Button
-                  key={index}
-                  className={item.className}
-                  onClick={item.onClick}
-                >
-                  {item.children}
-                </Button>
-              ))}
-            </div>
+            )}
+
+            {/* Açıklama Alanı */}
+            {finishedAmount > 0 && (
+              <div className="w-1/3 popup-table">
+                <div className="popup-table-header text-center py-2 text-xl ">
+                  Açıklama Alanı
+                </div>
+                <div className="popup-table-body ">
+                  <textarea
+                    className="popup-textarea w-full h-[200px] text-[35px] text-center font-semibold text-black"
+                    placeholder="Açıklama Giriniz"
+                    onChange={(e) => setDesc(e.target.value)}
+                    value={desc}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Butonlar */}
+        <div className="flex justify-center gap-6 mt-6">
+          {buttons.map((item, index) => (
+            <Button
+              key={index}
+              onClick={item.onClick}
+              className={`${
+                item.type === "submit"
+                  ? "popup-button primary"
+                  : item.type === "button"
+                  ? "popup-button danger"
+                  : "popup-button secondary"
+              }`}
+            >
+              {item.children}
+            </Button>
+          ))}
+        </div>
       </div>
-      <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
   );
 }

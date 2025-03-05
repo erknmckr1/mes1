@@ -14,11 +14,15 @@ function Button({
   return (
     <button
       type={type}
-      className={`${
-        disabled
-          ? "bg-gray-600 hover:bg-gray-600 sm:px-1 sm:py-4  text-sm " 
-          : className
-      } text-white font-bold button ${theme} bg-blue-500 hover:bg-blue-600 py-3 px-2 sm:py-[15px] sm:px-[40px] rounded text-center`}
+      className={` 
+        ${disabled
+          ? "bg-gray-600 text-gray-300 cursor-not-allowed opacity-50"
+          : "hover:scale-105 active:scale-75 transition-all duration-300"
+        } 
+        text-white font-bold rounded-lg shadow-md 
+        ${theme} bg-blue-500 hover:bg-blue-600
+        py-3 px-2 sm:py-[15px] sm:px-[40px] text-center 
+        ${className}`}
       onClick={onClick}
       disabled={disabled}
     >

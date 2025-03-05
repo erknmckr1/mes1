@@ -1,23 +1,35 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { setFoodPopupState } from "@/redux/globalSlice";
+import { useSelector } from "react-redux";
 function FoodPopup() {
-    const dispatch = useDispatch();
-    // popup ı kapatacak komponent...
-    const handleCloseFoodPopup = () => {
-        dispatch(setFoodPopupState(false))
-    }
-      return (
-    <div className="w-screen h-screen top-0 left-0 absolute">
-      <div className="flex items-center justify-center w-full h-full  ">
-        <div className=" w-[1300px] h-[800px] bg-black p-3 static z-50 rounded-md ">
-            <div className="w-full h-full flex justify-center">
-            <img className="h-full" src="/MayısYemekMenu.png" alt="" />
-            <button onClick={handleCloseFoodPopup} className="absolute top-4 right-36 bg-red-600 p-3 font-semibold text-white hover:bg-red-500">X KAPAT</button>
-            </div>    
+  const { theme } = useSelector((state) => state.global);
+  const dispatch = useDispatch();
+  // popup ı kapatacak komponent...
+  const handleCloseFoodPopup = () => {
+    dispatch(setFoodPopupState(false));
+  };
+  return (
+    <div className={`fixed w-screen h-screen top-0 left-0 flex items-center justify-center bg-black bg-opacity-75 z-[9999] ${theme === "dark" ? "dark-mode" : "light-mode"}`}>
+      {/* Popup İçeriği */}
+      <div className="w-[90%] max-w-[1300px] h-[80%] max-h-[800px] popup-content shadow-2xl rounded-xl p-6 relative flex flex-col items-center justify-center">
+        {/* Yemek Listesi Görseli */}
+        <div className="w-full h-full flex justify-center items-center">
+          <img
+            className="w-full h-full object-contain rounded-lg"
+            src="/MayısYemekMenu.png"
+            alt="Yemek Listesi"
+          />
         </div>
+
+        {/* Kapat Butonu */}
+        <button
+          onClick={handleCloseFoodPopup}
+          className="absolute top-6 right-6 bg-red-600 text-white font-semibold px-5 py-3 rounded-lg hover:bg-red-500 hover:scale-105 transition-all duration-300 shadow-md"
+        >
+          ✖
+        </button>
       </div>
-      <div className="w-screen h-screen absolute bg-black opacity-85  top-0 left-0"></div> 
     </div>
   );
 }

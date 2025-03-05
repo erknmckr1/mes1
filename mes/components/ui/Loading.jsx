@@ -1,20 +1,28 @@
 import Image from "next/image";
 import React from "react";
-Image;
+import { useSelector } from "react-redux";
 function Loading() {
+  const { theme } = useSelector((state) => state.global);
   return (
-    <div className="w-screen h-screen top-0 left-0 absolute">
-      <div className="flex items-center justify-center w-full h-full  ">
-        <div className="sm:w-[700px] w-full h-[300px] text-white sm:h-[500px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
-          <div className="w-full h-full flex flex-col items-center gap-y-20">
-            <div className="h-[100px] w-full bg-secondary flex justify-center items-center text-black font-semibold">
-              <h1 className="text-[30px] sm:text-[50px]"> Sayfa Yükleniyor...</h1>
-            </div>
-            <Image className="w-32 sm:w-[400px]" width={400} height={400} alt="" src="/midas_logo.png" />
-          </div>
+    <div
+      className={`w-screen h-screen top-0 left-0 absolute flex items-center justify-center bg-black bg-opacity-75
+        ${theme === "dark" ? "dark-mode" : "light-mode"} `}
+    >
+      <div className="popup-content sm:w-[700px] w-full h-[300px] sm:h-[500px]   shadow-xl rounded-xl p-6 flex flex-col items-center justify-evenly"> 
+        {/* Header */}
+        <div className="w-full bg-gradient-to-r popup-header font-bold text-center py-5 rounded-md shadow-md">
+          <h1 className="text-[30px] sm:text-[50px]">Sayfa Yükleniyor...</h1>
         </div>
+
+        {/* Loading Animation */}
+        <Image
+          className="w-32 sm:w-[200px] animate-spin"
+          width={200}
+          height={200}
+          alt="Loading"
+          src="/midas_logo.png"
+        />
       </div>
-      <div className="w-screen h-screen absolute bg-transparent opacity-85 top-0 left-0"></div>
     </div>
   );
 }

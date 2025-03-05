@@ -57,7 +57,7 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
         end_date: null,
       },
     });
-
+    
     const isSectionParticipated = await SectionParticiptionLogs.findOne({
       where: {
         operator_id,

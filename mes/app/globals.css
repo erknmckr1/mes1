@@ -8,7 +8,8 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
@@ -68,9 +69,15 @@ body {
 } */
 
 @keyframes blinking-bg {
-  0% { background-color: yellow; }
-  50% { background-color: white; }
-  100% { background-color: yellow; }
+  0% {
+    background-color: yellow;
+  }
+  50% {
+    background-color: white;
+  }
+  100% {
+    background-color: yellow;
+  }
 }
 
 /* .MuiDataGrid-footerContainer{
@@ -84,7 +91,17 @@ body {
 .selected-row {
   background-color: grey !important;
 }
-.shift-row{
+.default-row {
+  background-color: #3b3b3b !important; /* Default satır - Daha açık gri */
+  color: #e0e0e0 !important;
+  transition: background 0.3s ease;
+}
+
+.default-row:hover {
+  background-color: #4a4a4a !important; /* Hover rengi - Daha açık gri */
+  color: white !important;
+}
+.shift-row {
   background-color: #727ee7 !important;
 }
 .green-row {
@@ -163,3 +180,190 @@ body {
 .button.light {
   color: black;
 }
+
+/* Genel Popup Tasarımı */
+/* İçerik Alanı */
+/* .popup-content {
+  width: 90%;
+  max-width: 1200px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+} */
+/*  🌓 Dark Mode */
+.dark-mode .popup-content {
+  background-color: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.dark-mode .popup-header {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  color: black;
+  padding: 10px;
+  border-radius: 12px 12px 0 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.dark-mode .popup-table {
+  background: #2e2e2e;
+  color: #ddd;
+  border-radius: 8px;
+}
+.dark-mode .popup-table-header {
+  background: #ff9800;
+  color: black;
+}
+
+.dark-mode .popup-table th {
+  background: #3b3b3b;
+  color: white;
+}
+
+.dark-mode .popup-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 🌞 Light Mode */
+.light-mode .popup-content {
+  background-color: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  color: black;
+}
+
+.light-mode .popup-header {
+  background: linear-gradient(135deg, #007BFF, #00C6FF);
+  color: white;
+  padding: 10px;
+  border-radius: 12px 12px 0 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.light-mode .popup-table {
+  background: #F5F5F5;
+  color: black;
+  border-radius: 8px;
+}
+.light-mode .popup-table-header {
+  background: #007BFF;
+  color: white;
+}
+
+.light-mode .popup-table th {
+  background: #E0E0E0;
+  color: black;
+}
+
+.light-mode .popup-table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 🔘 Butonlar */
+.dark-mode .popup-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.dark-mode .popup-button.primary {
+  background: #007BFF;
+  color: white;
+}
+
+.dark-mode .popup-button.primary:hover {
+  background: #0056b3;
+}
+
+.dark-mode .popup-button.danger {
+  background: #DC3545;
+  color: white;
+}
+
+.dark-mode .popup-button.danger:hover {
+  background: #B52B3A;
+}
+
+.light-mode .popup-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.light-mode .popup-button.primary {
+  background: #0056b3;
+  color: white;
+}
+
+.light-mode .popup-button.primary:hover {
+  background: #003E80;
+}
+
+.light-mode .popup-button.danger {
+  background: #DC3545;
+  color: white;
+}
+
+.light-mode .popup-button.danger:hover {
+  background: #B52B3A;
+}
+
+/* 📌 Input Alanları */
+.dark-mode .popup-input {
+  background: #2E2E2E;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Dark Mode için Placeholder */
+.dark-mode .popup-input::placeholder {
+  color: #d1d5db; /* Açık gri (beyaza yakın) */
+}
+
+.dark-mode .popup-input:focus {
+  border-color: #FFC107;
+  box-shadow: 0px 0px 10px rgba(255, 193, 7, 0.5);
+}
+.dark-mode .popup-select {
+  background: #2e2e2e;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.dark-mode .popup-textarea {
+  background: #444;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.light-mode .popup-input {
+  background: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  color: black;
+}
+
+/* Light Mode için Placeholder */
+.light-mode .popup-input::placeholder {
+  color: #374151; /* Koyu gri (siyaha yakın) */
+}
+
+.light-mode .popup-input:focus {
+  border-color: #007BFF;
+  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
+}
+.light-mode .popup-select {
+  background: #ffffff;
+  color: black;
+}
+
+.light-mode .popup-textarea {
+  background: #f0f0f0;
+  color: black;
+}
+
+/* 📌 Liste Elemanı */

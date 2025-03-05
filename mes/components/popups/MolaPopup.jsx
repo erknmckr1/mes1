@@ -8,7 +8,7 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { setUser } from "@/redux/userSlice";
-import{ getJoinTheField } from "@/redux/orderSlice";
+import { getJoinTheField } from "@/redux/orderSlice";
 import {
   fetchOnBreakUsers,
   setİsCurrentBreak,
@@ -18,7 +18,7 @@ function MolaPopup() {
   const [molaReason, setMolaReason] = useState(null);
   const [araSebebi, setAraSebebi] = useState("");
   const { userInfo, user, userIdPopup } = useSelector((state) => state.user);
-  const { isCurrentBreak } = useSelector((state) => state.break);
+  const { theme } = useSelector((state) => state.global);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3];
   const section = pathname.split("/")[2];
@@ -105,7 +105,7 @@ function MolaPopup() {
         toast.success(`${user.op_name} için mola oluşturuldu.`);
         dispatch(setUser(""));
         dispatch(setMolaPopup(false));
-        dispatch(getJoinTheField({ areaName }))
+        dispatch(getJoinTheField({ areaName }));
       } else if (response.data.isAlreadyOnBreak === true) {
         toast.error("Bu kullanici zateb molada...");
         dispatch(setUser(""));
@@ -118,7 +118,12 @@ function MolaPopup() {
   };
 
   const createBreakFunc = () => {
-    if (areaName === "cekic" || areaName === "buzlama" || areaName === "kalite") {
+    if (
+      areaName === "cekic" ||
+      areaName === "buzlama" ||
+      areaName === "kalite" ||
+      areaName === "kurutiras"
+    ) {
       createBreakWıthId(araSebebi);
     } else {
       createBreak(userInfo, araSebebi);
@@ -135,7 +140,7 @@ function MolaPopup() {
     {
       onClick: createBreakFunc,
       children: "Araya Cik",
-      type: "button",
+      type: "submit",
       className: "bg-red-600 hover:bg-red-500",
     },
   ];
@@ -156,95 +161,96 @@ function MolaPopup() {
     second: "2-digit",
   });
   return (
-    <div className="w-screen h-screen top-0 left-0 absolute text-black font-semibold">
-      <div className="flex items-center justify-center w-full h-full  ">
-        <div className="md:w-[1200px] w-[800px] h-[600px] bg-black border-2 border-white p-3 static z-50 rounded-md ">
-          {/* Header kısmı 20% */}
-          <div className="h-[20%] w-full bg-white"></div>
-          {/* 80% */}
-          <div className="h-[80%] w-full mt-1 bg-gray-100 ">
-            <div className="flex gap-x-2 h-full ">
-              {/* iptal sebebleri */}
-              <div className="w-[30%] h-full border relative p-2">
-                <div className="w-full h-full flex flex-col ">
-                  <span className="absolute bg-secondary text-center w-full border-b border-black py-4 font-bold text-[25px]">
-                    Molaya Çıkma Sebebi
+    <div className={`w-screen h-screen top-0 left-0 absolute flex items-center justify-center bg-black bg-opacity-75 z-50 ${theme === "dark" ? "dark-mode" : "light-mode"}`}>
+      <div className="md:w-[1200px] w-[800px] h-[600px] popup-content shadow-2xl rounded-xl p-6">
+        
+        {/* Header - 20% */}
+        <div className="h-[20%] popup-header w-full font-bold text-xl flex items-center justify-center rounded-t-xl shadow-md">
+          Molaya Çıkma Sebebi
+        </div>
+  
+        {/* İçerik Alanı - 80% */}
+        <div className="h-[80%] w-full mt-1 p-2 rounded-b-xl flex">
+          {/* Sebep Listesi */}
+          <div className="w-[30%] h-full border-r popup-table p-2 flex flex-col">
+            <div className="overflow-y-auto flex flex-col gap-2 mt-2">
+              {molaReason &&
+                molaReason.map((item) => (
+                  <span
+                    key={item.break_reason_id}
+                    className={`py-3 text-lg cursor-pointer text-center border rounded-md transition-all duration-300
+                      ${
+                        araSebebi === item.break_reason_id
+                          ? "bg-green-600 text-white"
+                          : "popup-item hover:bg-opacity-75"
+                      }`}
+                    onClick={() => setAraSebebi(item.break_reason_id)}
+                  >
+                    {item.break_reason}
                   </span>
-                  <div className="w-full h-full flex flex-col overflow-x-scroll mt-16">
-                    {molaReason &&
-                      molaReason.map((item) => (
-                        <span
-                          key={item.break_reason_id}
-                          className={`py-[15px] text-[20px] cursor-pointer hover:text-white hover:bg-gray-600  text-center border-b border-black 
-                           ${
-                             araSebebi === item.break_reason_id
-                               ? "bg-green-600 text-white"
-                               : ""
-                           }`}
-                          onClick={() => setAraSebebi(item.break_reason_id)}
-                        >
-                          {item.break_reason}
-                        </span>
-                      ))}
-                  </div>
-                </div>
-              </div>
-              <div className="w-[70%] h-full border text-white p-2">
-                <div className="w-full h-full flex flex-col">
-                  {/* w-75% -> h-85,15  */}
-                  <div className="w-full h-[85%] bg-black">
-                    <table className="w-full p-2">
-                      <thead className="bg-secondary text-[20px] text-black font-semibold overflow-x-scroll">
-                        <tr className="w-full text-center">
-                          {sutunİsimleri.map((item, index) => (
-                            <td
-                              key={index}
-                              className=" p-2  text-center border"
-                            >
-                              {item}
-                            </td>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="p-3">
-                        <tr className="bg-gray-100 h-16 text-black text-[23px]">
-                          <th>
-                            {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite" || areaName === "kurutiras"
-                              ? user && user.id_dec
-                              : userInfo && userInfo.id_dec}
-                          </th>
-                          <th>
-                             {areaName === "cekic" || areaName === "buzlama" || areaName === "kalite" || areaName === "kurutiras"
-                              ? user && user.op_username
-                              : userInfo && userInfo.op_username}
-                          </th>
-                          <th>{araSebebi}</th>
-                          <th>{currentDate}</th>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="w-full h-[15%] ">
-                    <div className="w-full h-full flex items-center gap-20 justify-evenly">
-                      {buttons.map((item, index) => (
-                        <Button
-                          key={index}
-                          className={item.className}
-                          children={item.children}
-                          onClick={item.onClick}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                ))}
+            </div>
+          </div>
+  
+          {/* Tablo Alanı */}
+          <div className="w-[70%] h-full flex flex-col px-2">
+            <div className="w-full h-[85%] popup-table rounded-lg p-3 shadow-md">
+              <table className="w-full rounded-md overflow-hidden">
+                <thead className="popup-table-header text-lg font-semibold">
+                  <tr>
+                    {sutunİsimleri.map((item, index) => (
+                      <th key={index} className="p-2 border">
+                        {item}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="text-lg text-center popup-table-body">
+                  <tr className="h-16 text-xl">
+                    <td className="border">
+                      {areaName === "cekic" ||
+                      areaName === "buzlama" ||
+                      areaName === "kalite" ||
+                      areaName === "kurutiras"
+                        ? user && user.id_dec
+                        : userInfo && userInfo.id_dec}
+                    </td>
+                    <td className="border">
+                      {areaName === "cekic" ||
+                      areaName === "buzlama" ||
+                      areaName === "kalite" ||
+                      areaName === "kurutiras"
+                        ? user && user.op_username
+                        : userInfo && userInfo.op_username}
+                    </td>
+                    <td className="border">{araSebebi}</td>
+                    <td className="border">{currentDate}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+  
+            {/* Butonlar */}
+            <div className="w-full h-[15%] flex items-center justify-evenly mt-3">
+              {buttons.map((item, index) => (
+                <Button
+                  key={index}
+                  onClick={item.onClick}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md popup-button
+                    ${item.type === "submit" ? "popup-button primary" :
+                      item.type === "button" ? "popup-button danger" : "popup-button secondary"}`}
+                >
+                  {item.children}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
       </div>
-      <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
   );
+  
+  
 }
 
 export default MolaPopup;

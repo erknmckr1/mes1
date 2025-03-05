@@ -1,4 +1,4 @@
-import React, { useState,useRef,useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, setUserIdPopup } from "@/redux/userSlice";
 import axios from "axios";
@@ -8,7 +8,7 @@ function UserIdPopup() {
   const [id, setId] = useState("");
   const dispatch = useDispatch();
   const inputRef = useRef();
-
+  const { theme } = useSelector((state) => state.global);
   const handleGetUser = async (event) => {
     if (event.key === "Enter") {
       try {
@@ -34,34 +34,43 @@ function UserIdPopup() {
 
   const handleClosePopup = () => {
     dispatch(setUserIdPopup(false));
-  }
+  };
 
   return (
-    <div className="w-screen h-screen top-0 left-0 absolute">
-      <div className="flex items-center justify-center w-full h-full px-2 sm:px-0">
-        <div className="sm:w-[700px] sm:h-[500px] h-[300px] w-full bg-black border-2 border-white p-3 static z-50 rounded-md ">
-          <div className="flex flex-col gap-y-10">
-            <span className="text-center uppercase sm:text-[40px] text-[30px] py-5 font-semibold bg-secondary">
-              Operator ID
-            </span>
-            <div className="flex   gap-y-10 flex-col justify-between items-center  h-[200px]">
-              <input
-                placeholder="Operator ID"
-                className="sm:p-6 p-3 w-full text-[30px] text-black font-semibold placeholder:text-center"
-                type="text"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                onKeyDown={handleGetUser}
-                ref={inputRef}
-              />
-            
-                <Button onClick={handleClosePopup} className="bg-red-500 hover:bg-red-600" children={"Kapat"}/>
-             
-            </div>
+    <div
+      className={`w-screen h-screen top-0 left-0 absolute flex z-50 items-center justify-center bg-black bg-opacity-75 ${
+        theme === "dark" ? "dark-mode" : "light-mode"
+      }`}
+    >
+      <div className="sm:w-[700px] sm:h-[500px] w-full h-[300px] popup-content bg-gray-900 border border-gray-700 shadow-2xl rounded-xl p-6">
+        <div className="flex flex-col gap-y-8">
+          {/* Header */}
+          <span className=" uppercase popup-header sm:text-[36px] text-[28px] py-5 text-black shadow-md">
+            Operator ID
+          </span>
+
+          {/* Input Alanı ve Buton */}
+          <div className="flex flex-col gap-y-6 justify-between items-center h-[200px]">
+            <input
+              placeholder="Operator ID"
+              className="w-full sm:p-5 p-3 text-[28px] text-gray-900 font-semibold placeholder:text-center border border-gray-400 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all"
+              type="text"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              onKeyDown={handleGetUser}
+              ref={inputRef}
+            />
+
+            {/* Kapat Butonu */}
+            <Button
+              onClick={handleClosePopup}
+              className="bg-red-600 hover:bg-red-700 text-white text-lg font-semibold px-6 py-3 rounded-lg shadow-lg transition-all duration-300"
+            >
+              Kapat
+            </Button>
           </div>
         </div>
       </div>
-      <div className="w-screen h-screen absolute bg-black opacity-85 top-0 left-0"></div>
     </div>
   );
 }

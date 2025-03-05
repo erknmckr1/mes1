@@ -353,7 +353,7 @@ app.get("/getOrder", async (req, res) => {
     }
   } catch (err) {
     console.error("Sipariş alınırken hata:", err);
-    res.status(500).json({ message: "Internal server error." });
+    res.status(500).json({ message: "Sipariş no bulunamadı" });
   }
 });
 
@@ -378,7 +378,7 @@ app.post("/createWorkLog", async (req, res) => {
     }
     return res.status(200).json(result);
   } catch (err) {
-    res.status(500).json({ message: "İş baslatma sırasında hata olustu" });
+    return res.status(result.status).json(result.message);
   }
 });
 

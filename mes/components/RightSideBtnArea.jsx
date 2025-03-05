@@ -1202,7 +1202,7 @@ function RightSideBtnArea() {
       className: "w-[200px] bg-red-600 hover:bg-red-500",
       // disabled: isCurrentBreak,
     },
-    areaName === "buzlama" && {
+    isRequiredUserId && {
       onClick: handleOpenMeasurementPopup,
       children: "Ölçüm V. Girişi",
       type: "button",

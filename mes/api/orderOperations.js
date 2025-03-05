@@ -217,6 +217,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     field,
   } = work_info;
 
+
   // Eğer "buzlama" ekranındaysak ve machine_name boşsa hata döndür
   if (area_name === "buzlama" && !machine_name) {
     return {

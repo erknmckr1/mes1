@@ -1,8 +1,9 @@
-'use client'
+"use client";
 import React from "react";
 import { useSelector } from "react-redux";
 function Input(props) {
   const { isCurrentBreak } = useSelector((state) => state.break);
+  const { theme } = useSelector((state) => state.global);
   const { type, errorMessage, addProps, touched, placeholder, ...inputProps } =
     props;
   return (
@@ -18,7 +19,11 @@ function Input(props) {
           required
           {...inputProps}
         />
-        <span className="absolute text-black top-0 left-0 px-4 text-lg flex items-center h-full peer-focus:h-7 peer-focus:text-xs peer-valid:h-7 peer-valid:text-xs transition-all">
+        <span
+          className={`absolute ${
+            theme === "dark" ? "text-white" : "text-black"
+          } top-0 left-0 px-4 text-lg flex items-center h-full peer-focus:h-7 peer-focus:text-xs peer-valid:h-7 peer-valid:text-xs transition-all`}
+        >
           {placeholder}
         </span>
       </label>
