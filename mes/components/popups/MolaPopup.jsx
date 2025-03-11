@@ -18,7 +18,7 @@ function MolaPopup() {
   const [molaReason, setMolaReason] = useState(null);
   const [araSebebi, setAraSebebi] = useState("");
   const { userInfo, user, userIdPopup } = useSelector((state) => state.user);
-  const { theme } = useSelector((state) => state.global);
+  const { theme, isRequiredUserId } = useSelector((state) => state.global);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3];
   const section = pathname.split("/")[2];
@@ -34,7 +34,7 @@ function MolaPopup() {
   const getOzelAraReason = async () => {
     try {
       const getReason = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/breakReason`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/breakReason`
       );
       if (getReason.status === 200) {
         setMolaReason(getReason.data);
@@ -64,7 +64,7 @@ function MolaPopup() {
     };
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBreak`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/createBreak`,
         startLog
       );
 
@@ -96,7 +96,7 @@ function MolaPopup() {
     };
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/createBreak`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/createBreak`,
         startLog
       );
 
@@ -118,12 +118,7 @@ function MolaPopup() {
   };
 
   const createBreakFunc = () => {
-    if (
-      areaName === "cekic" ||
-      areaName === "buzlama" ||
-      areaName === "kalite" ||
-      areaName === "kurutiras"
-    ) {
+    if (isRequiredUserId) {
       createBreakWıthId(araSebebi);
     } else {
       createBreak(userInfo, araSebebi);
@@ -161,14 +156,17 @@ function MolaPopup() {
     second: "2-digit",
   });
   return (
-    <div className={`w-screen h-screen top-0 left-0 absolute flex items-center justify-center bg-black bg-opacity-75 z-50 ${theme === "dark" ? "dark-mode" : "light-mode"}`}>
+    <div
+      className={`w-screen h-screen top-0 left-0 absolute flex items-center justify-center bg-black bg-opacity-75 z-50 ${
+        theme === "dark" ? "dark-mode" : "light-mode"
+      }`}
+    >
       <div className="md:w-[1200px] w-[800px] h-[600px] popup-content shadow-2xl rounded-xl p-6">
-        
         {/* Header - 20% */}
         <div className="h-[20%] popup-header w-full font-bold text-xl flex items-center justify-center rounded-t-xl shadow-md">
           Molaya Çıkma Sebebi
         </div>
-  
+
         {/* İçerik Alanı - 80% */}
         <div className="h-[80%] w-full mt-1 p-2 rounded-b-xl flex">
           {/* Sebep Listesi */}
@@ -191,7 +189,7 @@ function MolaPopup() {
                 ))}
             </div>
           </div>
-  
+
           {/* Tablo Alanı */}
           <div className="w-[70%] h-full flex flex-col px-2">
             <div className="w-full h-[85%] popup-table rounded-lg p-3 shadow-md">
@@ -208,18 +206,12 @@ function MolaPopup() {
                 <tbody className="text-lg text-center popup-table-body">
                   <tr className="h-16 text-xl">
                     <td className="border">
-                      {areaName === "cekic" ||
-                      areaName === "buzlama" ||
-                      areaName === "kalite" ||
-                      areaName === "kurutiras"
+                      {isRequiredUserId
                         ? user && user.id_dec
                         : userInfo && userInfo.id_dec}
                     </td>
                     <td className="border">
-                      {areaName === "cekic" ||
-                      areaName === "buzlama" ||
-                      areaName === "kalite" ||
-                      areaName === "kurutiras"
+                      {isRequiredUserId
                         ? user && user.op_username
                         : userInfo && userInfo.op_username}
                     </td>
@@ -229,7 +221,7 @@ function MolaPopup() {
                 </tbody>
               </table>
             </div>
-  
+
             {/* Butonlar */}
             <div className="w-full h-[15%] flex items-center justify-evenly mt-3">
               {buttons.map((item, index) => (
@@ -237,8 +229,13 @@ function MolaPopup() {
                   key={index}
                   onClick={item.onClick}
                   className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md popup-button
-                    ${item.type === "submit" ? "popup-button primary" :
-                      item.type === "button" ? "popup-button danger" : "popup-button secondary"}`}
+                    ${
+                      item.type === "submit"
+                        ? "popup-button primary"
+                        : item.type === "button"
+                        ? "popup-button danger"
+                        : "popup-button secondary"
+                    }`}
                 >
                   {item.children}
                 </Button>
@@ -249,8 +246,6 @@ function MolaPopup() {
       </div>
     </div>
   );
-  
-  
 }
 
 export default MolaPopup;

@@ -267,7 +267,7 @@ function RightSideBtnArea() {
 
         // API isteği
         response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/restartWork`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartWork`,
           requestData
         );
 
@@ -468,7 +468,7 @@ function RightSideBtnArea() {
 
       if (confirm("Sipariş iptal edilsin mi ?")) {
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/cancelWork`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/cancelWork`,
           requestData
         );
         if (response.status === 200) {
@@ -1172,7 +1172,7 @@ function RightSideBtnArea() {
 
   //? CEKİC EKRANI METOTLARI BİTİS...
 
-  // Kalite buttons || kurutiras
+  // Kalite buttons || kurutiras || telcekme
   const buttons_r = [
     {
       onClick: restartWork,
@@ -1399,7 +1399,8 @@ function RightSideBtnArea() {
     if (
       areaName === "kalite" ||
       areaName === "kurutiras" ||
-      areaName === "buzlama"
+      areaName === "buzlama" ||
+      areaName === "telcekme"
     ) {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">

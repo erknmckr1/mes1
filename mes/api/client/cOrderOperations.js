@@ -7,7 +7,7 @@ import { setWorkList } from '@/redux/orderSlice';
 export const getWorkList = async ({ areaName, userId, dispatch }) => {
   try {
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/getWorks`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorks`,
       { params: { area_name: areaName, user_id_dec: userId } }
     );
     if (response.status === 200) {

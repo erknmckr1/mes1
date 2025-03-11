@@ -41,9 +41,271 @@ const {
   fwork,
   startToSetup,
   startToProces,
+  getStopReason,
+  getCancelReason,
+  cancelWork,
+  getRepairReason,
+  getProcessList,
+  getMachineList,
+  getOrder,
+  createWork,
+  getWorks,
+  getStoppedWorks,
+  stopWork,
+  rWork,
+  finishedWork,
 } = require("../services/orderServices");
 
-//!
+//! Siparişi bitirecek metot...
+router.post("/finishedWork", async (req, res) => {
+  const {
+    uniq_id,
+    produced_amount,
+    work_finished_op_dec,
+    repair_amount,
+    scrap_amount,
+    repair_reason,
+    scrap_reason,
+    repair_reason_1,
+    repair_reason_2,
+    repair_reason_3,
+    repair_reason_4,
+    repair_section,
+    end_desc,
+  } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result = await finishedWork({
+      uniq_id,
+      currentDateTimeOffset,
+      produced_amount,
+      work_finished_op_dec,
+      repair_amount,
+      scrap_amount,
+      repair_reason,
+      scrap_reason,
+      repair_reason_1,
+      repair_reason_2,
+      repair_reason_3,
+      repair_reason_4,
+      repair_section,
+      end_desc,
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+    throw err;
+  }
+});
+
+//! Durdurulan işleri tekrardan başlatacak metot...
+router.post("/restartWork", async (req, res) => {
+  const {
+    work_log_uniq_id,
+    currentUser,
+    startedUser,
+    selectedOrders,
+    areaName,
+    field,
+  } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result = await rWork({
+      currentDateTimeOffset,
+      work_log_uniq_id,
+      currentUser,
+      startedUser,
+      selectedOrders,
+      area_name: areaName,
+      field,
+    });
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ message: err.message });
+  }
+});
+
+//! Aktif bir işi durduracak metot
+router.post("/stopSelectedWork", async (req, res) => {
+  const {
+    order_id,
+    stop_reason_id,
+    work_log_uniq_id,
+    user_who_stopped,
+    areaName,
+    field,
+  } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result = await stopWork({
+      work_log_uniq_id,
+      currentDateTimeOffset,
+      order_id,
+      stop_reason_id,
+      user_who_stopped,
+      area_name: areaName,
+      field,
+    });
+
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.log(err.message);
+    return res
+      .status(500)
+      .json({ message: "Sunucu hatası. İş durdurulamadı." });
+  }
+});
+
+//! Mevcut işleri getirecek metot...
+router.get("/getWorks", async (req, res) => {
+  const { area_name, user_id_dec } = req.query;
+  try {
+    // Kullanıcının kendi işleri (aktif)
+    const userWorks = await getWorks({ area_name, user_id_dec });
+
+    // Belirli bir area_name ile durdurulmuş tüm işler
+    const stoppedWorks = await getStoppedWorks({ area_name });
+
+    // Kullanıcının işleri ile durdurulmuş işleri birleştir
+    const allWorks = [...userWorks, ...stoppedWorks];
+
+    res.status(200).json(allWorks);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+    throw err;
+  }
+});
+
+//! work_log tablosunda yani bir iş başlatacak metot...
+router.post("/createWorkLog", async (req, res) => {
+  const currentDate = new Date();
+  const currentDateTimeOffset = currentDate.toISOString();
+  let result;
+  const { work_info, field } = req.body;
+  try {
+    // if (work_info.area_name === "cekic") {
+    //   result = await createCekicWorkLog({
+    //     work_info,
+    //     currentDateTimeOffset,
+    //     field,
+    //   });
+    // } else {
+    result = await createWork({ work_info, currentDateTimeOffset, field });
+
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(result.status).json(result.message);
+  }
+});
+
+//! Okutulan siparişi cekecek servis
+router.get("/getOrder", async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const result = await getOrder({ id });
+    if (result.dataValues) {
+      res.status(200).json(result.dataValues);
+    } else {
+      res.status(404).json({ message: "Sipariş no bulunamadı." });
+    }
+  } catch (err) {
+    console.error("Sipariş alınırken hata:", err);
+    res.status(500).json({ message: "Sipariş no bulunamadı" });
+  }
+});
+
+//! İlgili makine bilgilerini getirecek query...
+router.get("/getMachineList", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getMachineList({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Bölüme göre process turlerını getırecek query
+router.get("/getProcessTypes", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getProcessList({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Tamir sebeplerini getirecek query..
+router.get("/getRepairReason", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getRepairReason({ area_name });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+//! Seçili işi iptal edecek fonksiyon
+router.post("/cancelWork", async (req, res) => {
+  const { uniq_id, currentUser, areaName, field } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result = await cancelWork({
+      uniq_id,
+      currentDateTimeOffset,
+      currentUser,
+      area_name: areaName,
+      field,
+    });
+    // Eğer result bir hata durumu içeriyorsa, status koduna göre döndürün
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    return res.status(result.status).json(result.message);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Sunucu hatası. İş silinemedi." });
+  }
+});
+
+//! Durdurma sebeblerini getırecek metot url ye gore...
+router.get("/getStopReason", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getStopReason({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! iptal sebeblerini getirecek query..
+router.get("/getCancelReason", async (req, res) => {
+  const { area_name } = req.query;
+  try {
+    const result = await getCancelReason({ area_name });
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
 
 //! İd ile sipariş cekecek route...
 router.get("/getOrderById", async (req, res) => {
@@ -358,23 +620,33 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec,areaName,field } = req.body;
-  const result = await fwork(uniqIds, work_finished_op_dec,areaName,field);
+  const { uniqIds, work_finished_op_dec, areaName, field } = req.body;
+  const result = await fwork(uniqIds, work_finished_op_dec, areaName, field);
   return res.status(result.status).json(result.message);
 });
 
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ
 //! Start to setup route
 router.put("/start-to-setup", async (req, res) => {
-  const { workIds,operator_id } = req.body;
+  const { workIds, operator_id } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
-  const result = await startToSetup(workIds, currentDateTimeOffset,operator_id);
+  const result = await startToSetup(
+    workIds,
+    currentDateTimeOffset,
+    operator_id
+  );
   return res.status(result.status).json(result.message);
 });
 //! Bölüme katılma route
 router.post("/join-section", async (req, res) => {
-  const { section, areaName, user_id, field,machine_name } = req.body;
-  const result = await joinSection(section, areaName, user_id, field,machine_name);
+  const { section, areaName, user_id, field, machine_name } = req.body;
+  const result = await joinSection(
+    section,
+    areaName,
+    user_id,
+    field,
+    machine_name
+  );
   return res.status(result.status).json(result.message);
 });
 //! Bölümden ayrılma route
@@ -396,22 +668,26 @@ router.get("/getPersonInTheField", async (req, res) => {
 });
 //! Setup ı bıtırıp işi baslatacak route...
 router.post("/finishedToSetup", async (req, res) => {
-  const { workIds,operator_id } = req.body; // Gelen veriyi diziden alıyoruz
+  const { workIds, operator_id } = req.body; // Gelen veriyi diziden alıyoruz
   const currentDateTimeOffset = new Date().toISOString();
   if (!workIds || workIds.length === 0) {
     return res.status(400).json({ message: "Güncellenecek iş bulunamadı." });
   }
 
-  const result = await finishedToSetup(workIds, currentDateTimeOffset,operator_id);
+  const result = await finishedToSetup(
+    workIds,
+    currentDateTimeOffset,
+    operator_id
+  );
   return res.status(result.status).json(result.message);
 });
 //! prosese baslatma route...
 router.put("/startToProces", async (req, res) => {
-  const { workIds, user_id_dec,area_name } = req.body;
+  const { workIds, user_id_dec, area_name } = req.body;
   if (!user_id_dec) {
     return res.status(400).json("Kullanıcı ID bulunamadı.");
   }
-  const result = await startToProces(workIds, user_id_dec,area_name);
+  const result = await startToProces(workIds, user_id_dec, area_name);
   return res.status(result.status).json(result.message);
 });
 

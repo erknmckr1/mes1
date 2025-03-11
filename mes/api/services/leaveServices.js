@@ -885,13 +885,14 @@ async function leavesApprovedByTheInfirmary(id_dec, roleId) {
 //!
 async function personelToBeChecked(status) {
   try {
-    const oneHourAgo = moment().subtract(1, "hour").toDate(); // Şu anki zamandan 1 saat önce
+    const startOfToday = moment().startOf("day").toDate(); // Bugünün başlangıcı (00:00)
+    const endOfToday = moment().endOf("day").toDate(); // Bugünün sonu (23:59:59)
 
     const result = await LeaveRecords.findAll({
       where: {
         leave_status: "3",
         leave_start_date: {
-          [Op.gt]: oneHourAgo, // 1 saat önceki tarihten büyük olanları al
+          [Op.between]: [startOfToday, endOfToday], // Sadece bugüne ait kayıtları getir
         },
       },
       order: [["leave_start_date", "DESC"]],

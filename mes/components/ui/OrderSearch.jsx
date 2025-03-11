@@ -21,6 +21,7 @@ function OrderSearch() {
   const { selectedProcess, selectedHammerSectionField, selectedMachine } =
     useSelector((state) => state.order);
   const { isCurrentBreak } = useSelector((state) => state.break);
+  const { isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const sectionName = pathName.split("/")[2];
@@ -47,9 +48,8 @@ function OrderSearch() {
       toast.error("Sipariş no giriniz...");
       return;
     }
-    const isReadIdScreen = ["cekic", "buzlama", "kurutiras"].includes(areaName);
 
-    if (isReadIdScreen && (!user || !user.id_dec)) {
+    if (isRequiredUserId && (!user || !user.id_dec)) {
       setRetryAction("createOrder"); // İşlem kaydediliyor
       dispatch(setUserIdPopup(true));
       return; // Kullanıcı giriş yapana kadar devam etme
@@ -58,7 +58,7 @@ function OrderSearch() {
     try {
       // Sipariş bilgilerini getirmek için istek at
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrder`,
         { params: { id: order_id } }
       );
 
@@ -82,6 +82,7 @@ function OrderSearch() {
         if (
           areaName === "buzlama" ||
           areaName === "kurutiras" ||
+          areaName === "telcekme" ||
           (areaName === "cekic" && selectedHammerSectionField === "makine")
         ) {
           if (!selectedProcess || !selectedMachine) {
@@ -105,7 +106,7 @@ function OrderSearch() {
           return;
         }
 
-        if (areaName === "buzlama") {
+        if (areaName === "buzlama" || areaName === "telcekme") {
           work_info.user_id_dec = user.id_dec;
           work_info.op_username = user.op_username;
         } else if (
@@ -129,13 +130,13 @@ function OrderSearch() {
         // İş başlatma isteği
         try {
           const workLogResponse = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createWorkLog`,
             { work_info }
           );
 
           if (workLogResponse.status === 200) {
             toast.success("İş başarıyla başlatıldı.");
-            if (isReadIdScreen) {
+            if (isRequiredUserId) {
               dispatch(getWorksWithoutId({ areaName }));
               dispatch(setUser(null));
             } else {
@@ -165,7 +166,7 @@ function OrderSearch() {
     if (order_id) {
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrder`,
           { params: { id: order_id } }
         );
         console.log(response.data);
@@ -253,7 +254,8 @@ function OrderSearch() {
         areaName === "kalite" ||
         areaName === "buzlama" ||
         areaName === "cekic" ||
-        areaName === "kurutiras"
+        areaName === "kurutiras" ||
+        areaName === "telcekme"
       ) {
         handleGetOrder();
       } else if (areaName === "") {

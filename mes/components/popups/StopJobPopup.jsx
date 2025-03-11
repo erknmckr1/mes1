@@ -21,21 +21,23 @@ function StopJobPopup() {
   const dispatch = useDispatch();
   const stopReasonPopup = useSelector((state) => state.order.stopReasonPopup);
   const { userInfo, user } = useSelector((state) => state.user);
+  const { isRequiredUserId } = useSelector((state) => state.global);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3]; // URL'den sayfa ismini alır
   const [stopReason, setStopReason] = useState(null);
   const [molaSebebi, setMolaSebebii] = useState("");
-  const {theme} = useSelector((state) => state.global);
-  const { selectedOrder, selectedGroupNo,selectedHammerSectionField } = useSelector(
-    (state) => state.order
-  );
+  const { theme } = useSelector((state) => state.global);
+  const { selectedOrder, selectedGroupNo, selectedHammerSectionField } =
+    useSelector((state) => state.order);
 
   //! Durdurma sebeplerini çekecek metot...
   const getBreakReason = async () => {
     try {
-      const result = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getStopReason`,
-        { area_name: areaName }
+      const result = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getStopReason`,
+        {
+          params: { area_name: areaName },
+        }
       );
       setStopReason(result.data);
       return result.data; // Veriyi döndürelim ki çağıran fonksiyon kullanabilsin
@@ -43,10 +45,9 @@ function StopJobPopup() {
       console.error("Error fetching break reasons:", err);
     }
   };
-
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
-    const isStopScreen = ["buzlama", "cekic","kurutiras"].includes(areaName);
+    const isStopScreen = ["buzlama", "cekic", "kurutiras"].includes(areaName);
     try {
       if (!molaSebebi) {
         toast.error("Seçili siparişi durdurmak için durdurma nedeni seçiniz.");
@@ -64,7 +65,7 @@ function StopJobPopup() {
         work_log_uniq_id: selectedOrder.map((item) => item.uniq_id), // İş kayıtları uniq_id array olarak
         user_who_stopped: userInfo?.id_dec, // Kullanıcı ID
         areaName,
-        field:selectedHammerSectionField
+        field: selectedHammerSectionField,
       };
 
       if (isStopScreen) {
@@ -73,7 +74,7 @@ function StopJobPopup() {
 
       // API çağrısını yap
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/stopSelectedWork`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/stopSelectedWork`,
         requestData
       );
 
@@ -159,6 +160,7 @@ function StopJobPopup() {
   useEffect(() => {
     getBreakReason();
   }, []);
+
   const buttons = [
     {
       onClick: () => {
@@ -199,7 +201,11 @@ function StopJobPopup() {
     second: "2-digit",
   });
   return (
-    <div className={`w-screen h-screen top-0 left-0 absolute z-50 font-semibold bg-black bg-opacity-75 flex items-center justify-center ${theme === "dark" ? "dark-mode" : "light-mode"}`}>
+    <div
+      className={`w-screen h-screen top-0 left-0 absolute z-50 font-semibold bg-black bg-opacity-75 flex items-center justify-center ${
+        theme === "dark" ? "dark-mode" : "light-mode"
+      }`}
+    >
       <div className="md:w-[1300px] w-[800px] h-[600px] bg-white border border-gray-300 shadow-2xl rounded-xl p-4 relative popup-content">
         {/* Header - 20% */}
         <div className="h-[20%] w-full text-xl flex items-center justify-center rounded-t-xl popup-header">
@@ -207,7 +213,7 @@ function StopJobPopup() {
             ? "Siparişi Durdurma Sebepleri"
             : "Grup Durdurma Sebepleri"}
         </div>
-  
+
         {/* İçerik Alanı - 80% */}
         <div className="h-[80%] w-full mt-1 p-2 rounded-b-xl flex">
           {/* Sebep Listesi */}
@@ -230,7 +236,7 @@ function StopJobPopup() {
                 ))}
             </div>
           </div>
-  
+
           {/* Tablo Alanı */}
           <div className="w-[70%] h-full flex flex-col px-2">
             <div className="w-full h-[85%] bg-black rounded-lg p-3">
@@ -245,27 +251,43 @@ function StopJobPopup() {
                   </tr>
                 </thead>
                 <tbody className="text-lg text-center bg-gray-800">
-                  {(areaName === "kalite" || areaName === "buzlama" || areaName === "cekic" || areaName === "kurutiras") && (
+                  {areaName === "kalite" && (
                     <tr className="h-16 text-white text-xl">
-                      <td className="border border-gray-700">{userInfo ? userInfo.id_dec : user.id_dec}</td>
-                      <td className="border border-gray-700">{userInfo ? userInfo.op_name : user.op_name}</td>
-                      <td className="border border-gray-700">{molaSebebi.stop_reason_name}</td>
+                      <td className="border border-gray-700">
+                        {userInfo.id_dec}
+                      </td>
+                      <td className="border border-gray-700">
+                        {userInfo.op_name}
+                      </td>
+                      <td className="border border-gray-700">
+                        {molaSebebi.stop_reason_name}
+                      </td>
+                      <td className="border border-gray-700">{currentDate}</td>
+                    </tr>
+                  )}
+                  {isRequiredUserId && (
+                    <tr className="h-16 text-white text-xl">
+                      <td className="border border-gray-700">{user.id_dec}</td>
+                      <td className="border border-gray-700">{user.op_name}</td>
+                      <td className="border border-gray-700">
+                        {molaSebebi.stop_reason_name}
+                      </td>
                       <td className="border border-gray-700">{currentDate}</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-  
+
             {/* Butonlar */}
             <div className="w-full h-[15%] flex items-center justify-evenly mt-3">
               {buttons.map((item, index) => (
                 <Button
-                key={index}
-                className={item.className}
-                children={item.children}
-                onClick={item.onClick}
-              />
+                  key={index}
+                  className={item.className}
+                  children={item.children}
+                  onClick={item.onClick}
+                />
               ))}
             </div>
           </div>
@@ -273,7 +295,6 @@ function StopJobPopup() {
       </div>
     </div>
   );
-  
 }
 
 export default StopJobPopup;

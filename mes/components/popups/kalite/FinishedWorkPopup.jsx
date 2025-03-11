@@ -46,7 +46,7 @@ function FinishedWorkPopup() {
   const getRepairReason = async () => {
     try {
       const result = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getRepairReason`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getRepairReason`,
         { params: { area_name: areaName } } // get metodu ıle parametre yolluyorsan params ı kullan.
       );
       setRepairReasonsList(result.data);
@@ -96,7 +96,7 @@ function FinishedWorkPopup() {
         }
 
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/finishedWork`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishedWork`,
           {
             uniq_id: selectedOrder[0].uniq_id,
             work_finished_op_dec: userInfo.id_dec,

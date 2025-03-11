@@ -55,13 +55,13 @@ function HomeSidebars() {
         break;
     }
   };
-
+  
   //! Logout fonksıyonu...
   const logoutUser = async () => {
     try {
       if (confirm("Çıkış yapılsın mı?")) {
         const logout = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`,
           {}, // Boş bir obje göndermek gerekiyor
           { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
         );
@@ -111,7 +111,6 @@ function HomeSidebars() {
     }
   };
 
-  console.log(permissions)
   const menuItems = [
     {
       label: "İzin Yönetimi",

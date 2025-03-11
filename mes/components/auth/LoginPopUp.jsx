@@ -19,7 +19,7 @@ function LoginPopUp({ setIsLoggedIn }) {
     if (event.key === "Enter") {
       try {
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/login`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`,
           {
             operator_id,
           },

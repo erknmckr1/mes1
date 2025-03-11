@@ -21,7 +21,7 @@ function CancelJobPopup() {
   const getCancelReason = async () => {
     try {
       const result = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getCancelReason`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getCancelReason`,
         { params: { area_name: pageName } } // get metodu ıle parametre yolluyorsan params ı kullan. 
       );
       setCancelReason(result.data);

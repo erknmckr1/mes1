@@ -23,11 +23,12 @@ function ProcessArea() {
     selectedHammerSectionField,
   } = useSelector((state) => state.order);
   const { theme } = useSelector((theme) => theme.global);
+
   //! İlgili bölüme göre proses listesini getırecek istek...
   const getProcessList = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getProcessTypes`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getProcessTypes`,
         {
           params: { area_name: pageName },
         }
@@ -62,7 +63,7 @@ function ProcessArea() {
   const getMachineList = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/getMachineList`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getMachineList`,
         {
           params: { area_name: pageName },
         }

@@ -25,10 +25,11 @@ function LeftSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
+  const {isRequiredUserId} = useSelector(state => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
-  const isWithoutIdReturnToBreakScreen = ["buzlama", "cekic", "kalite","kurutiras"];
+
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
@@ -52,7 +53,7 @@ function LeftSideBtnArea() {
     try {
       if (confirm("Çıkış yapılsın mı?")) {
         const logout = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`,
           {}, // Boş bir obje göndermek gerekiyor
           { withCredentials: true } // credentials: 'include' yerine withCredentials kullanılır
         );
@@ -67,7 +68,7 @@ function LeftSideBtnArea() {
   };
 
   const openOzelAra = () => {
-    if (areaName && isWithoutIdReturnToBreakScreen.includes(areaName)) {
+    if (isRequiredUserId) {
       if (!user || !user.id_dec) {
         dispatch(setUserIdPopup(true));
         setRetryAction("openOzelAra");
@@ -94,7 +95,7 @@ function LeftSideBtnArea() {
     // Güncel tarihi ISO 8601 standardında oluşturur
     const end_time = new Date().toISOString();
     try {
-      if (areaName && isWithoutIdReturnToBreakScreen.includes(areaName)) {
+      if (isRequiredUserId) {
         if (!user || !user.id_dec) {
           dispatch(setUserIdPopup(true));
           setRetryAction("returnToBreak");
@@ -102,7 +103,7 @@ function LeftSideBtnArea() {
         }
 
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/returnToBreak`,
           { operator_id: user.id_dec, end_time }
         );
 
@@ -118,7 +119,7 @@ function LeftSideBtnArea() {
 
         if (isCurrentBreak) {
           const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/returnToBreak`,
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/returnToBreak`,
             { operator_id: userInfo.id_dec, end_time }
           );
 

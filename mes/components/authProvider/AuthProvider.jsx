@@ -13,7 +13,7 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/check-login`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/check-login`, {
           withCredentials: true,
         });
         if (response.status === 200) {
