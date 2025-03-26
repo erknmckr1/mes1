@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic"]; // Kullanıcı ID isteyen ekranlar
+const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic","telcekme"]; // Kullanıcı ID isteyen ekranlar
 
 const globalSlice = createSlice({
   name: global,
@@ -13,7 +13,8 @@ const globalSlice = createSlice({
     isFirePopup:false,
     isCreateLeavePopup:false,
     isRequiredUserId:false,
-    areaName:""
+    areaName:"",
+    isErrorPopup: false,
   },
   reducers: {
     setFoodPopupState: (state, action) => {
@@ -45,7 +46,10 @@ const globalSlice = createSlice({
     setAreaName:(state,action)=>{
       state.areaName = action.payload;
       state.isRequiredUserId = requiredUserIdScreens.includes(action.payload);
-    }
+    },
+    setErrorPopup: (state, action) => {
+      state.isErrorPopup = action.payload;
+    },
   },
 });
 
@@ -61,5 +65,6 @@ export const {
   setFirePopup,
   setCreateLeavePopup,
   setAreaName,
+  setErrorPopup
 } = globalSlice.actions;
 export default globalSlice.reducer;

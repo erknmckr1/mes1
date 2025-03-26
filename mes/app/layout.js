@@ -27,6 +27,7 @@ import SurveyPopup from "@/components/popups/SurveyPopup";
 import FirePopup from "@/components/popups/FirePopup";
 import ShiftReportPopup from "@/components/popups/shiftReport/ShiftReportPopup";
 import CreateLeavePopup from "@/components/izinYonetimSistemi/popup/CreateLeavePopup";
+import ErrorPopup from "@/components/popups/ErrorPopup";
 import { setAreaName } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
 // export const metadata = {
@@ -41,7 +42,7 @@ function Layout({ children }) {
   const project = pathName.split("/")[1];
   const section = pathName.split("/")[2];
   const area_name = pathName.split("/")[3];
-  const {foodPopupState,isMolaPopup,isFirePopup,isCreateLeavePopup,areaName,isRequiredUserId} = useSelector((state) => state.global);
+  const {foodPopupState,isMolaPopup,isFirePopup,isCreateLeavePopup,areaName,isRequiredUserId,isErrorPopup} = useSelector((state) => state.global);
   const {
     stopReasonPopup,
     cancelReasonPopup,
@@ -88,6 +89,7 @@ function Layout({ children }) {
       {userIdPopup && <UserIdPopup />}
       {isFirePopup && <FirePopup />}
       {isCreateLeavePopup && <CreateLeavePopup />}
+      {isErrorPopup && <ErrorPopup />}
       <ToastContainer />
     </>
   );
@@ -97,7 +99,7 @@ function HomeLayout({ children }) {
   const pathName = usePathname();
   const project = pathName.split("/")[1];
   const returnUrl = localStorage.getItem("returnUrl") || "/";
-  const { isSurveyPopup, isFirePopup } = useSelector((state) => state.global);
+  const { isSurveyPopup } = useSelector((state) => state.global);
   const {shiftReportPopup} = useSelector(state => state.shift)
   const operation = pathName.split("/")[3];
   const operationTitles = {

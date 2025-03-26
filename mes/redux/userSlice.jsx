@@ -31,6 +31,8 @@ export const userSlice = createSlice({
     permissions: [], // Kullanıcı izin bilgileri
     user: null, // Buzlama gıbı ekranlarda bazı operasyonlardan once kullanıcıdan ıd ıstıyoruz...
     userIdPopup: false,
+    usersByArea: [], // Bölüme göre kullanıcıları tutacak state
+    selectedPartners : []
   },
   reducers: {
     setUserInfo: (state, action) => {
@@ -54,6 +56,12 @@ export const userSlice = createSlice({
     setUserIdPopup: (state, action) => {
       state.userIdPopup = action.payload;
     },
+    setUsersByArea: (state, action) => {
+      state.usersByArea = action.payload;
+    },
+    setSelectedPartners: (state, action) => {
+      state.selectedPartners = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -80,6 +88,8 @@ export const {
   setPermissions,
   setUser,
   setUserIdPopup,
+  setUsersByArea,
+  setSelectedPartners
 } = userSlice.actions;
 
 //! Kullanıcının sahıp oldugu ızınlerı al...

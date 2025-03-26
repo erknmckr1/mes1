@@ -18,6 +18,7 @@ import {
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice";
+import { getJoinTheField } from "@/redux/orderSlice";
 
 function LeftSideBtnArea() {
   const dispatch = useDispatch();
@@ -25,11 +26,11 @@ function LeftSideBtnArea() {
   const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
     (state) => state.break
   );
-  const {isRequiredUserId} = useSelector(state => state.global);
+
+  const { isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
-
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
@@ -110,6 +111,7 @@ function LeftSideBtnArea() {
         if (response.status === 200) {
           toast.success(`${user.op_name} moladan dönüş işlemi başarılı.`);
           dispatch(setUser(null));
+          dispatch(getJoinTheField({ areaName }));
         }
       } else {
         if (!userInfo || !userInfo.id_dec) {

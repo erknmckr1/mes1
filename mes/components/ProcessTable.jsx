@@ -105,16 +105,18 @@ function ProcessArea() {
 
   const handleSelected = (name, item) => {
     if (name === "process") {
-      const isSelectedProcess =
-        selectedProcess?.process_name === item.process_name;
+      const isSelectedProcess = selectedProcess?.process_name === item.process_name;
       dispatch(setSelectedProcess(isSelectedProcess ? {} : item));
+      if(!isSelectedProcess){
+        dispatch(setSelectedMachine({})); // Process değiştiğinde machine'i
+      }
     } else if (name === "machine") {
       const isSelectedMachine =
         selectedMachine?.machine_name === item.machine_name;
       dispatch(setSelectedMachine(isSelectedMachine ? {} : item));
     }
   };
-  
+
   return (
     <div
       className={`w-full h-full overflow-y-auto transition-all  tablearea ${theme} border-secondary border-2`}

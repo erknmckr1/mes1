@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Input from "./Input";
 import {
+  getJoinTheField,
   setReadOrder,
   setSelectedMachine,
   setSelectedProcess,
@@ -12,7 +13,11 @@ import { useSelector } from "react-redux";
 import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { getWorksWithoutId } from "@/redux/orderSlice";
-import { setUser, setUserIdPopup } from "@/redux/userSlice";
+import {
+  setUser,
+  setUserIdPopup,
+  setSelectedPartners,
+} from "@/redux/userSlice";
 
 function OrderSearch() {
   const dispatch = useDispatch();
@@ -25,7 +30,9 @@ function OrderSearch() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const sectionName = pathName.split("/")[2];
-  const { userInfo, user } = useSelector((state) => state.user);
+  const { userInfo, user, userIdPopup, selectedPartners } = useSelector(
+    (state) => state.user
+  );
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
@@ -42,16 +49,59 @@ function OrderSearch() {
     }
   }, [retryAction, user]);
 
-  //! Gırılen sıparıs no ıcın detayları getırecek servise isteği atacak ve yeni işi olusturacak metot. metot...
-  const handleGetOrder = async () => {
+  // Proses Order ve Makine kontrolü
+  const isValidProcessAndMachine = (process, machine) => {
+    const isMachineEmpty = Object.keys(machine).length === 0;
+    const isHammerSectionField =
+      areaName === "cekic" && selectedHammerSectionField === "makine";
+    const screens = ["telcekme", "buzlama", "kurutiras"];
+    const isScreen = screens.includes(areaName);
+
     if (!order_id) {
       toast.error("Sipariş no giriniz...");
       return;
     }
 
+    // 1. Eğer "telcekme", "buzlama", "kurutiras" veya "çekiş-makine" ise, proses ve makine seçilmeli
+    if (isScreen || isHammerSectionField) {
+      if (!process || isMachineEmpty) {
+        toast.error("Siparişi başlatmak için makine ve proses seçiniz.");
+        dispatch(setSelectedPartners([]));
+        dispatch(setUser(null));
+        return false;
+      }
+    }
+
+    // 2. Eğer "kalite" ekranıysa, proses seçilmeli
+    if (areaName === "kalite" && !process) {
+      toast.error("Siparişi başlatmak için proses seçiniz.");
+      dispatch(setUser(null));
+      return false;
+    }
+
+    // 3. Eğer "çekiş" ekranıysa, bir alan seçilmeli
+    if (areaName === "cekic" && !selectedHammerSectionField) {
+      toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
+      return false;
+    }
+
+    return true;
+  };
+
+  //! Gırılen sıparıs no ıcın detayları getırecek servise isteği atacak ve yeni işi olusturacak metot. metot...
+  const handleGetOrder = async () => {
+    if (!isValidProcessAndMachine(selectedProcess, selectedMachine)) {
+      return; // Eğer fonksiyon false döndürdüyse sipariş başlatma işlemi burada duracak.
+    }
+
     if (isRequiredUserId && (!user || !user.id_dec)) {
       setRetryAction("createOrder"); // İşlem kaydediliyor
-      dispatch(setUserIdPopup(true));
+      dispatch(
+        setUserIdPopup({
+          visible: true,
+          showOrderDetails: areaName === "telcekme", // Sadece telçekme için ekstra alan göster
+        })
+      );
       return; // Kullanıcı giriş yapana kadar devam etme
     }
 
@@ -72,39 +122,12 @@ function OrderSearch() {
           order_id: response.data.ORDER_ID,
           section: sectionName,
           area_name: areaName,
-          work_status: "1", // 1 ise iş aktif
+          work_status: "1", // 1: İş aktif
           process_id: selectedProcess?.process_id,
           process_name: selectedProcess?.process_name,
           production_amount: response.data.PRODUCTION_AMOUNT,
           machine_name: selectedMachine?.machine_name,
         };
-
-        if (
-          areaName === "buzlama" ||
-          areaName === "kurutiras" ||
-          areaName === "telcekme" ||
-          (areaName === "cekic" && selectedHammerSectionField === "makine")
-        ) {
-          if (!selectedProcess || !selectedMachine) {
-            toast.error("Sipariş başlatmadan önce proses ve makine seçin.");
-            dispatch(setUser(null));
-            return;
-          }
-        }
-
-        if (areaName === "cekic") {
-          if (!selectedHammerSectionField) {
-            toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
-            return;
-          }
-        }
-
-        // `process_id` kontrolü
-        if (areaName === "kalite" && !selectedProcess) {
-          toast.error("Sipariş başlatmadan önce proses seçin.");
-          dispatch(setUser(null));
-          return;
-        }
 
         if (areaName === "buzlama" || areaName === "telcekme") {
           work_info.user_id_dec = user.id_dec;
@@ -136,26 +159,68 @@ function OrderSearch() {
 
           if (workLogResponse.status === 200) {
             toast.success("İş başarıyla başlatıldı.");
+            const newUniqId = workLogResponse.data.result.uniq_id; // API'den dönen uniq_id
+
+            //! İş telçekmede başlatıldıysa bölüme katılımı yap
+            if (areaName === "telcekme") {
+
+              const selectedPartner = selectedPartners.map(
+                (partner) => partner.id_dec
+              );
+              const allUsersIds = [user.id_dec, ...selectedPartner];
+              try {
+                const joinSectionResponse = await axios.post(
+                  `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/join-section`,
+                  {
+                    section: sectionName,
+                    areaName,
+                    user_id: allUsersIds,
+                    machine_name: selectedMachine?.machine_name,
+                    workIds: [response.data.ORDER_ID], // Tek sipariş ID’si
+                    uniqIds: [newUniqId], // Tüm kullanıcılar için tek uniq_id
+                    field: selectedHammerSectionField,
+                  }
+                );
+
+                if (joinSectionResponse.status === 200) {
+                  toast.success("Bölüme katılım başarılı.");
+                  dispatch(getJoinTheField({ areaName }));
+                } else {
+                  toast.error("Bölüme katılım sırasında bir hata oluştu.");
+                }
+              } catch (error) {
+                console.error("Bölüme katılım sırasında hata:", error);
+                toast.error(
+                  error.response?.data?.message ||
+                    "Bölüme katılım işlemi başarısız oldu."
+                );
+              }
+            }
+
+            // Job table yenile ekranın türüne göre...
             if (isRequiredUserId) {
               dispatch(getWorksWithoutId({ areaName }));
               dispatch(setUser(null));
+              dispatch(setSelectedPartners([]));
             } else {
               getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
               dispatch(setSelectedProcess(""));
+              dispatch(setSelectedPartners([]));
             }
           }
         } catch (err) {
           console.error("İş başlatma sırasında hata:", err);
           toast.error(
-            err.response.data.message || "Siparişi çekerken bir hata oluştu."
+            err.response?.data?.message || "Siparişi çekerken bir hata oluştu."
           );
           dispatch(setUser(null));
+          dispatch(setSelectedPartners([]));
         }
       }
     } catch (err) {
       console.error("Siparişi çekerken hata:", err);
       toast.error(
-        err?.response.data.message || "Siparişi çekerken bir hata oluştu."
+        err.response?.data?.message || "Siparişi çekerken bir hata oluştu."
       );
       dispatch(setUser(null));
     }
@@ -186,67 +251,6 @@ function OrderSearch() {
       toast.error("Girdiğiniz sipariş numarası hatalı...");
     }
   };
-
-  // //! Cekic ekranı ıcın setuplu ekran iş okutulacak fonksıyon...
-  // const handleCreateOrderCekic = async () => {
-  //   if (!order_id) {
-  //     toast.error("Sipariş no giriniz...");
-  //     return;
-  //   }
-
-  //   if (!selectedHammerSectionField) {
-  //     toast.error("Sipariş okutmadan önce alan seçimi yapınız.");
-  //     return;
-  //   }
-
-  //   try {
-  //     // Sipariş bilgilerini getir
-  //     const response = await axios.get(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/getOrder`,
-  //       { params: { id: order_id } }
-  //     );
-
-  //     if (response.status === 200) {
-  //       dispatch(setReadOrder(response.data));
-  //       setOrderId("");
-  //       // Makine seçimi yapılmışsa
-  //       if (selectedHammerSectionField === "makine") {
-  //         toast.success(
-  //           "Sipariş başarıyla okutuldu. Proses ve makine seçip setup başlatabilirsiniz."
-  //         );
-  //         return;
-  //       }
-
-  //       const work_info = {
-  //         user_id_dec: userInfo.id_dec,
-  //         op_username: userInfo.op_username,
-  //         order_id: response.data.ORDER_ID, // response'dan gelen sipariş bilgileri kullanılıyor
-  //         section: sectionName,
-  //         area_name: areaName,
-  //         work_status: "1",
-  //         process_id: selectedProcess?.process_id,
-  //         process_name: selectedProcess?.process_name,
-  //         production_amount: response.data.PRODUCTION_AMOUNT,
-  //       };
-
-  //       // İş başlatma isteği gönder
-  //       const workLogResponse = await axios.post(
-  //         `${process.env.NEXT_PUBLIC_API_BASE_URL}/createWorkLog`,
-  //         { work_info, field: selectedHammerSectionField }
-  //       );
-
-  //       if (workLogResponse.status === 200) {
-  //         toast.success("İş başarıyla başlatıldı.");
-  //         getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-  //         dispatch(setSelectedProcess(""));
-  //         dispatch(setSelectedMachine(""));
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("İş başlatma sırasında hata:", err);
-  //     toast.error("İş başlatma sırasında bir hata oluştu.");
-  //   }
-  // };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {

@@ -14,8 +14,10 @@ const PureGoldScrapMeasurements = require("../../models/PureGoldScrapMeasurement
 const SectionParticiptionLogs = require("../../models/SectionParticiptionLogs");
 const BreakLog = require("../../models/BreakLog");
 const RepairReason = require("../../models/RepairReason");
-const Processes = require("../../models/Processes")
-const Machines = require("../../models/Machines")
+const Processes = require("../../models/Processes");
+const Machines = require("../../models/Machines");
+const Sequelize = require("sequelize");
+const { current } = require("@reduxjs/toolkit");
 
 //! Seçili işi bitirecek query...
 const finishedWork = async ({
@@ -65,7 +67,6 @@ const finishedWork = async ({
   }
 };
 
-
 //! Seçili işleri yeniden başlatacak query...
 const rWork = async ({
   currentDateTimeOffset,
@@ -77,7 +78,7 @@ const rWork = async ({
   field,
 }) => {
   try {
-    // İŞLEMİ YAPACAK KULLANICI MOLADA MI ?
+    // 1. MOLADA MI?
     const isBreakUser = await BreakLog.findOne({
       where: {
         operator_id: currentUser,
@@ -92,8 +93,8 @@ const rWork = async ({
           "Moladayken işleri başlatamazsınız. Moladan dönüş işlemini gerçekleştirip tekrar deneyin.",
       };
     }
-    // MOLA
-    // Bölümde mi ? şimdilik sadece cekic bölümüne özel
+
+    // 2. CEKIC ALANIYSA BÖLÜMDE Mİ?
     if (area_name === "cekic") {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
@@ -117,8 +118,8 @@ const rWork = async ({
         };
       }
     }
-    // bölüm ?
-    // Seçilen tüm işlerin gerçekten durdurulmuş olup olmadığını kontrol et
+
+    // 3. DURDURULMUŞ İŞLERİ BUL
     const stoppedWorks = await StoppedWorksLogs.findAll({
       where: {
         work_log_uniq_id,
@@ -131,79 +132,159 @@ const rWork = async ({
       throw new Error("Durdurulmuş iş bulunamadı.");
     }
 
-    let workIdsToClose = []; // Eski işleri kapatılacaklar
-    let workIdsToRestart = []; // Aynı kişi tarafından başlatılacak işler
-    let newWorkTasks = []; // Yeni açılacak işler
+    // 4. DEĞİŞKENLER
+    let workIdsToClose = [];
+    let workIdsToRestart = [];
+    let newWorkTasks = [];
 
+    // 5.  exit_time dolu olan geçmiş katılım kayıtları
+    const getExitedLogs = async (uniq_id) => {
+      return await SectionParticiptionLogs.findAll({
+        where: {
+          uniq_id,
+          exit_time: {
+            [Op.not]: null,
+          },
+          status: "2",
+        },
+      });
+    };
+
+    // 6. DÖNGÜ
     for (let i = 0; i < selectedOrders.length; i++) {
       const order = selectedOrders[i];
       const stoppedWork = stoppedWorks.find(
         (sw) => sw.work_log_uniq_id === order.uniq_id
       );
 
-      if (!stoppedWork) {
+      if (!stoppedWork)
         throw new Error(`Durdurulmuş iş bulunamadı: ${order.uniq_id}`);
-      }
 
-      // Eğer başlatan kişi ile durduran kişi aynıysa sadece yeniden başlat
-      if (startedUser[i] === currentUser) {
+      // BAŞLATAN KİŞİ AYNIYSA YALNIZCA UPDATE
+      if (String(startedUser[i]) === String(currentUser)) {
         await StoppedWorksLogs.update(
           {
             stop_end_date: currentDateTimeOffset,
             user_who_started: currentUser,
           },
-          {
-            where: { id: stoppedWork.id },
-          }
+          { where: { id: stoppedWork.id } }
         );
 
         workIdsToRestart.push(order.uniq_id);
-      }
-      // Eğer başlatan kişi farklıysa, eski işi kapat ve yeni bir iş oluştur
-      else {
+
+        const exitedLogs = await getExitedLogs(order.uniq_id);
+        for (const item of exitedLogs) {
+          // Eski katılımı geçmişe taşı
+          await SectionParticiptionLogs.update(
+            {
+              status: "4",
+            },
+            {
+              where: {
+                status: "2",
+                uniq_id: item.uniq_id,
+                operator_id: item.operator_id, // ✅ bu filtreyi de eklersen daha güvenli olur
+              },
+            }
+          );
+          // Yeni aktif katılımı oluştur
+          await SectionParticiptionLogs.create({
+            uniq_id: item.uniq_id,
+            operator_id: item.operator_id,
+            join_time: currentDateTimeOffset,
+            section: item.section,
+            area_name: item.area_name,
+            order_no: item.order_no,
+            status: "1",
+            machine_name: item.machine_name,
+            field: item.field,
+          });
+        }
+      } else {
+        // YENİ İŞ OLUŞTURULUYOR
         await StoppedWorksLogs.update(
           {
             stop_end_date: currentDateTimeOffset,
             user_who_started: currentUser,
           },
-          {
-            where: { id: stoppedWork.id },
-          }
+          { where: { id: stoppedWork.id } }
         );
 
-        workIdsToClose.push(order.uniq_id); // Eski işin kapatılması gerekiyor
+        workIdsToClose.push(order.uniq_id);
 
-        // Yeni uniq_id oluştur
         const latestWorkLog = await WorkLog.findOne({
           order: [["uniq_id", "DESC"]],
         });
 
-        let newUniqId = latestWorkLog
+        const newUniqId = latestWorkLog
           ? String(parseInt(latestWorkLog.uniq_id, 10) + 1).padStart(6, "0")
           : "000001";
 
-        // Yeni iş kaydı oluştur
+        // Yeni iş kaydı
         newWorkTasks.push({
           uniq_id: newUniqId,
           user_id_dec: currentUser,
           order_no: order.order_no,
           section: order.section,
           area_name: order.area_name,
-          work_status: "1", // Yeni iş başlatılıyor
+          work_status: "1",
           process_id: order.process_id,
           work_start_date: currentDateTimeOffset,
           process_name: order.process_name,
           production_amount: order.production_amount,
-          machine_name: order?.machine_name || null, // Buzlama için makine adı eklenmeli
+          machine_name: order?.machine_name || null,
+        });
+
+        // Geçmiş katılımcıları geri ekle (duplike kontrolüyle)
+        const exitedLogs = await getExitedLogs(order.uniq_id);
+        for (const item of exitedLogs) {
+
+          // Eski katılımı geçmişe taşı
+          await SectionParticiptionLogs.update(
+            {
+              status: "4",
+            },
+            {
+              where: {
+                status: "2",
+                uniq_id: item.uniq_id,
+                operator_id: item.operator_id, // ✅ bu filtreyi de eklersen daha güvenli olur
+              },
+            }
+          );
+          // Yeni aktif katılımı oluştur
+          await SectionParticiptionLogs.create({
+            uniq_id: newUniqId,
+            operator_id: item.operator_id,
+            join_time: currentDateTimeOffset,
+            section: item.section,
+            area_name: item.area_name,
+            order_no: item.order_no,
+            status: "1",
+            machine_name: item.machine_name,
+            field: item.field,
+          });
+        }
+
+        await SectionParticiptionLogs.create({
+          uniq_id: newUniqId,
+          operator_id: currentUser,
+          join_time: currentDateTimeOffset,
+          section: order.section,
+          area_name: order.area_name,
+          order_no: order.order_no,
+          status: "1",
+          machine_name: order?.machine_name || null,
+          field,
         });
       }
     }
 
-    // Eski işleri kapat (work_status = 4 yap)
+    // 7. GÜNCELLEME VE KAYITLAR
     if (workIdsToClose.length > 0) {
       await WorkLog.update(
         {
-          work_status: "4", // İş kapatıldı
+          work_status: "4",
           work_end_date: currentDateTimeOffset,
           work_finished_op_dec: currentUser,
           produced_amount: 0,
@@ -212,7 +293,6 @@ const rWork = async ({
       );
     }
 
-    // Aynı kişi tarafından başlatılan işleri yeniden başlat (work_status = 1 yap)
     if (workIdsToRestart.length > 0) {
       await WorkLog.update(
         { work_status: "1" },
@@ -220,7 +300,6 @@ const rWork = async ({
       );
     }
 
-    // Yeni iş kaydı oluştur
     if (newWorkTasks.length > 0) {
       await WorkLog.bulkCreate(newWorkTasks);
     }
@@ -256,11 +335,8 @@ const stopWork = async ({
         "Moladayken prosesi durduramazsınız. Moladan dönüş işlemini gerçekleştirip tekrar deneyin.",
     };
   }
-
-  // İlgili uniq id ile zaten durdurulmuş iş kontrolü
-
   // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-  if (area_name === "cekic") {
+  if (area_name === "cekic" || area_name === "telcekme") {
     const isSectionParticipated = await SectionParticiptionLogs.findOne({
       where: {
         operator_id: user_who_stopped,
@@ -306,6 +382,34 @@ const stopWork = async ({
     { work_status: "2" },
     { where: { uniq_id: work_log_uniq_id } }
   );
+  // Aşağıdaki işlemi şimdilik sadece telçekme bölümü için yapıyoruz. İş durduruldugu zaman bölümdekileri çıkarıyoruz.
+  if (area_name === "telcekme") {
+    //todo findAll ın dönüş değeri dizidir.
+    const isSectionParticipated = await SectionParticiptionLogs.findAll({
+      where: {
+        exit_time: null,
+        area_name,
+        uniq_id: work_log_uniq_id,
+      },
+    });
+
+    if (isSectionParticipated.length > 0) {
+      const exitTimeUpdated = await SectionParticiptionLogs.update(
+        {
+          exit_time: currentDateTimeOffset,
+          status: "2",
+        },
+        {
+          where: {
+            uniq_id: work_log_uniq_id,
+            status: {
+              [Op.in]: ["1", "2"],
+            },
+          },
+        }
+      );
+    }
+  }
   return { status: 200, message: "İş başarıyla durduruldu." };
 };
 
@@ -361,7 +465,6 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     field,
   } = work_info;
 
-
   // Eğer "buzlama" ekranındaysak ve machine_name boşsa hata döndür
   if (area_name === "buzlama" && !machine_name) {
     return {
@@ -398,38 +501,39 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
-    // Eğer "cekic" ekranındaysak, kullanıcının bölüme katılımını kontrol et
-    if (area_name === "cekic") {
-      try {
-        const isSectionParticipated = await SectionParticiptionLogs.findOne({
-          where: {
-            operator_id: user_id_dec,
-            exit_time: null,
-            area_name: area_name,
-          },
-        });
-  
-        if (!isSectionParticipated) {
-          return {
-            status: 400,
-            message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
-          };
-        }
-  
-        // Eğer kullanıcı bölüme katıldıysa ancak yanlış field içinde ise
-        if (isSectionParticipated.field !== field) {
-          return {
-            status: 400,
-            message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
-          };
-        }
-      } catch (err) {
+  // Eğer "cekic" ekranındaysak, kullanıcının bölüme katılımını kontrol et
+  if (area_name === "cekic") {
+    try {
+      const isSectionParticipated = await SectionParticiptionLogs.findOne({
+        where: {
+          operator_id: user_id_dec,
+          exit_time: null,
+          area_name: area_name,
+        },
+      });
+
+      if (!isSectionParticipated) {
         return {
-          status: 500,
-          message: "Bölüm katılım durumu kontrol edilirken bir hata meydana geldi.",
+          status: 400,
+          message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
         };
       }
+
+      // Eğer kullanıcı bölüme katıldıysa ancak yanlış field içinde ise
+      if (isSectionParticipated.field !== field) {
+        return {
+          status: 400,
+          message: `Şu anda ${isSectionParticipated.field} alanında çalışıyorsunuz. Önce çıkış yapıp ${field} alanına giriş yapmalısınız.`,
+        };
+      }
+    } catch (err) {
+      return {
+        status: 500,
+        message:
+          "Bölüm katılım durumu kontrol edilirken bir hata meydana geldi.",
+      };
     }
+  }
 
   // En büyük uniq_id'yi bul ve bir artır
   let newUniqId;
@@ -485,7 +589,6 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 };
-
 
 //! Order id ye göre siparişi çekecek query...
 const getOrder = async ({ id }) => {
@@ -554,10 +657,11 @@ const cancelWork = async ({
   currentDateTimeOffset,
   currentUser,
   area_name,
-  field
+  field,
 }) => {
+  console.log(uniq_id);
   try {
-    // Bölüme katılacak kullanıcı molada mı ?
+    // kullanıcı molada mı ?
     const isBreakUser = await BreakLog.findOne({
       where: {
         operator_id: currentUser,
@@ -611,6 +715,46 @@ const cancelWork = async ({
         },
       }
     );
+
+    // Aşağıdaki işlemi şimdilik sadece telçekme bölümü için yapıyoruz
+    if (area_name === "telcekme") {
+      // findAll ın dönüş değeri dizidir.
+      const isSectionParticipated = await SectionParticiptionLogs.findAll({
+        where: {
+          exit_time: null,
+          uniq_id,
+          area_name,
+        },
+      });
+
+      if (isSectionParticipated.length > 0) {
+        const exitTimeUpdated = await SectionParticiptionLogs.update(
+          {
+            exit_time: currentDateTimeOffset,
+            status: "3",
+          },
+          {
+            where: {
+              uniq_id,
+              area_name,
+              status: {
+                [Op.in]: ["1", "2"],
+              },
+            },
+          }
+        );
+
+        if (exitTimeUpdated[0] > 0) {
+          console.log(
+            `✔ ${exitTimeUpdated[0]} kullanıcı çıkışı kaydedildi (telçekme).`
+          );
+        } else {
+          console.log(
+            "⚠ Kullanıcı çıkışı güncellenmedi, zaten çıkış yapılmış olabilir."
+          );
+        }
+      }
+    }
     return { status: 200, message: "Sipariş başarıyla iptal edildi." };
   } catch (err) {
     console.log(err);
@@ -620,17 +764,17 @@ const cancelWork = async ({
 
 //! durdurma sebeplerini bölüme göre getirecek metot
 const getStopReason = async ({ area_name }) => {
-try {
-  const stopReason = await StopReason.findAll({
-      where:{
-          area_name
-      }
-  });
-  return stopReason;
-} catch (err) {
-  console.error("Error querying stop reasons:", err);
-  throw err;
-}
+  try {
+    const stopReason = await StopReason.findAll({
+      where: {
+        area_name,
+      },
+    });
+    return stopReason;
+  } catch (err) {
+    console.error("Error querying stop reasons:", err);
+    throw err;
+  }
 };
 
 //! Parametreye gore iptal sebeblerini cekecek query ( parametre url route dan alıyoruz.)
@@ -2689,8 +2833,13 @@ async function updateMeasure(formState, uniq_id) {
 //? FİRE İŞLEMLERİ İÇİN GEREKLİ SERVİSLER SON...
 
 //? Toplu sipariş iptal edecek servis
-
-const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
+const fwork = async (
+  uniqIds,
+  work_finished_op_dec,
+  areaName,
+  field,
+  repair_amount
+) => {
   const work_end_date = new Date().toISOString();
   try {
     // Geçersiz veri kontrolü
@@ -2720,7 +2869,7 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
     // MOLA
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if (areaName === "cekic") {
+    if (areaName === "cekic" || areaName === "telcekme") {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: work_finished_op_dec,
@@ -2732,7 +2881,7 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
       if (!isSectionParticipated) {
         return {
           status: 400,
-          message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
+          message: "Bölüme katılım sağlamadan işe bitiremezsinizs.",
         };
       }
       if (isSectionParticipated.field !== field) {
@@ -2744,7 +2893,6 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
     }
 
     // bölüm ?
-
     const orders = await WorkLog.findAll({
       where: { uniq_id: uniqIds },
     });
@@ -2767,12 +2915,49 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
 
     // İşleri bitmiş olarak güncelleme
     const [updatedCount] = await WorkLog.update(
-      { work_status: "4", work_finished_op_dec, work_end_date }, // Doğru kolon ismi
+      { work_status: "4", work_finished_op_dec, work_end_date, repair_amount }, // Doğru kolon ismi
       { where: { uniq_id: uniqIds } }
     );
 
     if (updatedCount === 0) {
       return { status: 404, message: "Güncellenecek sipariş bulunamadı." };
+    }
+
+    // Aşağıdaki işlemi şimdilik sadece telçekme bölümü için yapıyoruz
+    if (areaName === "telcekme") {
+      // findAll ın dönüş değeri dizidir.
+      const isSectionParticipated = await SectionParticiptionLogs.findAll({
+        where: {
+          exit_time: null,
+          area_name: areaName,
+          uniq_id: uniqIds,
+        },
+      });
+
+      if (isSectionParticipated.length > 0) {
+        const exitTimeUpdated = await SectionParticiptionLogs.update(
+          {
+            exit_time: work_end_date,
+            status: "4",
+          },
+          {
+            where: {
+              uniq_id: uniqIds,
+              status: { [Op.or]: ["1", "2"] },
+            },
+          }
+        );
+
+        if (exitTimeUpdated[0] > 0) {
+          console.log(
+            `✔ ${exitTimeUpdated[0]} kullanıcı çıkışı kaydedildi (telçekme).`
+          );
+        } else {
+          console.log(
+            "⚠ Kullanıcı çıkışı güncellenmedi, zaten çıkış yapılmış olabilir."
+          );
+        }
+      }
     }
 
     return {
@@ -2788,62 +2973,101 @@ const fwork = async (uniqIds, work_finished_op_dec, areaName,field) => {
 //? CEKİC BOLUME KATILAM İŞLEMLERİ....
 
 //! Bölüme katılım sağlanması için kullanılacak servis...
-async function joinSection(section, areaName, user_id, field, machine_name) {
+async function joinSection(
+  section,
+  areaName,
+  user_id,
+  field,
+  machine_name,
+  workIds,
+  uniqIds
+) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    // kullanıcı bır bolume katılmıs mı ?
-    const isJoinUserField = await SectionParticiptionLogs.findOne({
-      where: {
-        operator_id: user_id,
-        exit_time: null,
-      },
-    });
+    // Kullanıcı ID'lerini dizi haline getir (tek kişi ise dizileştir)
+    const userIds = Array.isArray(user_id) ? user_id : [user_id];
 
-    // Bölüme katılacak kullanıcı molada mı ?
-    const isBreakUser = await BreakLog.findOne({
-      where: {
-        operator_id: user_id,
-        end_date: null,
-      },
-    });
+    for (const userId of userIds) {
+      // Kullanıcı zaten bölüme katılmış mı?
+      let isJoinUserField;
 
-    if (isBreakUser) {
-      return {
-        status: 400,
-        message: "Moladayken bölüme katılım sağlayamazsınız.",
-      };
-    }
+      if (areaName !== "telcekme") {
+        isJoinUserField = await SectionParticiptionLogs.findOne({
+          where: {
+            operator_id: userId,
+            exit_time: null,
+          },
+        });
+      }
 
-    if (isJoinUserField) {
-      return {
-        status: 409, // 409: Conflict durumu daha uygun
-        message: `${
-          isJoinUserField.dataValues.field
-        } bölümüne katılım sağlamışsınız. Önce bu bölümden ayrılıp tekrar deneyin.`,
-      };
-    }
-
-    if (!isJoinUserField) {
-      const joinSection = await SectionParticiptionLogs.create({
-        section,
-        area_name: areaName,
-        operator_id: user_id,
-        field,
-        join_time: currentDateTimeOffset,
-        machine_name,
+      // Kullanıcı molada mı?
+      const isBreakUser = await BreakLog.findOne({
+        where: {
+          operator_id: userId,
+          end_date: null,
+        },
       });
-      return { status: 200, message: "Bölüme başarıyla katıldınız." };
-    } else {
-      return {
-        status: 303,
-        message: "Daha önceden bu bölüme katılım sağlamıssınız.",
-      };
+
+      if (isBreakUser) {
+        return {
+          status: 400,
+          message: `Moladayken bölüme katılım sağlayamazsınız. (${userId})`,
+        };
+      }
+
+      if (isJoinUserField) {
+        return {
+          status: 409, // 409: Conflict durumu daha uygun
+          message: `${isJoinUserField.dataValues.field} bölümüne katılım sağlamışsınız. Önce bu bölümden ayrılıp tekrar deneyin.`,
+        };
+      }
     }
+
+    // Katılım işlemi (Hem iş hem de kullanıcıları birlikte yönetelim)
+    await Promise.all(
+      // map içinde async await yok... Promise.all içinde async await kullanıyoruz
+      // userIds tek bir kullanıcı ID'si olabileceği gibi, dizi içinde birden fazla kullanıcı ID'si de olabilir.
+      (Array.isArray(userIds) ? userIds : [userIds]).map(async (userId) => {
+        // Eğer workIds boşsa, sadece kullanıcı katılımı yap
+        if (!Array.isArray(workIds) || workIds.length === 0) {
+          await SectionParticiptionLogs.create({
+            section,
+            area_name: areaName,
+            operator_id: userId,
+            field,
+            join_time: currentDateTimeOffset,
+            machine_name,
+            order_no: null, // Sipariş yoksa NULL atanabilir
+            uniq_id: null, // uniq_id de null olabilir
+            status: "1",
+          });
+        } else {
+          await Promise.all(
+            workIds.map(async (order, index) => {
+              await SectionParticiptionLogs.create({
+                section,
+                area_name: areaName,
+                operator_id: userId,
+                field,
+                join_time: currentDateTimeOffset,
+                machine_name,
+                order_no: order,
+                uniq_id: uniqIds[index] || null, // Eğer uniq_id yoksa null ata
+                status: "1",
+              });
+            })
+          );
+        }
+      })
+    );
+
+    return { status: 200, message: "Bölüme başarıyla katıldınız." };
   } catch (err) {
-    console.error("Error in joinSection  function:", err);
+    console.error("Error in joinSection function:", err);
     return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
+
 //! Bölüme katılmıs bir personelin çıkısını yapacak servis
 async function exitSection(
   selectedPersonInField,
@@ -2855,6 +3079,7 @@ async function exitSection(
     const exitSection = await SectionParticiptionLogs.update(
       {
         exit_time: currentDateTimeOffset,
+        status: "4",
       },
       {
         where: {
@@ -2892,15 +3117,36 @@ async function exitSection(
 async function getPersonInTheField(areaName) {
   try {
     const result = await SectionParticiptionLogs.findAll({
+      attributes: [
+        "operator_id",
+        "op_name",
+        "area_name",
+        "section",
+        "field",
+        "machine_name",
+        [Sequelize.fn("MIN", Sequelize.col("join_time")), "join_time"], // En erken giriş yapılan kaydı al
+      ],
       where: {
         area_name: areaName,
-        exit_time: null,
+        exit_time: null, // Çıkış yapmamış kullanıcıları getir
       },
+      group: [
+        "operator_id",
+        "op_name",
+        "area_name",
+        "section",
+        "field",
+        "machine_name", // Makine bazında da grupluyoruz
+      ],
+      order: [
+        ["machine_name", "ASC"], // Makineye göre sıralıyoruz
+        [Sequelize.fn("MIN", Sequelize.col("join_time")), "ASC"], // En erken giriş sırasına göre sıralıyoruz
+      ],
     });
 
     return { status: 200, message: result };
   } catch (err) {
-    console.error("Error in deleteMeasurement function:", err);
+    console.error("Error in getPersonInTheField function:", err);
     return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
@@ -3139,6 +3385,87 @@ async function startToProces(workIds, user_id_dec, area_name) {
 }
 
 //? CEKİC BOLUME KATILAM İŞLEMLERİ SON...
+//! Bir işi devredecek servis
+async function transferOrder(
+  workIds,
+  user_id_dec,
+  area_name,
+  op_username,
+  currentDateTimeOffset
+) {
+  try {
+    if (!workIds || !Array.isArray(workIds) || workIds.length === 0) {
+      return {
+        status: 400,
+        message: "Geçerli bir iş ID listesi gönderilmedi.",
+      };
+    }
+
+    const works = await WorkLog.findAll({
+      where: {
+        uniq_id: {
+          [Op.in]: workIds,
+        },
+        work_status: "1",
+      },
+    });
+
+    if (!works || works.length === 0) {
+      return {
+        status: 404,
+        message: "Devredeceğiniz işler bulunamadı.",
+      };
+    }
+
+    const latestWorkLog = await WorkLog.findOne({
+      order: [["uniq_id", "DESC"]],
+    });
+
+    let currentUniqId = latestWorkLog
+      ? parseInt(latestWorkLog.uniq_id, 10) + 1
+      : 1;
+    const updatedWorks = [];
+
+    for (const work of works) {
+      newUniqId = String(currentUniqId).padStart(6, "0");
+      const newWorkData = { ...work.dataValues };
+      delete newWorkData.id;
+      delete newWorkData.op_username;
+
+      await WorkLog.update(
+        {
+          work_status: "8",
+          work_end_date: currentDateTimeOffset,
+          work_finished_op_dec: user_id_dec,
+        },
+        {
+          where: {
+            uniq_id: work.uniq_id,
+          },
+        }
+      );
+
+      await WorkLog.create({
+        ...newWorkData,
+        uniq_id: newUniqId,
+        work_status: "1",
+        work_start_date: currentDateTimeOffset,
+        user_id_dec,
+        op_username,
+      });
+      updatedWorks.push(newUniqId);
+      currentUniqId++;
+    }
+
+    return {
+      status: 200,
+      message: `İşlem başarıyla tamamlandı. Devredilen iş sayısı: ${updatedWorks.length}`,
+    };
+  } catch (err) {
+    console.log("Error in forwardWork function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+}
 
 module.exports = {
   getOrderById,
@@ -3193,5 +3520,6 @@ module.exports = {
   getStoppedWorks,
   stopWork,
   rWork,
-  finishedWork
+  finishedWork,
+  transferOrder,
 };

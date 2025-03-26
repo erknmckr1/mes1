@@ -40,6 +40,18 @@ const SectionParticiptionLogs = sequelize.define("SectionParticiptionLogs", {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  order_no:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  uniq_id:{
+    type:DataTypes.STRING,
+    allowNull:true
+  },
+  status:{
+    type:DataTypes.STRING,
+    allowNull:true
+  }
 },{
     timestamps:false,
     tableName:"section_particiption_logs"

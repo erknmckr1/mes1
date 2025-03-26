@@ -35,10 +35,10 @@ function JobTable() {
   const {
     selectedOrder,
     workList,
-    selectedGroupNo,
     selectedHammerSectionField,
     selectedMachine,
   } = useSelector((state) => state.order);
+  const { isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
@@ -60,7 +60,8 @@ function JobTable() {
       } else if (
         areaName === "buzlama" ||
         areaName === "cekic" ||
-        areaName === "kurutiras"
+        areaName === "kurutiras" ||
+        areaName === "telcekme"
       ) {
         // Buzlama ekranında çoklu seçim yapılabilir
         dispatch(setSelectedOrder([...selectedOrder, params.row]));
@@ -104,11 +105,10 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
-      const isWithoutId = ["buzlama", "kurutiras", "cekic"].includes(areaName);
       if (areaName === "kalite" && userInfo) {
         // ID ile siparişleri çek
         getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
-      } else if (isWithoutId) {
+      } else if (isRequiredUserId) {
         // ID olmadan tüm siparişleri çek
         dispatch(getWorksWithoutId({ areaName }));
       }
@@ -126,7 +126,7 @@ function JobTable() {
   }, [areaName, userInfo, dispatch, selectedHammerSectionField]);
 
   const getFilteredRows = () => {
-    if (areaName === "buzlama") {
+    if (areaName === "buzlama" || areaName === "telcekme") {
       // Buzlama ekranı için filtreleme yap
       return workList
         ?.filter((item) => item.machine_name === selectedMachine.machine_name)

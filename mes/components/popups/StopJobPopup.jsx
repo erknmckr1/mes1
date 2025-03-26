@@ -8,6 +8,7 @@ import {
   setSelectedGroupNos,
   setFilteredGroup,
   getWorksWithoutId,
+  getJoinTheField,
 } from "@/redux/orderSlice";
 import { setUser } from "@/redux/userSlice";
 import { usePathname } from "next/navigation";
@@ -47,7 +48,6 @@ function StopJobPopup() {
   };
   //! Seçilen işi durdurmak için gerekli istek...
   const stopSelectedWork = async () => {
-    const isStopScreen = ["buzlama", "cekic", "kurutiras"].includes(areaName);
     try {
       if (!molaSebebi) {
         toast.error("Seçili siparişi durdurmak için durdurma nedeni seçiniz.");
@@ -68,7 +68,7 @@ function StopJobPopup() {
         field: selectedHammerSectionField,
       };
 
-      if (isStopScreen) {
+      if (isRequiredUserId) {
         requestData.user_who_stopped = user.id_dec;
       }
 
@@ -85,8 +85,9 @@ function StopJobPopup() {
         toast.success(`Siparişleri durdurma işlemi başarılı.`);
       };
       if (response.status === 200) {
-        if (isStopScreen) {
+        if (isRequiredUserId) {
           dispatch(getWorksWithoutId({ areaName }));
+          dispatch(getJoinTheField({ areaName }));
           opt();
         } else {
           getWorkList({ areaName, userId: userInfo.id_dec, dispatch }); // WorkList'i yenile

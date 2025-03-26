@@ -11,7 +11,6 @@ import {
   setSelectedPersonInField,
   setSelectedMachine,
   setSelectedProcess,
-   
 } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 function GroupArea() {
@@ -32,13 +31,14 @@ function GroupArea() {
     selectedPersonInField,
     workList,
     selectedMachine,
+    selectedProcess
   } = useSelector((state) => state.order);
 
   useEffect(() => {
     dispatch(handleGetGroupList());
     dispatch(fetchBuzlamaWorks({ areaName }));
     // şimdilik isteği sadece cekıc ekranlarında atalım
-    if (areaName === "cekic") {
+    if (areaName === "cekic" || areaName === "telcekme") {
       dispatch(getJoinTheField({ areaName }));
     }
   }, [dispatch, areaName]);
@@ -59,7 +59,7 @@ function GroupArea() {
       );
     } else {
       updatedSelectedGroupNo = [
-       // ...selectedGroupNo,
+        // ...selectedGroupNo,
         { group_record_id, group_status, group_no },
       ];
     }
@@ -84,7 +84,11 @@ function GroupArea() {
   //? yenı makıne ıslevı gerceklestıgı zaman son prosesi listele...
   const filteredGroupList = groupList.reduce((acc, group) => {
     const existingGroup = acc.find((g) => g.group_no === group.group_no);
-    if (!existingGroup || new Date(existingGroup.group_creation_date) < new Date(group.group_creation_date)) {
+    if (
+      !existingGroup ||
+      new Date(existingGroup.group_creation_date) <
+        new Date(group.group_creation_date)
+    ) {
       // Eğer bu group_no daha önce eklenmediyse ya da daha yeniyse, güncelle
       return acc.filter((g) => g.group_no !== group.group_no).concat(group);
     }
@@ -98,7 +102,7 @@ function GroupArea() {
     { field: "Sarma", name: "sarma", id: 4 },
   ];
 
-  //? CEKIC ISLEMLERI...
+  //? BÖLÜME KATILMA İŞLEMLERİ
   // cekic alanı sececek fonksıyon...
   const handleSelectedArea = (name) => {
     dispatch(setSelectedHammerSectionField(name));
@@ -116,16 +120,21 @@ function GroupArea() {
     },
     [dispatch, selectedPersonInField]
   );
-  console.log(usersJoinedTheField);
+
   useEffect(() => {
-    const filtered = usersJoinedTheField.filter((item) => {
-      // if (selectedHammerSectionField === "makine") {
-      //   return item.machine_name === selectedMachine.machine_name; // makine seçiliyse
-      // }
-      return item.field === selectedHammerSectionField;
-    });
+    let filtered ;
+    if(areaName === "telcekme"){
+      filtered = usersJoinedTheField.filter((item) => {
+        return item.machine_name === selectedMachine?.machine_name;
+      });
+    }else{
+      filtered = usersJoinedTheField.filter((item) => {
+        return item.field === selectedHammerSectionField;
+      });
+    }
+    
     setFilteredPersonInField(filtered);
-  }, [selectedHammerSectionField, usersJoinedTheField,selectedMachine]);
+  }, [selectedHammerSectionField, usersJoinedTheField, selectedMachine]);
 
   const renderArea = () => {
     if (areaName === "buzlama") {
@@ -223,56 +232,67 @@ function GroupArea() {
         >
           <div className="w-full h-full flex gap-x-1">
             {/* grup listesi */}
-            <div className="w-1/2 h-full flex flex-col">
-              <h1 className="text-center w-full py-2 border-b text-xs">
-                Alan Seçimi
-              </h1>
-              {/* alanlar */}
-              <div className="overflow-y-auto h-full">
-                <ul>
-                  {cekicAreas.map((item, index) => (
-                    <li
-                      className={`w-full py-2 h-16 items-center flex justify-center cursor-pointer hover:bg-green-500 text-[20px] text-black border-b-2 font-bold border-black ${
-                        selectedHammerSectionField === item.name
-                          ? "bg-green-500 "
-                          : `listeleman ${theme}`
-                      }`}
-                      key={item.id}
-                      onClick={() => handleSelectedArea(item.name)}
-                    >
-                      {item.field}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            {/* sipariş listesi */}
-            <div className="w-1/2 h-full">
-              {/*  */}
-              <div className="flex flex-col h-full w-full">
-                <span className="text-center w-full py-2 border-b text-xs">
-                  Operatörler
-                </span>
-                <ul className="w-full overflow-y-auto h-full pt-1 text-black flex flex-col ">
-                  {filteredPersonInField &&
-                    filteredPersonInField.map((item, index) => (
+            {areaName === "cekic" && (
+              <div className="w-1/2 h-full flex flex-col">
+                <h1 className="text-center w-full py-2 border-b text-xs">
+                  Alan Seçimi
+                </h1>
+                {/* alanlar */}
+                <div className="overflow-y-auto h-full">
+                  <ul>
+                    {cekicAreas.map((item, index) => (
                       <li
-                        key={index}
-                        onClick={() =>
-                          handleSelectedPersonInField(item.operator_id)
-                        }
-                        className={`h-12 overflow-y-auto cursor-pointer border-b border-black bg-green-500 px-2 flex items-center rounded-sm ${
-                          item.operator_id === selectedPersonInField
+                        className={`w-full py-2 h-16 items-center flex justify-center cursor-pointer hover:bg-green-500 text-[20px] text-black border-b-2 font-bold border-black ${
+                          selectedHammerSectionField === item.name
                             ? "bg-green-500 "
                             : `listeleman ${theme}`
                         }`}
+                        key={item.id}
+                        onClick={() => handleSelectedArea(item.name)}
                       >
-                        {item.operator_id}
+                        {item.field}
                       </li>
                     ))}
-                </ul>
+                  </ul>
+                </div>
               </div>
-            </div>
+            )}
+            {/* TEL CEKMEEEEEE */}
+            {(areaName !== "telcekme" ||
+              (areaName === "telcekme" && selectedMachine?.machine_name)) && (
+              <div
+                className={`${
+                  areaName === "cekic" ? "w-1/2" : "w-full"
+                } h-full`}
+              >
+                <div className="flex flex-col h-full w-full">
+                    <span className="text-center w-full py-2 border-b text-xs">
+                      {!areaName === "telcekme"
+                        ? "Operatörler"
+                        : `${selectedMachine?.machine_name ? selectedMachine.machine_name : selectedHammerSectionField } deki operatörler`}
+                    </span>
+                  
+                  <ul className="w-full overflow-y-auto h-full pt-1 text-black flex flex-col">
+                    {filteredPersonInField &&
+                      filteredPersonInField.map((item, index) => (
+                        <li
+                          key={index}
+                          onClick={() =>
+                            handleSelectedPersonInField(item.operator_id)
+                          }
+                          className={`h-12 overflow-y-auto cursor-pointer border-b border-black px-2 flex items-center rounded-sm ${
+                            item.operator_id === selectedPersonInField
+                              ? "bg-green-500"
+                              : `listeleman ${theme}`
+                          }`}
+                        >
+                          {item.operator_id}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );

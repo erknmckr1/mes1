@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getAllUsers, getUserWithId } = require("../services/userServices");
+const { getAllUsers, getUserWithId,getUserWithArea } = require("../services/userServices");
 const User = require("../../models/User");
 const Permissions = require("../../models/Permissions");
 const Role = require("../../models/Roles");
@@ -203,6 +203,13 @@ router.get("/:userId/getuserinfo", async (req, res) => {
   const { userId } = req.params;
   console.log(userId);
   const result = await getUserWithId(userId);
+  return res.status(result.status).json(result.message);
+});
+
+//! Bölüme göre kullanıcı çekecek route
+router.get("/getUserWithArea", async (req, res) => {
+  const { areaName } = req.query;
+  const result = await getUserWithArea(areaName);
   return res.status(result.status).json(result.message);
 });
 

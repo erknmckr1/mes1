@@ -28,7 +28,7 @@ import axios from "axios";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice"; // buzlama gıbı ekranlarda operasyon oncesı ıd sorulacaksa bu state ı kullanıyoruz.
-import { setFirePopup  } from "@/redux/globalSlice";
+import { setFirePopup } from "@/redux/globalSlice";
 
 function RightSideBtnArea() {
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
@@ -42,8 +42,7 @@ function RightSideBtnArea() {
     groupList,
     selectedHammerSectionField,
     selectedPersonInField,
-    read_order,
-    stopReasonPopup,
+    workList,
   } = useSelector((state) => state.order);
   const { isRequiredUserId } = useSelector((state) => state.global);
   const { userInfo, user } = useSelector((state) => state.user);
@@ -51,6 +50,7 @@ function RightSideBtnArea() {
   const pathName = usePathname();
   const section = pathName.split("/")[2];
   const areaName = pathName.split("/")[3];
+
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
       switch (retryAction) {
@@ -113,6 +113,9 @@ function RightSideBtnArea() {
           break;
         case "startToProces":
           startToProces();
+          break;
+        case "transferOrder":
+          transferOrder();
           break;
         default:
           break;
@@ -221,14 +224,13 @@ function RightSideBtnArea() {
 
   //! Seçili ve durdurulmuş siparişi yeniden başlat...
   const restartWork = async () => {
-   
     try {
       if (selectedOrder.length === 0) {
         toast.error("Durdurulmuş bir iş seçiniz...");
         return;
       }
 
-      // Eğer kalite ekranındaysak sadece tek bir iş seçilmesine izin ver
+      // Eğer kalite gibi ekranlardaysak  sadece tek bir iş seçilmesine izin ver
       if (!isRequiredUserId && selectedOrder.length > 1) {
         toast.error("Bu ekranda yalnızca 1 iş yeniden başlatılabilir.");
         return;
@@ -276,6 +278,7 @@ function RightSideBtnArea() {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           } else if (isRequiredUserId) {
             dispatch(getWorksWithoutId({ areaName }));
+            dispatch(getJoinTheField({ areaName }));
           } else {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           }
@@ -399,6 +402,7 @@ function RightSideBtnArea() {
         dispatch(setSelectedOrder([]));
         dispatch(setUser(null));
         dispatch(getWorksWithoutId({ areaName }));
+        dispatch(getJoinTheField({ areaName }));
       }
     } catch (err) {
       console.error("İş bitirme hatası:", err);
@@ -412,8 +416,9 @@ function RightSideBtnArea() {
 
   //! Tekli yada coklu ıslemler ıcın ıkı farklı fonksıyon yazdık bunu teke dusur.
   const handleFinishedFunc = () => {
-    const isMoreFinish = ["buzlama","kurutiras"].includes(areaName);
-    if (isMoreFinish) {
+    if (areaName === "telcekme") {
+      handleOpenFinishedPopup();
+    }else if (isRequiredUserId){
       handleFinishWork();
     } else {
       handleOpenFinishedPopup();
@@ -440,7 +445,6 @@ function RightSideBtnArea() {
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
-
       // Seçili sipariş kontrolü
       if (!selectedOrder || selectedOrder.length === 0) {
         toast.error("İptal etmek için en az bir sipariş seçmelisiniz.");
@@ -459,7 +463,7 @@ function RightSideBtnArea() {
           : selectedOrder[0].uniq_id, // Tek sipariş için string
         areaName,
         field: selectedHammerSectionField,
-        currentUser:userInfo.id_dec
+        currentUser: userInfo.id_dec,
       };
 
       if (isRequiredUserId) {
@@ -481,8 +485,9 @@ function RightSideBtnArea() {
           dispatch(setUser(null));
           if (areaName === "kalite") {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama" || areaName === "cekic") {
+          } else if (isRequiredUserId) {
             dispatch(getWorksWithoutId({ areaName }));
+            dispatch(getJoinTheField({ areaName }));
           } else {
             getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
           }
@@ -959,36 +964,50 @@ function RightSideBtnArea() {
       setRetryAction("joinTheSection");
       return;
     }
-
-    if (!selectedHammerSectionField) {
+    // Çekiç bölüme katılma şartı
+    if (areaName === "cekic" && !selectedHammerSectionField) {
       toast.error("Katılacağınız bölümü seçiniz.");
       dispatch(setUser(""));
       return;
     }
 
-    // Eğer seçilen alan "makine" ise, makine adı seçilmesi zorunlu
-    // if (
-    //   selectedHammerSectionField === "makine" &&
-    //   !selectedMachine?.machine_name
-    // ) {
-    //   toast.error("Makine bölümüne katılmak için bir makine seçmelisiniz.");
-    //   dispatch(setUser(""));
-    //   return;
-    // }
+    // tel çekme bölümüne katılacaksa makine seçimi zorunlu
+    if (areaName === "telcekme" && !selectedMachine?.machine_name) {
+      toast.error("Katılacağınız makineyi seçiniz.");
+      dispatch(setUser(""));
+      return;
+    }
+
+    // Seçilen makineye ait işlerin order_no ve uniq_id'lerini al
+    const workData = workList
+      .filter((item) => item.machine_name === selectedMachine.machine_name)
+      .map((item) => ({
+        order_no: item.order_no,
+        uniq_id: item.uniq_id,
+      }));
+
+    // Eğer seçilen alan "tel çekme" ise ve seçilen makineye ait iş yoksa hata ver
+    if (areaName === "telcekme" && workData.length === 0) {
+      toast.error("Seçilen makineye ait iş bulunamadı.");
+      dispatch(setUser(""));
+      return;
+    }
+
+    // params
+    let requestData = {
+      section,
+      areaName,
+      user_id: user.id_dec,
+      field: selectedHammerSectionField,
+      machine_name: selectedMachine?.machine_name,
+      workIds: workData.map((item) => item.order_no), // order_no'ları gönderiyoruz
+      uniqIds: workData.map((item) => item.uniq_id), // uniq_id'leri de gönderiyoruz
+    };
 
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/join-section`,
-        {
-          section,
-          areaName,
-          user_id: user.id_dec,
-          field: selectedHammerSectionField,
-          machine_name:
-            selectedHammerSectionField === "makine"
-              ? selectedMachine?.machine_name
-              : null,
-        }
+        requestData
       );
 
       if (response.status === 200) {
@@ -1132,7 +1151,6 @@ function RightSideBtnArea() {
 
   //! Setup bıtmıs işi baslatacak query...
   const startToProces = async () => {
-    console.log("startToProces");
     if (selectedOrder.length <= 0) {
       toast.error("Başlatacağınız siparişleri seçiniz.");
       dispatch(setUser(null));
@@ -1171,6 +1189,48 @@ function RightSideBtnArea() {
   };
 
   //? CEKİC EKRANI METOTLARI BİTİS...
+
+  //! Bir işi başka bir kullanıcıya devredecek query...
+  const transferOrder = async () => {
+    if (!selectedOrder || selectedOrder.length === 0) {
+      toast.error("Devredeceğiniz siparişi seçiniz.");
+      return;
+    }
+
+    if (!user || !user.id_dec) {
+      dispatch(setUserIdPopup(true));
+      setRetryAction("transferOrder");
+      return;
+    }
+
+    const workIds = selectedOrder.map((order) => order.uniq_id);
+    const requestData = {
+      workIds,
+      user_id_dec: user.id_dec,
+      area_name: areaName,
+      op_username: user.op_username,
+    };
+
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/transferOrder`,
+        requestData
+      );
+      if (response.status === 200) {
+        toast.success(response.data);
+        dispatch(setSelectedOrder([]));
+        dispatch(setUser(null));
+        dispatch(getWorksWithoutId({ areaName }));
+      }
+    } catch (err) {
+      console.error("Devir işlemi sırasında hata oluştu:", err);
+      toast.error(
+        err.response?.data.message || "Devir işlemi sırasında hata oluştu."
+      );
+      dispatch(setUser(null));
+      dispatch(setSelectedOrder([]));
+    }
+  };
 
   // Kalite buttons || kurutiras || telcekme
   const buttons_r = [
@@ -1334,8 +1394,16 @@ function RightSideBtnArea() {
           },
         ]
       : []),
+    // areaName === "telcekme" && {
+    //   onClick: transferOrder,
+    //   children: "Devir Al",
+    //   type: "button",
+    //   className:
+    //     "w-[140px] bg-orange-500 hover:bg-orange-600 sm:py-4 text-sm sm:px-1",
+    //   // disabled: isCurrentBreak,
+    // },
     {
-      onClick: handleFinishWork,
+      onClick: handleFinishedFunc,
       children: "Prosesi Bitir",
       type: "button",
       className:
@@ -1382,6 +1450,14 @@ function RightSideBtnArea() {
         "w-[140px] sm:px-1 hover:bg-red-500 bg-red-600 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
+    isRequiredUserId && {
+      onClick: handleOpenMeasurementPopup,
+      children: "Ölçüm V. Girişi",
+      type: "button",
+      className:
+        "w-[140px] bg-orange-500 hover:bg-orange-600 sm:py-4 text-sm sm:px-1",
+      // disabled: isCurrentBreak,
+    },
   ];
 
   const taslama_buttons = [
@@ -1399,8 +1475,7 @@ function RightSideBtnArea() {
     if (
       areaName === "kalite" ||
       areaName === "kurutiras" ||
-      areaName === "buzlama" ||
-      areaName === "telcekme"
+      areaName === "buzlama"
     ) {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">
@@ -1416,7 +1491,7 @@ function RightSideBtnArea() {
           ))}
         </div>
       );
-    } else if (areaName === "cekic") {
+    } else if (areaName === "cekic" || areaName === "telcekme") {
       return (
         <div className="">
           <div className="w-full grid grid-cols-2 gap-1">

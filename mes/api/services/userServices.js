@@ -43,4 +43,24 @@ async function getUserWithId(userId) {
     }
   }
 
-module.exports = { getAllUsers,getUserWithId };
+  //! Bölüme göre kullanıcı çekecek servis...
+  async function getUserWithArea(areaName) {
+    try {
+      const result = await User.findAll({
+        where: {
+          part: areaName,
+        },
+      });
+  
+      if (!result || result.length === 0) {
+        return { status: 404, message: "Kullanıcı bulunamadı." };
+      }
+  
+      return { status: 200, message: result };
+    } catch (err) {
+      console.log(err);
+      return { status: 500, message: "Sunucu hatası." };
+    }
+  }
+
+module.exports = { getAllUsers,getUserWithId,getUserWithArea };

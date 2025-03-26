@@ -1,6 +1,8 @@
 const BreakReason = require("../../models/BreakReason");
 const SectionParticiptionLogs = require("../../models/SectionParticiptionLogs");
 const BreakLog = require("../../models/BreakLog");
+const WorkLog = require("../../models/WorkLog");
+const { Op } = require("sequelize");
 const pool = require("../../lib/dbConnect");
 const sequelize = require("../../lib/dbConnect");
 
@@ -57,7 +59,7 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
         end_date: null,
       },
     });
-    
+
     const isSectionParticipated = await SectionParticiptionLogs.findOne({
       where: {
         operator_id,
@@ -68,7 +70,10 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
     //? Eğer bir kullanıcı zaten bir bölümde çalışıyorsa molaya çıkacağı zaman bölümdeki çıkış zamanını güncelle
     if (isSectionParticipated) {
       const sectionParticipated = await SectionParticiptionLogs.update(
-        { exit_time: currentDateTimeOffset },
+        {
+          exit_time: currentDateTimeOffset,
+          status: "5", // status 5 bolumden mola sebebi ile çıktı
+        },
         {
           where: {
             exit_time: null,
@@ -115,13 +120,6 @@ const onBreakUsers = async (areaName) => {
 //! Giriş yapan kullancı moladaysa moladan donus ıcın gereklı fonksıyon. end_time doldugu zaman mola
 //! bitmiş sayılacak...
 const returnToBreak = async ({ operator_id, end_time }) => {
-  console.log(
-    "Updating break for operator:",
-    operator_id,
-    "with end time:",
-    end_time
-  );
-
   try {
     // Güncelleme işlemini gerçekleştirin
     const result = await BreakLog.update(
@@ -134,8 +132,6 @@ const returnToBreak = async ({ operator_id, end_time }) => {
       }
     );
 
-    console.log("Update result:", result);
-
     // Güncellenen kayıtları kontrol et
     const updatedRecords = await BreakLog.findAll({
       where: {
@@ -144,8 +140,47 @@ const returnToBreak = async ({ operator_id, end_time }) => {
       },
     });
 
+    // Mola sebebi ile bölümden çıkan kullanıcıyı kontrol et
+    const exitedDuringBreak = await SectionParticiptionLogs.findAll({
+      where: {
+        operator_id: operator_id,
+        exit_time: {
+          [Op.not]: null,
+        },
+        status: "5",
+      },
+    });
+
+    if (exitedDuringBreak.length > 0) {
+      for (const sectionLog of exitedDuringBreak) {
+        // Sipariş hala aktifse bölüme tekrar giriş yap
+        const isActiveOrder = await WorkLog.findOne({
+          where: {
+            uniq_id: sectionLog.uniq_id,
+            work_status: {
+              [Op.or]: ["1", "2"],
+            },
+          },
+        });
+
+        if (isActiveOrder) {
+          const updateSectionLog = await SectionParticiptionLogs.create({
+            operator_id: sectionLog.operator_id,
+            join_time: end_time,
+            exit_time: null,
+            status: "1", // status 1 normal giriş
+            uniq_id: sectionLog.uniq_id,
+            order_no: sectionLog.order_no,
+            section: sectionLog.section,
+            machine_name: sectionLog.machine_name,
+            area_name: sectionLog.area_name,
+            field: sectionLog.field,
+          });
+        }
+      }
+    }
+
     if (updatedRecords.length > 0) {
-      console.log("Records successfully updated:", updatedRecords);
       return updatedRecords.length; // Güncelleme başarılı, güncellenen kayıt sayısını döner
     } else {
       console.log("No records found with updated end_date");

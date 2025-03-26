@@ -11,7 +11,6 @@ const ThemeButton = () => {
         dispatch(setTheme(theme === "dark" ? "light" : "dark"))
     }
 
-    console.log(theme)
     return (
         <div className={` items-center justify-center rounded-md flex text-center themabtn  ${theme} transition-all`}>
             {theme === "dark" && <CiCloudMoon className="w-[50px] h-[50px] text-[30px] cursor-pointer" onClick={handleChangeThema} />}

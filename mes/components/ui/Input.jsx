@@ -21,7 +21,7 @@ function Input(props) {
         />
         <span
           className={`absolute ${
-            theme === "dark" ? "text-white" : "text-black"
+            theme === "dark" ? "text-black" : "text-black"
           } top-0 left-0 px-4 text-lg flex items-center h-full peer-focus:h-7 peer-focus:text-xs peer-valid:h-7 peer-valid:text-xs transition-all`}
         >
           {placeholder}

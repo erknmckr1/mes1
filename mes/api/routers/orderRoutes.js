@@ -54,6 +54,7 @@ const {
   stopWork,
   rWork,
   finishedWork,
+  transferOrder,
 } = require("../services/orderServices");
 
 //! Siparişi bitirecek metot...
@@ -620,8 +621,8 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec, areaName, field } = req.body;
-  const result = await fwork(uniqIds, work_finished_op_dec, areaName, field);
+  const { uniqIds, work_finished_op_dec, areaName, field,repair_amount } = req.body;
+  const result = await fwork(uniqIds, work_finished_op_dec, areaName, field,repair_amount);
   return res.status(result.status).json(result.message);
 });
 
@@ -639,13 +640,15 @@ router.put("/start-to-setup", async (req, res) => {
 });
 //! Bölüme katılma route
 router.post("/join-section", async (req, res) => {
-  const { section, areaName, user_id, field, machine_name } = req.body;
+  const { section, areaName, user_id, field, machine_name,workIds,uniqIds } = req.body;
   const result = await joinSection(
     section,
     areaName,
     user_id,
     field,
-    machine_name
+    machine_name,
+    workIds,
+    uniqIds,
   );
   return res.status(result.status).json(result.message);
 });
@@ -693,4 +696,26 @@ router.put("/startToProces", async (req, res) => {
 
 //? CEKİC - BÖLÜME KATILMA İŞLEMLERİ SON...
 
+//! Bir işi farklı kullanıcıya devredecek route...
+router.put("/transferOrder", async (req, res) => {
+  console.log("xxx");
+  const { workIds, user_id_dec, area_name,op_username } = req.body;
+  const currentDateTimeOffset = new Date().toISOString();
+  try {
+    const result = await transferOrder(
+      workIds,
+      user_id_dec,
+      area_name,
+      op_username,
+      currentDateTimeOffset
+    );
+    if (result.status && result.status !== 200) {
+      return res.status(result.status).json({ message: result.message });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ message: err.message });
+  }
+});
 module.exports = router;
