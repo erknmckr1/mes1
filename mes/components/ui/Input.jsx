@@ -13,9 +13,7 @@ function Input(props) {
           type={type}
           className={`${
             touched && errorMessage ? "border-primary" : "border-secondary"
-          }  w-full peer border outline-none px-4 pt-2 ${
-            isCurrentBreak ? "bg-gray-600" : "bg-white"
-          }  ${addProps}`}
+          }  w-full peer border outline-none px-4 pt-2 bg-white   ${addProps}`}
           required
           {...inputProps}
         />

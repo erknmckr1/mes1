@@ -95,7 +95,7 @@ const rWork = async ({
     }
 
     // 2. CEKIC ALANIYSA BÖLÜMDE Mİ?
-    if (area_name === "cekic") {
+    if (area_name === "cekic" && field !== "makine") {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: currentUser,
@@ -238,7 +238,6 @@ const rWork = async ({
         // Geçmiş katılımcıları geri ekle (duplike kontrolüyle)
         const exitedLogs = await getExitedLogs(order.uniq_id);
         for (const item of exitedLogs) {
-
           // Eski katılımı geçmişe taşı
           await SectionParticiptionLogs.update(
             {
@@ -336,7 +335,10 @@ const stopWork = async ({
     };
   }
   // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-  if (area_name === "cekic" || area_name === "telcekme") {
+  if (
+    (area_name === "cekic" && field !== "makine") ||
+    area_name === "telcekme"
+  ) {
     const isSectionParticipated = await SectionParticiptionLogs.findOne({
       where: {
         operator_id: user_who_stopped,
@@ -463,6 +465,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     group_no,
     group_record_id,
     field,
+    old_code,
   } = work_info;
 
   // Eğer "buzlama" ekranındaysak ve machine_name boşsa hata döndür
@@ -502,7 +505,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
   }
 
   // Eğer "cekic" ekranındaysak, kullanıcının bölüme katılımını kontrol et
-  if (area_name === "cekic") {
+  if (area_name === "cekic" && field !== "makine") {
     try {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
@@ -531,6 +534,26 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
         status: 500,
         message:
           "Bölüm katılım durumu kontrol edilirken bir hata meydana geldi.",
+      };
+    }
+  }
+
+  // cekic bölümünde makine alanında başka bir iş var mı kontrolü eğer bir makine birden fazla iş başlatılacaksa bunu şartı kaldır...
+  if (area_name === "cekic" && field === "makine") {
+    const isSelectedCekicMachineWork = await WorkLog.findOne({
+      where: {
+        area_name: "cekic",
+        machine_name,
+        work_status: {
+          [Op.in]: ["0", "1", "2"],
+        },
+      },
+    });
+
+    if (isSelectedCekicMachineWork) {
+      return {
+        status: 400,
+        message: `${machine_name} makinesinde başka bir iş var.`,
       };
     }
   }
@@ -567,6 +590,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     machine_name,
     group_no,
     group_record_id,
+    old_code,
   };
 
   if (area_name === "cekic") {
@@ -659,7 +683,6 @@ const cancelWork = async ({
   area_name,
   field,
 }) => {
-  console.log(uniq_id);
   try {
     // kullanıcı molada mı ?
     const isBreakUser = await BreakLog.findOne({
@@ -679,7 +702,7 @@ const cancelWork = async ({
     //MOLA
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if (area_name === "cekic") {
+    if (area_name === "cekic" && field !== "makine") {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: currentUser,
@@ -2841,6 +2864,7 @@ const fwork = async (
   repair_amount
 ) => {
   const work_end_date = new Date().toISOString();
+
   try {
     // Geçersiz veri kontrolü
     if (!uniqIds || !Array.isArray(uniqIds) || uniqIds.length === 0) {
@@ -2869,7 +2893,10 @@ const fwork = async (
     // MOLA
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if (areaName === "cekic" || areaName === "telcekme") {
+    if (
+      (areaName === "cekic" && field !== "makine") ||
+      areaName === "telcekme"
+    ) {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: work_finished_op_dec,
@@ -2902,6 +2929,37 @@ const fwork = async (
         status: 400,
         message: "Bazı siparişler bulunamadı veya geçersiz ID'ler gönderildi.",
       };
+    }
+
+    // Cekic bölümünde ölçüm yapılmadan sipariş bitirilmiyecek... Şimdilik sadece cekic bölümü için...
+    let toBeFinished = []; // ölçüm verisi olanlar
+    let withoutMeasure = []; // ölçüm verisi olmayanlar
+    if (areaName === "cekic") {
+      for (const uniqId of uniqIds) {
+        const isMeasureData = await MeasureData.findOne({
+          where: {
+            order_no: orders.map((item) => item.order_no),
+            area_name: areaName,
+            measure_status: "1",
+          },
+        });
+
+        if (isMeasureData) {
+          toBeFinished.push(uniqId);
+        } else {
+          withoutMeasure.push(uniqId);
+        }
+      }
+
+      // Eğer tüm siparişlerde ölçüm yoksa → işlemi tamamen iptal et
+      if (toBeFinished.length === 0) {
+        return {
+          status: 400,
+          message: `${orders.map(
+            (item) => item.order_no
+          )} Hiçbir siparişin ölçüm verisi bulunamadı. Önce ölçüm yapılmalıdır.`,
+        };
+      }
     }
 
     const allAreStatus = orders.every((order) => order.work_status === "1");
@@ -2984,23 +3042,17 @@ async function joinSection(
 ) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    // Kullanıcı ID'lerini dizi haline getir (tek kişi ise dizileştir)
+    // Kullanıcı ID'lerini dizi haline getir (tek kişi ise dizileştir) bolumlere göre dizi ya da tek kişi olabilir
     const userIds = Array.isArray(user_id) ? user_id : [user_id];
 
     for (const userId of userIds) {
-      // Kullanıcı zaten bölüme katılmış mı?
-      let isJoinUserField;
+      const existingLogs = await SectionParticiptionLogs.findAll({
+        where: {
+          operator_id: userId,
+          exit_time: null,
+        },
+      });
 
-      if (areaName !== "telcekme") {
-        isJoinUserField = await SectionParticiptionLogs.findOne({
-          where: {
-            operator_id: userId,
-            exit_time: null,
-          },
-        });
-      }
-
-      // Kullanıcı molada mı?
       const isBreakUser = await BreakLog.findOne({
         where: {
           operator_id: userId,
@@ -3015,10 +3067,50 @@ async function joinSection(
         };
       }
 
-      if (isJoinUserField) {
+      // Aynı field’a tekrar katılım varsa → engelle
+      const sameAreaSameField = existingLogs.find(
+        (log) => log.area_name === areaName && log.field === field
+      );
+
+      if (sameAreaSameField && areaName !== "telcekme") {
         return {
-          status: 409, // 409: Conflict durumu daha uygun
-          message: `${isJoinUserField.dataValues.field} bölümüne katılım sağlamışsınız. Önce bu bölümden ayrılıp tekrar deneyin.`,
+          status: 400,
+          message: `"${areaName} / ${field}" alanına zaten katılmışsınız.`,
+        };
+      }
+
+      // Cekic/makine özel durumu: farklı field’a geçebilir
+      const isInCekicMakine = existingLogs.find(
+        (log) => log.area_name === "cekic" && log.field === "makine"
+      );
+
+      const isInOtherCekicField = existingLogs.find(
+        (log) => log.area_name === "cekic" && log.field !== "makine"
+      );
+
+      // makine harici baska bir yerde katılım varsa → engelle
+      if (isInOtherCekicField) {
+        return {
+          status: 400,
+          message: `Başka bir alanda aktif katılımınız var (${isInOtherCekicField.field}). Önce çıkış yapın.`,
+        };
+      }
+
+      if (isInCekicMakine && areaName === "cekic" && field !== "makine") {
+        // izin ver, continue → kayıt oluşturulacak
+        continue;
+      }
+
+      // Telçekme → başka bölümlere her zaman katılabilir
+      if (areaName === "telcekme") {
+        continue;
+      }
+
+      // Diğer durumlar: zaten başka yerdeyse → engelle
+      if (existingLogs.length > 0) {
+        return {
+          status: 409,
+          message: `Başka bir alanda aktif katılımınız var (${existingLogs[0].area_name} / ${existingLogs[0].field}). Önce çıkış yapın.`,
         };
       }
     }
@@ -3067,6 +3159,59 @@ async function joinSection(
     return { status: 500, message: "İç sunucu hatası: " + err.message };
   }
 }
+
+//! Bu servis, kullanıcının herhangi bir bölüme katılımı olup olmadığını kontrol eder.
+async function checkParticipation(areaName, user_id) {
+  try {
+    if (!user_id) {
+      return { status: 400, message: "Kullanıcı ID'si gerekli." };
+    }
+
+    const activeParticipation = await SectionParticiptionLogs.findAll({
+      where: {
+        operator_id: user_id,
+        exit_time: null,
+      },
+    });
+
+    // Hiç aktif katılım yoksa
+    if (activeParticipation.length === 0) {
+      return {
+        status: 200,
+        message: "Herhangi bir bölüme katılım yok.",
+        joined: false,
+      };
+    }
+
+    // Kendi ekranı dışında bir alana katılım var mı?
+    const conflictLog = activeParticipation.find(
+      (log) => log.area_name !== areaName
+    );
+
+    // Başka bir bölüme katılım varsa
+    if (conflictLog) {
+      return {
+        status: 200,
+        message: `${conflictLog.area_name} biriminde aktif katılımınız var. Öncelikle bu bölümden çıkış yapmalısınız.`,
+        joined: true,
+      };
+    }
+
+    // Yalnızca kendi alanında katılım varsa sorun yok
+    return {
+      status: 200,
+      message: "Sadece kendi alanınızda katılım var.",
+      joined: false,
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: 500,
+      message: "İç sunucu hatası: " + err.message,
+    };
+  }
+}
+
 
 //! Bölüme katılmıs bir personelin çıkısını yapacak servis
 async function exitSection(
@@ -3301,7 +3446,7 @@ async function startToSetup(workIds, currentDateTimeOffset, operator_id) {
 }
 
 //! prosesi baslatacak servis
-async function startToProces(workIds, user_id_dec, area_name) {
+async function startToProces(workIds, user_id_dec, area_name,field) {
   try {
     // Bölüme katılacak kullanıcı molada mı ?
     const isBreakUser = await BreakLog.findOne({
@@ -3320,7 +3465,8 @@ async function startToProces(workIds, user_id_dec, area_name) {
     }
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if (area_name === "cekic") {
+    if ( (area_name === "cekic" && field !== "makine") ||
+    area_name === "telcekme") {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: user_id_dec,
@@ -3501,6 +3647,7 @@ module.exports = {
   getScrapMeasure,
   deleteScrapMeasure,
   joinSection,
+  checkParticipation,
   exitSection,
   getPersonInTheField,
   finishedToSetup,

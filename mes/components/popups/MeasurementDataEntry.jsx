@@ -78,7 +78,6 @@ function MeasurementDataEntry() {
       }
     }
   }, [formState.exitGramage, measure50Cm]); // exitGramage ve measure50Cm her değiştiğinde çalışır
-  console.log(isOutOfRange);
 
   //! metarıal no ıle olcum verısı cekecek query
   const handleGetMeasureWithMetarialNo = async () => {
@@ -211,7 +210,7 @@ function MeasurementDataEntry() {
       exit_measurement: formState.exitMeasurement,
       entry_weight_50cm: formState.entryGramage,
       exit_weight_50cm: formState.exitGramage,
-      data_entry_date: "", // İsterseniz burada bir tarih atayabilirsiniz.
+      data_entry_date: "",
       description: orderData?.ITEM_DESCRIPTION,
       measurement_package: formState.quantity,
       // group_no: selectedGroupNo[0].group_no,

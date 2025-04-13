@@ -34,6 +34,44 @@ function OrderSearch() {
     (state) => state.user
   );
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
+  const [lastMachineId, setLastMachineId] = useState(null);
+
+  const userTimeoutEnabledScreens = ["buzlama"];
+
+  //? Timeout start
+  //! Seçilen makine değiştikçe user state ini sıfırlayacak...
+  useEffect(() => {
+    const currentMachineId = selectedMachine?.machine_id;
+    const isEnabled = userTimeoutEnabledScreens.includes(areaName);
+
+    if (
+      isEnabled &&
+      currentMachineId &&
+      currentMachineId !== lastMachineId &&
+      user?.id_dec
+    ) {
+      dispatch(setUser(null));
+      dispatch(setSelectedPartners([]));
+      setLastMachineId(currentMachineId);
+    }
+  }, [selectedMachine]);
+
+  //!  kullanıcı bir kere ID girince 20 saniye boyunca başka sipariş okutmasına izin verir. 60 saniye geçince tekrar ID istenir.
+  useEffect(() => {
+    if (!userTimeoutEnabledScreens.includes(areaName)) return;
+
+    if (user?.id_dec) {
+      const timer = setTimeout(() => {
+        dispatch(setUser(null));
+        dispatch(setSelectedPartners([]));
+      }, 20000);
+
+      return () => clearTimeout(timer); // cleanup
+    }
+  }, [user, areaName]);
+
+  //? Timeout end
+
   const handleChangeOrder = (e) => {
     setOrderId(e.target.value);
   };
@@ -120,6 +158,7 @@ function OrderSearch() {
           user_id_dec: userInfo.id_dec,
           op_username: userInfo.op_username,
           order_id: response.data.ORDER_ID,
+          old_code: response.data.OLD_CODE,
           section: sectionName,
           area_name: areaName,
           work_status: "1", // 1: İş aktif
@@ -129,7 +168,11 @@ function OrderSearch() {
           machine_name: selectedMachine?.machine_name,
         };
 
-        if (areaName === "buzlama" || areaName === "telcekme") {
+        if (
+          areaName === "buzlama" ||
+          areaName === "telcekme" ||
+          areaName === "kurutiras"
+        ) {
           work_info.user_id_dec = user.id_dec;
           work_info.op_username = user.op_username;
         } else if (
@@ -152,6 +195,19 @@ function OrderSearch() {
 
         // İş başlatma isteği
         try {
+          let controlPartipation;
+          if (areaName === "telcekme") {
+            controlPartipation = await axios.post(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/check-participation`,
+              { user_id: user.id_dec, areaName }
+            );
+
+            if (controlPartipation.data.joined) {
+              toast.error(controlPartipation.data.message);
+              return;
+            }
+          }
+
           const workLogResponse = await axios.post(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/createWorkLog`,
             { work_info }
@@ -163,7 +219,6 @@ function OrderSearch() {
 
             //! İş telçekmede başlatıldıysa bölüme katılımı yap
             if (areaName === "telcekme") {
-
               const selectedPartner = selectedPartners.map(
                 (partner) => partner.id_dec
               );
@@ -187,6 +242,7 @@ function OrderSearch() {
                   dispatch(getJoinTheField({ areaName }));
                 } else {
                   toast.error("Bölüme katılım sırasında bir hata oluştu.");
+                  return;
                 }
               } catch (error) {
                 console.error("Bölüme katılım sırasında hata:", error);
@@ -194,14 +250,17 @@ function OrderSearch() {
                   error.response?.data?.message ||
                     "Bölüme katılım işlemi başarısız oldu."
                 );
+                return;
               }
             }
 
             // Job table yenile ekranın türüne göre...
             if (isRequiredUserId) {
               dispatch(getWorksWithoutId({ areaName }));
-              dispatch(setUser(null));
-              dispatch(setSelectedPartners([]));
+              if (!userTimeoutEnabledScreens.includes(areaName)) {
+                dispatch(setUser(null));
+                dispatch(setSelectedPartners([]));
+              }
             } else {
               getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
               dispatch(setSelectedProcess(""));
@@ -278,7 +337,7 @@ function OrderSearch() {
         onChange={(e) => handleChangeOrder(e)}
         onKeyDown={handleKeyDown}
         value={order_id}
-        disabled={isCurrentBreak}
+        disabled={false}
       />
       {/* <Button children="Numune Yap" /> */}
     </div>

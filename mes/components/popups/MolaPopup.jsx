@@ -118,7 +118,7 @@ function MolaPopup() {
   };
 
   const createBreakFunc = () => {
-    if (isRequiredUserId) {
+    if (isRequiredUserId || areaName === "kalite") {
       createBreakWıthId(araSebebi);
     } else {
       createBreak(userInfo, araSebebi);
@@ -206,12 +206,12 @@ function MolaPopup() {
                 <tbody className="text-lg text-center popup-table-body">
                   <tr className="h-16 text-xl">
                     <td className="border">
-                      {isRequiredUserId
+                      {(isRequiredUserId || areaName === "kalite")
                         ? user && user.id_dec
                         : userInfo && userInfo.id_dec}
                     </td>
                     <td className="border">
-                      {isRequiredUserId
+                      {(isRequiredUserId || areaName === "kalite")
                         ? user && user.op_username
                         : userInfo && userInfo.op_username}
                     </td>

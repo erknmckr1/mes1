@@ -418,7 +418,7 @@ function RightSideBtnArea() {
   const handleFinishedFunc = () => {
     if (areaName === "telcekme") {
       handleOpenFinishedPopup();
-    }else if (isRequiredUserId){
+    } else if (isRequiredUserId) {
       handleFinishWork();
     } else {
       handleOpenFinishedPopup();
@@ -1171,6 +1171,7 @@ function RightSideBtnArea() {
           workIds,
           user_id_dec: user.id_dec,
           area_name: areaName,
+          field: selectedHammerSectionField,
         }
       );
 
@@ -1426,7 +1427,8 @@ function RightSideBtnArea() {
         "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
-    {
+    // ✅ Bölüme Katıl → sadece çekic + makine değilken göster
+    !(areaName === "cekic" && selectedHammerSectionField === "makine") && {
       onClick: joinTheSection,
       children: "Bölüme Katıl",
       type: "button",
@@ -1434,7 +1436,7 @@ function RightSideBtnArea() {
         "w-[140px] hover:bg-green-500 bg-green-600 sm:px-1 sm:py-4 text-sm",
       disabled: isCurrentBreak,
     },
-    {
+    !(areaName === "cekic" && selectedHammerSectionField === "makine") && {
       onClick: exitTheField,
       children: "Bölümden Ayrıl",
       type: "button",
@@ -1479,14 +1481,14 @@ function RightSideBtnArea() {
     ) {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">
-          {buttons_r.map((button, index) => (
+          {buttons_r.filter(Boolean).map((button, index) => (
             <Button
               key={index}
               className={button.className}
               children={button.children}
               type={button.type}
               onClick={button.onClick}
-              disabled={isCurrentBreak}
+              disabled={false}
             />
           ))}
         </div>
@@ -1495,7 +1497,7 @@ function RightSideBtnArea() {
       return (
         <div className="">
           <div className="w-full grid grid-cols-2 gap-1">
-            {cekic_buttons.map((button, index) => (
+            {cekic_buttons.filter(Boolean).map((button, index) => (
               <Button
                 key={index}
                 className={button.className}
@@ -1537,7 +1539,7 @@ function RightSideBtnArea() {
                 children={button.children}
                 type={button.type}
                 onClick={button.onClick}
-                disabled={isCurrentBreak}
+                // disabled={isCurrentBreak}
               />
             ))}
           </div>

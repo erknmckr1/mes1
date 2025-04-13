@@ -34,6 +34,7 @@ const {
   getScrapMeasure,
   deleteScrapMeasure,
   joinSection,
+  checkParticipation,
   exitSection,
   getPersonInTheField,
   finishedToSetup,
@@ -621,8 +622,15 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec, areaName, field,repair_amount } = req.body;
-  const result = await fwork(uniqIds, work_finished_op_dec, areaName, field,repair_amount);
+  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount } =
+    req.body;
+  const result = await fwork(
+    uniqIds,
+    work_finished_op_dec,
+    areaName,
+    field,
+    repair_amount
+  );
   return res.status(result.status).json(result.message);
 });
 
@@ -640,7 +648,8 @@ router.put("/start-to-setup", async (req, res) => {
 });
 //! Bölüme katılma route
 router.post("/join-section", async (req, res) => {
-  const { section, areaName, user_id, field, machine_name,workIds,uniqIds } = req.body;
+  const { section, areaName, user_id, field, machine_name, workIds, uniqIds } =
+    req.body;
   const result = await joinSection(
     section,
     areaName,
@@ -648,10 +657,19 @@ router.post("/join-section", async (req, res) => {
     field,
     machine_name,
     workIds,
-    uniqIds,
+    uniqIds
   );
   return res.status(result.status).json(result.message);
 });
+//! check participation route
+router.post("/check-participation", async (req, res) => {
+  const { user_id, areaName } = req.body;
+  const result = await checkParticipation(areaName, user_id);
+  return res
+    .status(result.status)
+    .json({ message: result.message, joined: result.joined });
+});
+
 //! Bölümden ayrılma route
 router.put("/exit-section", async (req, res) => {
   const { selectedPersonInField, areaName, selectedHammerSectionField } =
@@ -686,11 +704,11 @@ router.post("/finishedToSetup", async (req, res) => {
 });
 //! prosese baslatma route...
 router.put("/startToProces", async (req, res) => {
-  const { workIds, user_id_dec, area_name } = req.body;
+  const { workIds, user_id_dec, area_name,field } = req.body;
   if (!user_id_dec) {
     return res.status(400).json("Kullanıcı ID bulunamadı.");
   }
-  const result = await startToProces(workIds, user_id_dec, area_name);
+  const result = await startToProces(workIds, user_id_dec, area_name,field);
   return res.status(result.status).json(result.message);
 });
 
@@ -699,7 +717,7 @@ router.put("/startToProces", async (req, res) => {
 //! Bir işi farklı kullanıcıya devredecek route...
 router.put("/transferOrder", async (req, res) => {
   console.log("xxx");
-  const { workIds, user_id_dec, area_name,op_username } = req.body;
+  const { workIds, user_id_dec, area_name, op_username } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
     const result = await transferOrder(
