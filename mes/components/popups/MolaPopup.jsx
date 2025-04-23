@@ -71,6 +71,14 @@ function MolaPopup() {
       if (response.data.isAlreadyOnBreak === false) {
         await dispatch(fetchOnBreakUsers({ areaName }));
         toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
+        if (areaName === "cila") {
+          await axios.post(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`,
+            {},
+            { withCredentials: true }
+          );
+          window.location.href = pathname; // çıkıs yaptıktan sonra aynı sayfaya gıt
+        }
         dispatch(setMolaPopup(false));
       } else if (response.data.isAlreadyOnBreak === true) {
         toast.error("Bu kullanici zateb molada...");
@@ -206,12 +214,12 @@ function MolaPopup() {
                 <tbody className="text-lg text-center popup-table-body">
                   <tr className="h-16 text-xl">
                     <td className="border">
-                      {(isRequiredUserId || areaName === "kalite")
+                      {isRequiredUserId || areaName === "kalite"
                         ? user && user.id_dec
                         : userInfo && userInfo.id_dec}
                     </td>
                     <td className="border">
-                      {(isRequiredUserId || areaName === "kalite")
+                      {isRequiredUserId || areaName === "kalite"
                         ? user && user.op_username
                         : userInfo && userInfo.op_username}
                     </td>

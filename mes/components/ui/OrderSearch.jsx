@@ -39,36 +39,36 @@ function OrderSearch() {
   const userTimeoutEnabledScreens = ["buzlama"];
 
   //? Timeout start
-  //! Seçilen makine değiştikçe user state ini sıfırlayacak...
-  useEffect(() => {
-    const currentMachineId = selectedMachine?.machine_id;
-    const isEnabled = userTimeoutEnabledScreens.includes(areaName);
+  // //! Seçilen makine değiştikçe user state ini sıfırlayacak...
+  // useEffect(() => {
+  //   const currentMachineId = selectedMachine?.machine_id;
+  //   const isEnabled = userTimeoutEnabledScreens.includes(areaName);
 
-    if (
-      isEnabled &&
-      currentMachineId &&
-      currentMachineId !== lastMachineId &&
-      user?.id_dec
-    ) {
-      dispatch(setUser(null));
-      dispatch(setSelectedPartners([]));
-      setLastMachineId(currentMachineId);
-    }
-  }, [selectedMachine]);
+  //   if (
+  //     isEnabled &&
+  //     currentMachineId &&
+  //     currentMachineId !== lastMachineId &&
+  //     user?.id_dec
+  //   ) {
+  //     dispatch(setUser(null));
+  //     dispatch(setSelectedPartners([]));
+  //     setLastMachineId(currentMachineId);
+  //   }
+  // }, [selectedMachine]);
 
-  //!  kullanıcı bir kere ID girince 20 saniye boyunca başka sipariş okutmasına izin verir. 60 saniye geçince tekrar ID istenir.
-  useEffect(() => {
-    if (!userTimeoutEnabledScreens.includes(areaName)) return;
+  // //!  kullanıcı bir kere ID girince 20 saniye boyunca başka sipariş okutmasına izin verir. 60 saniye geçince tekrar ID istenir.
+  // useEffect(() => {
+  //   if (!userTimeoutEnabledScreens.includes(areaName)) return;
 
-    if (user?.id_dec) {
-      const timer = setTimeout(() => {
-        dispatch(setUser(null));
-        dispatch(setSelectedPartners([]));
-      }, 20000);
+  //   if (user?.id_dec) {
+  //     const timer = setTimeout(() => {
+  //       dispatch(setUser(null));
+  //       dispatch(setSelectedPartners([]));
+  //     }, 20000);
 
-      return () => clearTimeout(timer); // cleanup
-    }
-  }, [user, areaName]);
+  //     return () => clearTimeout(timer); // cleanup
+  //   }
+  // }, [user, areaName]);
 
   //? Timeout end
 
@@ -111,7 +111,7 @@ function OrderSearch() {
     }
 
     // 2. Eğer "kalite" ekranıysa, proses seçilmeli
-    if (areaName === "kalite" && !process) {
+    if ((areaName === "kalite" || areaName === "cila") && !process) {
       toast.error("Siparişi başlatmak için proses seçiniz.");
       dispatch(setUser(null));
       return false;
@@ -204,6 +204,7 @@ function OrderSearch() {
 
             if (controlPartipation.data.joined) {
               toast.error(controlPartipation.data.message);
+              dispatch(setUser(null));
               return;
             }
           }
@@ -242,6 +243,7 @@ function OrderSearch() {
                   dispatch(getJoinTheField({ areaName }));
                 } else {
                   toast.error("Bölüme katılım sırasında bir hata oluştu.");
+                  dispatch(setUser(null));
                   return;
                 }
               } catch (error) {
@@ -250,6 +252,7 @@ function OrderSearch() {
                   error.response?.data?.message ||
                     "Bölüme katılım işlemi başarısız oldu."
                 );
+                dispatch(setUser(null));
                 return;
               }
             }
@@ -318,7 +321,8 @@ function OrderSearch() {
         areaName === "buzlama" ||
         areaName === "cekic" ||
         areaName === "kurutiras" ||
-        areaName === "telcekme"
+        areaName === "telcekme" ||
+        areaName === "cila"
       ) {
         handleGetOrder();
       } else if (areaName === "") {

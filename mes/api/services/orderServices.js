@@ -76,6 +76,7 @@ const rWork = async ({
   selectedOrders,
   area_name,
   field,
+  machine_name,
 }) => {
   try {
     // 1. MOLADA MI?
@@ -96,12 +97,19 @@ const rWork = async ({
 
     // 2. CEKIC ALANIYSA BÖLÜMDE Mİ?
     if (area_name === "cekic" && field !== "makine") {
+      const whereClause = {
+        operator_id: currentUser,
+        exit_time: null,
+        area_name,
+      };
+
+      // Eğer alan telcekme ise selectedMachine de kontrol edilsin
+      if (area_name === "telcekme") {
+        whereClause.machine_name = machine_name;
+      }
+
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
-        where: {
-          operator_id: currentUser,
-          exit_time: null,
-          area_name,
-        },
+        where: whereClause,
       });
 
       if (!isSectionParticipated) {
@@ -476,7 +484,27 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
+  if (area_name === "telcekme") {
+    const work = await WorkLog.findOne({
+      where: {
+        area_name: "telcekme",
+        process_name: "ÖN HADDELEME",
+        order_no: order_id,
+        work_status: {
+          [Op.in]: ["4"],
+        },
+      },
+    });
+    if (!work) {
+      return {
+        status: 400,
+        message: "Bu sipariş için ön haddeleme işlemi yapılmamıştır.",
+      };
+    }
+  }
+
   let existingOrderCount = 0;
+  // Baslatılmaya calısılan iş daha önce başlatılmış mı kontrol et
   if (area_name === "buzlama") {
     try {
       existingOrderCount = await WorkLog.count({
@@ -702,7 +730,10 @@ const cancelWork = async ({
     //MOLA
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if (area_name === "cekic" && field !== "makine") {
+    if (
+      (area_name === "cekic" && field !== "makine") ||
+      area_name === "telcekme"
+    ) {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: currentUser,
@@ -3212,27 +3243,32 @@ async function checkParticipation(areaName, user_id) {
   }
 }
 
-
 //! Bölüme katılmıs bir personelin çıkısını yapacak servis
 async function exitSection(
   selectedPersonInField,
   areaName,
-  selectedHammerSectionField
+  selectedHammerSectionField,
+  machine_name
 ) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
+    const whereClause = {
+      operator_id: selectedPersonInField,
+      exit_time: null,
+      area_name: areaName,
+      field: selectedHammerSectionField,
+    };
+    //! Telçekme bölümünde makine adı da kontrol ediliyor. Çünkü bir kullanıcı bırden fazla makine calıstırabilir
+    if (areaName === "telcekme") {
+      whereClause.machine_name = machine_name;
+    }
     const exitSection = await SectionParticiptionLogs.update(
       {
         exit_time: currentDateTimeOffset,
         status: "4",
       },
       {
-        where: {
-          operator_id: selectedPersonInField,
-          exit_time: null,
-          area_name: areaName,
-          field: selectedHammerSectionField,
-        },
+        where: whereClause,
       }
     );
 
@@ -3446,7 +3482,7 @@ async function startToSetup(workIds, currentDateTimeOffset, operator_id) {
 }
 
 //! prosesi baslatacak servis
-async function startToProces(workIds, user_id_dec, area_name,field) {
+async function startToProces(workIds, user_id_dec, area_name, field) {
   try {
     // Bölüme katılacak kullanıcı molada mı ?
     const isBreakUser = await BreakLog.findOne({
@@ -3465,8 +3501,10 @@ async function startToProces(workIds, user_id_dec, area_name,field) {
     }
 
     // Bölümde mi ? şimdilik sadece cekic bölümüne özel
-    if ( (area_name === "cekic" && field !== "makine") ||
-    area_name === "telcekme") {
+    if (
+      (area_name === "cekic" && field !== "makine") ||
+      area_name === "telcekme"
+    ) {
       const isSectionParticipated = await SectionParticiptionLogs.findOne({
         where: {
           operator_id: user_id_dec,

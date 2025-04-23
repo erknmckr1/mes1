@@ -35,6 +35,20 @@ const getBreakReason = async () => {
   }
 };
 
+//! Kullanıcı molası olup olmadığını kontrol edecek query
+const checkUserBreakStatus = async (operator_id) => {
+  if (!operator_id) throw new Error("operator_id is required");
+
+  const breakLog = await BreakLog.findOne({
+    where: {
+      operator_id,
+      end_date: null,
+    },
+  });
+
+  return !!breakLog; // true ya da false döner
+};
+
 // //! tüm break loglarını getırecek query
 // const getBreakReasonLog = async () => {
 //   try {
@@ -198,4 +212,5 @@ module.exports = {
   onBreakUsers,
   returnToBreak,
   createBreakReason,
+  checkUserBreakStatus
 };

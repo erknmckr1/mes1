@@ -42,7 +42,15 @@ function Layout({ children }) {
   const project = pathName.split("/")[1];
   const section = pathName.split("/")[2];
   const area_name = pathName.split("/")[3];
-  const {foodPopupState,isMolaPopup,isFirePopup,isCreateLeavePopup,areaName,isRequiredUserId,isErrorPopup} = useSelector((state) => state.global);
+  const {
+    foodPopupState,
+    isMolaPopup,
+    isFirePopup,
+    isCreateLeavePopup,
+    areaName,
+    isRequiredUserId,
+    isErrorPopup,
+  } = useSelector((state) => state.global);
   const {
     stopReasonPopup,
     cancelReasonPopup,
@@ -68,7 +76,7 @@ function Layout({ children }) {
 
   useEffect(() => {
     dispatch(setAreaName(area_name));
-  },[area_name])
+  }, [area_name]);
 
   return (
     <>
@@ -100,7 +108,7 @@ function HomeLayout({ children }) {
   const project = pathName.split("/")[1];
   const returnUrl = localStorage.getItem("returnUrl") || "/";
   const { isSurveyPopup } = useSelector((state) => state.global);
-  const {shiftReportPopup} = useSelector(state => state.shift)
+  const { shiftReportPopup } = useSelector((state) => state.shift);
   const operation = pathName.split("/")[3];
   const operationTitles = {
     mesaiolustur: "MESAİ OLUŞTUR",
@@ -115,33 +123,32 @@ function HomeLayout({ children }) {
             <HomeSidebars />
           </div>
           {/* section sag tarafın genıslıgı 100vh - sidebar kadar */}
-          <section className=" flex flex-col ml-[256px] " style={{ width: 'calc(100% - 256px)' }}>
+          <section className="flex-1 w-full">
             {/* header */}
             <div className="h-[100px]  bg-black  border-secondary border-b shadow-lg flex items-center justify-between px-4">
-              <div className="text-[30px] text-white">
+              <div className="text-xs sm:text-[30px] text-white">
                 {operationTitles[operation]}
               </div>
               <div className="flex items-center space-x-10">
                 <div className=" text-white  ">
                   <a
                     href={returnUrl}
-                    className="text-[20px] underline flex  gap-x-2 justify-center items-center"
+                    className="text-xs sm:text-[20px] underline flex  gap-x-2 justify-center items-center"
                   >
                     <span className="underline uppercase">{`${
                       returnUrl.split("/")[5]
                     } ekranına geri dön`}</span>
                   </a>
                 </div>
-                <div className="text-green-500 font-semibold text-[30px]">
-                  <CurrentDate addProps={"text-[30px]"} />
+                <div className="text-green-500 font-semibold text-xs sm:text-[30px]">
+                  <CurrentDate addProps={" text-xs sm:text-[30px]"} />
                 </div>
               </div>
             </div>
             <main className="flex-1 w-full  "> {children}</main>
           </section>
           {isSurveyPopup && <SurveyPopup />}
-          {shiftReportPopup && <ShiftReportPopup
-          />}
+          {shiftReportPopup && <ShiftReportPopup />}
         </div>
       )}
       <ToastContainer />
@@ -152,19 +159,33 @@ function HomeLayout({ children }) {
 // RootLayout, uygulamanın temel yapısını ve Redux sağlayıcısını yönetir
 export default function RootLayout({ children }) {
   const pathName = usePathname();
+  const searchParams = useSearchParams();
+  const isPanel = pathName.includes("/panel");
   const project = pathName.split("/")[1];
+  const area_name = pathName.split("/")[3];
+  const section = pathName.split("/")[2];
+  // Ana Frame sayfasıysa sadece iframe'leri döndür
+  const isFrameHost =
+    project === "uretim" && section === "montaj" && area_name === "cila" && !isPanel;
+
   return (
     <html lang="tr">
       <body>
-        <Provider store={store}>
-          <AuthProvider>
-            {project === "home" ? (
-              <HomeLayout>{children}</HomeLayout>
-            ) : (
-              <Layout>{children}</Layout>
-            )}
-          </AuthProvider>
-        </Provider>
+        {isFrameHost ? (
+          // Ana sayfa sadece iframe kapsayıcı
+          children
+        ) : (
+          // iframe içeriği
+          <Provider store={store}>
+            <AuthProvider>
+              {project === "home" ? (
+                <HomeLayout>{children}</HomeLayout>
+              ) : (
+                <Layout>{children}</Layout>
+              )}
+            </AuthProvider>
+          </Provider>
+        )}
       </body>
     </html>
   );

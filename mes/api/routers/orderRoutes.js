@@ -109,6 +109,7 @@ router.post("/restartWork", async (req, res) => {
     selectedOrders,
     areaName,
     field,
+    machine_name
   } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -120,6 +121,7 @@ router.post("/restartWork", async (req, res) => {
       selectedOrders,
       area_name: areaName,
       field,
+      machine_name
     });
     if (result.status && result.status !== 200) {
       return res.status(result.status).json({ message: result.message });
@@ -672,12 +674,13 @@ router.post("/check-participation", async (req, res) => {
 
 //! Bölümden ayrılma route
 router.put("/exit-section", async (req, res) => {
-  const { selectedPersonInField, areaName, selectedHammerSectionField } =
+  const { selectedPersonInField, areaName, selectedHammerSectionField,machine_name } =
     req.body;
   const result = await exitSection(
     selectedPersonInField,
     areaName,
-    selectedHammerSectionField
+    selectedHammerSectionField,
+    machine_name
   );
   return res.status(result.status).json(result.message);
 });

@@ -6,16 +6,19 @@ import { setUserInfo, fetchUserPermissions } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 import { setOperatorid } from "@/redux/userSlice";
 import { toast } from "react-toastify";
-
+import { usePathname } from "next/navigation";
 function LoginPopUp({ setIsLoggedIn }) {
   const inputRef = useRef();
   const dispatch = useDispatch();
+  const pathName = usePathname();
+  const areaName = pathName.split("/")[3];
   //! girilen operator id yi global state'te tutuyoruz.
   const operator_id = useSelector((state) => state.user.operator_id);
   const { theme } = useSelector((state) => state.global);
   // Oturum tokenı olusturmak ıcın server a ıstek atıp tokenı session kısmına kaydettık. Session da bu token
   // oldugu surece kullanıcı ıslemlerıne devam edebılecek...
   const handleLogin = async (event) => {
+    const end_time = new Date().toISOString();
     if (event.key === "Enter") {
       try {
         const response = await axios.post(
@@ -28,7 +31,19 @@ function LoginPopUp({ setIsLoggedIn }) {
           }
         );
         if (response.status === 200) {
-          console.log("Login isteği başarılı");
+
+          if (areaName === "cila") {
+            const checkBreak = await axios.get(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/check-break`,
+              { params: { operator_id } }
+            );
+            if(checkBreak.data.isOnBreak) {
+              const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/returnToBreak`,
+                { operator_id, end_time }
+              );
+            }
+          }
           setIsLoggedIn(true);
           dispatch(setUserInfo(response.data));
           dispatch(fetchUserPermissions(response.data.id_dec)); // İzinleri al ve store'a ekle

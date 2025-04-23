@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic","telcekme"]; // Kullanıcı ID isteyen ekranlar
+const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic","telcekme",]; // Kullanıcı ID isteyen ekranlar
 
 const globalSlice = createSlice({
   name: global,

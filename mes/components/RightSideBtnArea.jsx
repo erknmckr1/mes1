@@ -261,6 +261,7 @@ function RightSideBtnArea() {
           selectedOrders: selectedOrder, // Seçili siparişlerin tamamı
           areaName,
           field: selectedHammerSectionField,
+          machine_name: selectedMachine?.machine_name,
         };
 
         if (isRequiredUserId) {
@@ -1036,6 +1037,7 @@ function RightSideBtnArea() {
             selectedPersonInField,
             areaName,
             selectedHammerSectionField,
+            machine_name:selectedMachine?.machine_name
           }
         );
       }
@@ -1239,35 +1241,35 @@ function RightSideBtnArea() {
       onClick: restartWork,
       children: "Yeniden Başlat",
       type: "button",
-      className: "w-[200px]",
+      className: "lg:w-[200px]",
       //   disabled: isCurrentBreak,
     },
     {
       onClick: () => handleOpenStopPopup("order"),
       children: "Siparişi Durdur",
       type: "button",
-      className: "w-[200px] bg-red-600 hover:bg-red-500",
+      className: "w-[130px] lg:w-[200px] bg-red-600 hover:bg-red-500",
       //  disabled: isCurrentBreak,
     },
     {
       onClick: handleFinishedFunc,
       children: "Prosesi Bitir",
       type: "button",
-      className: "w-[200px] bg-red-600 hover:bg-red-500",
+      className: "w-[130px] lg:w-[200px] bg-red-600 hover:bg-red-500",
       //  disabled: isCurrentBreak,
     },
     {
       onClick: handleCancelWork,
       children: "Sipariş İptal",
       type: "button",
-      className: "w-[200px] bg-red-600 hover:bg-red-500",
+      className: "w-[130px] lg:w-[200px] bg-red-600 hover:bg-red-500",
       // disabled: isCurrentBreak,
     },
     isRequiredUserId && {
       onClick: handleOpenMeasurementPopup,
       children: "Ölçüm V. Girişi",
       type: "button",
-      className: "w-[200px] bg-orange-500 hover:bg-orange-600",
+      className: "w-[130px] lg:w-[200px] bg-orange-500 hover:bg-orange-600",
       // disabled: isCurrentBreak,
     },
   ];
@@ -1477,7 +1479,8 @@ function RightSideBtnArea() {
     if (
       areaName === "kalite" ||
       areaName === "kurutiras" ||
-      areaName === "buzlama"
+      areaName === "buzlama" ||
+      areaName === "cila" 
     ) {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">

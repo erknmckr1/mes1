@@ -61,7 +61,8 @@ function JobTable() {
         areaName === "buzlama" ||
         areaName === "cekic" ||
         areaName === "kurutiras" ||
-        areaName === "telcekme"
+        areaName === "telcekme" || 
+        areaName === "cila"
       ) {
         // Buzlama ekranında çoklu seçim yapılabilir
         dispatch(setSelectedOrder([...selectedOrder, params.row]));
@@ -106,7 +107,7 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
-      if (areaName === "kalite" && userInfo) {
+      if ((areaName === "kalite" || areaName === "cila") && userInfo) {
         // ID ile siparişleri çek
         getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
       } else if (isRequiredUserId) {

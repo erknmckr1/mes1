@@ -127,7 +127,7 @@ function LeftSideBtnArea() {
 
           if (response.status === 200) {
             toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
-            dispatch(setIsCurrentBreak(false));
+            dispatch(setİsCurrentBreak(false));
           }
         } else {
           toast.error("Kullanıcı molada değil veya bilgiler eksik.");
@@ -203,7 +203,7 @@ function LeftSideBtnArea() {
   return (
     <div className="flex w-full flex-col items-center h-full ">
       <Image alt="" height={200} width={200} src={`${"/avatar2.jpg"}`} />
-      <div className="flex flex-col font-bold items-center pt-1  ">
+      <div className="flex flex-col w-full font-bold items-center justify-center mt-4 lg:pt-1  ">
         <span>User Id: {userInfo && userInfo.id_dec}</span>
         <span className="text-xl uppercase">
           {userInfo && userInfo.op_username}

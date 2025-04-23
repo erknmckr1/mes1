@@ -21,7 +21,7 @@ function Button({
         } 
         text-white font-bold rounded-lg shadow-md 
         ${theme} bg-blue-500 hover:bg-blue-600
-        py-3 px-2 sm:py-[15px] sm:px-[40px] text-center 
+        py-4 px-2 lg:py-[15px]  lg:px-[40px] text-center 
         ${className}`}
       onClick={onClick}
       disabled={disabled}

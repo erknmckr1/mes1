@@ -154,7 +154,7 @@ function FinishedWorkPopup() {
 
   //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
   const handleFinishWork = async () => {
-    const isFinishedAmountValid = finishedAmount > 100;
+    const isFinishedAmountValid = finishedAmount >= 100;
     const isDescriptionProvided = desc.trim().length > 0;
 
     if(!finishedAmount){

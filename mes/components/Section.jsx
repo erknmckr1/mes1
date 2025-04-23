@@ -17,7 +17,7 @@ function Section() {
     <div
       className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}
     >
-      <div className="flex w-full h-full p-3">
+      <div className="flex w-full h-full lg:p-3">
         {/* left side Image vs. %20 */}
         <div className="w-[15%] h-full ">
           <LeftSideBtnArea />
@@ -38,8 +38,8 @@ function Section() {
           <div className="w-full h-[40%] flex">
             <div className=" w-[80%] h-full  flex justify-between ">
               {/* left side mola area w-1/2  */}
-              <div className="w-1/2 h-full p-1">
-                {areaName === "kalite" || areaName ==="buzlama" || areaName === "kurutiras"  ? (
+              {areaName !== "cila" &&  <div className="w-1/2 h-full p-1">
+                {areaName === "kalite" || areaName ==="buzlama" || areaName === "kurutiras"   || areaName === "cila" ?  (
                   <BreakTable />
                 ) : (
                   <div className="w-full h-full flex">
@@ -51,15 +51,15 @@ function Section() {
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
               {/* w-1/2 Process area... */}
-              <div className="w-1/2 h-full p-1">
+              <div className={`${areaName === "cila" ? "w-full h-full p-1" : "w-1/2 h-full p-1"}`}>
                 <ProcessArea />
               </div>
             </div>
             {/* 20% saat tarıh  alanı  */}
             <div className="w-[20%] h-full ">
-              <Date addProps={"text-[80px]"} />
+              <Date addProps={"lg:text-[80px]"} />
             </div>
           </div>
         </div>

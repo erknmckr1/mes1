@@ -12,6 +12,7 @@ const {
   getIsUserOnBreak,
   returnToBreak,
   onBreakUsers,
+  checkUserBreakStatus
 } = require("../services/breakOperations");
 const SECRET_KEY = crypto.randomBytes(32).toString("hex");
 const currentDateTimeOffset = new Date().toISOString();
@@ -141,6 +142,19 @@ router.get("/getBreakOnUsers", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Internal server error" });
     throw err;
+  }
+});
+
+//! Kullanıcı için mola sorgusu atacak route
+router.get("/check-break", async (req, res) => {
+  const { operator_id } = req.query;
+
+  try {
+    const isOnBreak = await checkUserBreakStatus(operator_id);
+    res.status(200).json({ isOnBreak });
+  } catch (error) {
+    console.error("Error checking break:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

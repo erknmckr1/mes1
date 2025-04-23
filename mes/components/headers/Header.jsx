@@ -1,33 +1,42 @@
-'use client'
+"use client";
 import React from "react";
 import Logo from "../ui/Logo";
 import Button from "../ui/Button";
 import OrderSearch from "../ui/OrderSearch";
-import { usePathname } from 'next/navigation';
+import { usePathname } from "next/navigation";
 import ThemeButton from "../ui/ThemaButton";
 import { useSelector } from "react-redux";
 import ReloadButton from "../ui/ReloadButton";
 
 function Header() {
   const pathname = usePathname();
-  const area_name = pathname.split('/')[3]; // URL'den sayfa ismini alır,
-  const {theme} = useSelector(state =>state.global)
+  const area_name = pathname.split("/")[3]; // URL'den sayfa ismini alır,
+  const { theme } = useSelector((state) => state.global);
   return (
-    <header className={`w-screen h-[150px] header ${theme} flex items-center border-b-4 border-secondary shadow-2xl transition-all`}>
-      <div className="container mx-auto">
-        <div className="flex items-center justify-between ">
+    <header
+      className={`w-screen h-[150px] header ${theme} flex items-center border-b-4 border-secondary shadow-2xl transition-all`}
+    >
+      <div className="lg:container mx-auto w-full">
+        <div className="flex items-center justify-between w-full">
           <Logo />
           <span className=" font-semibold font-mono uppercase italic text-[50px]">
             {area_name && area_name}
           </span>
           <div className="flex gap-x-2">
-            <Button className="p-3" children="Bölüm Dosyaları" />
-            <Button className="p-3" children="Mesai Bilgisi" />
+            <Button className="p-3">
+              <span className="block lg:hidden">Bölüm D.</span>
+              <span className="hidden lg:block">Bölüm Dosyaları</span>
+            </Button>
+
+            <Button className="p-3">
+              <span className="block lg:hidden">Mesai B.</span>
+              <span className="hidden lg:block">Mesai Bilgisi</span>
+            </Button>
           </div>
-          {   <OrderSearch/>}
+          {<OrderSearch />}
           <div className="flex gap-x-6">
-          <ThemeButton/>
-          <ReloadButton theme={theme}/>
+            <ThemeButton />
+            <ReloadButton theme={theme} />
           </div>
         </div>
       </div>
