@@ -126,31 +126,37 @@ function ProcessArea() {
         <div
           className={`${
             pageName === "kalite" || pageName === "cila" ? "w-full" : "w-1/2"
-          } h-full flex flex-col`}
+          } h-full flex flex-col `}
         >
-         { pageName !== "cila" &&  <div
-            className={`px-6 py-3 text-left text-xs thead ${theme}   font-medium uppercase tracking-wider`}
-          >
-            {pageName === "kalite" ? "Kontrol Türleri" : "Prosesler"}
-          </div>}
+          {pageName !== "cila" && (
+            <div
+              className={`px-6 py-3 text-left text-xs thead ${theme}   font-medium uppercase tracking-wider`}
+            >
+              {pageName === "kalite" ? "Kontrol Türleri" : "Prosesler"}
+            </div>
+          )}
           {pageName === "cila" ? (
-           <div className="flex flex-wrap gap-3 p-[15px]">
-           {processList?.map((item) => {
-             const isSelected = selectedProcess.process_name === item.process_name;
-             return (
-               <div
-                 key={item.process_id}
-                 onClick={() => handleSelected("process", item)}
-                 className={`p-3 rounded-full border text-sm font-bold shadow 
-                   ${isSelected ? "bg-green-600 text-white border-green-600 scale-110 " : "bg-white text-black border-gray-300"} 
+            <div className="flex flex-wrap justify-center gap-3 p-[15px]">
+              {processList?.map((item) => {
+                const isSelected =
+                  selectedProcess.process_name === item.process_name;
+                return (
+                  <div
+                    key={item.process_id}
+                    onClick={() => handleSelected("process", item)}
+                    className={`p-3 rounded-full  border text-xs text-center break-words font-bold shadow 
+                   ${
+                     isSelected
+                       ? "bg-green-600 text-white border-green-600 scale-110 "
+                       : "bg-white text-black border-gray-300"
+                   } 
                    hover:bg-green-500 hover:text-white cursor-pointer transition-all duration-200 w-20 h-20  flex items-center justify-center`}
-               >
-                 {item.process_name}
-               </div>
-             );
-           })}
-         </div>
-         
+                  >
+                    {item.process_name}
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             // eski liste görünümü (default)
             <ul className="overflow-y-auto text-center bg-white border-t-2">
@@ -171,32 +177,31 @@ function ProcessArea() {
           )}
         </div>
         {/* kalite ve cila ekranlarında makine kısmını gostermıyoruz. */}
-        {((pageName !== "kalite" ||
-          pageName !== "cila") && (
-            <div className="w-1/2 h-full flex flex-col border-l">
-              <div
-                className={`px-6 py-3 text-left text-xs ${theme} thead   font-medium uppercase tracking-wider`}
-              >
-                Makineler
-              </div>
-              <ul className="overflow-y-auto text-center bg-white border-t-2">
-                {onMachine &&
-                  onMachine.map((item, index) => (
-                    <li
-                      key={index}
-                      className={`p-2 hover:bg-green-600 border cursor-pointer ${
-                        selectedMachine.machine_name === item.machine_name
-                          ? "bg-green-500"
-                          : `listeleman ${theme}`
-                      }`}
-                      onClick={() => handleSelected("machine", item)}
-                    >
-                      {item.machine_name}
-                    </li>
-                  ))}
-              </ul>
+        {pageName !== "kalite" && pageName !== "cila" && (
+          <div className="w-1/2 h-full flex flex-col border-l">
+            <div
+              className={`px-6 py-3 text-left text-xs ${theme} thead font-medium uppercase tracking-wider`}
+            >
+              Makineler
             </div>
-          ))}
+            <ul className="overflow-y-auto text-center bg-white border-t-2">
+              {onMachine &&
+                onMachine.map((item, index) => (
+                  <li
+                    key={index}
+                    className={`p-2 hover:bg-green-600 border cursor-pointer ${
+                      selectedMachine.machine_name === item.machine_name
+                        ? "bg-green-500"
+                        : `listeleman ${theme}`
+                    }`}
+                    onClick={() => handleSelected("machine", item)}
+                  >
+                    {item.machine_name}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

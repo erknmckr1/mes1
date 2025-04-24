@@ -484,7 +484,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
-  if (area_name === "telcekme") {
+  if (area_name === "telcekme" && process_name !== "ÖN HADDELEME") {  
     const work = await WorkLog.findOne({
       where: {
         area_name: "telcekme",

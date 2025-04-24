@@ -16,7 +16,7 @@ import {
   setİsCurrentBreak,
 } from "@/redux/breakOperationsSlice";
 import { toast } from "react-toastify";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice";
 import { getJoinTheField } from "@/redux/orderSlice";
 
@@ -27,6 +27,8 @@ function LeftSideBtnArea() {
     (state) => state.break
   );
 
+  const searchParams = useSearchParams();
+  const panel = searchParams.get("panel"); // 1 veya 2
   const { isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
@@ -53,6 +55,10 @@ function LeftSideBtnArea() {
   const logoutUser = async () => {
     try {
       if (confirm("Çıkış yapılsın mı?")) {
+        //? cila gibi iframe ile yönetilen ekranlar oturum işlemi şimdilik sessionStorage'da tutuluyor.
+        if (areaName === "cila") {
+          sessionStorage.removeItem(`cila-panel-user-${panel}`);
+        }
         const logout = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`,
           {}, // Boş bir obje göndermek gerekiyor

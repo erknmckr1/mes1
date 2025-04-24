@@ -6,12 +6,16 @@ import { setUserInfo, fetchUserPermissions } from "@/redux/userSlice";
 import { useDispatch } from "react-redux";
 import { setOperatorid } from "@/redux/userSlice";
 import { toast } from "react-toastify";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+
 function LoginPopUp({ setIsLoggedIn }) {
   const inputRef = useRef();
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
+  const searchParams = useSearchParams();
+  const panel = searchParams.get("panel"); // 1 veya 2
+
   //! girilen operator id yi global state'te tutuyoruz.
   const operator_id = useSelector((state) => state.user.operator_id);
   const { theme } = useSelector((state) => state.global);
@@ -31,22 +35,32 @@ function LoginPopUp({ setIsLoggedIn }) {
           }
         );
         if (response.status === 200) {
-
           if (areaName === "cila") {
             const checkBreak = await axios.get(
               `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/check-break`,
               { params: { operator_id } }
             );
-            if(checkBreak.data.isOnBreak) {
+            if (checkBreak.data.isOnBreak) {
               const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/returnToBreak`,
                 { operator_id, end_time }
               );
             }
           }
-          setIsLoggedIn(true);
-          dispatch(setUserInfo(response.data));
-          dispatch(fetchUserPermissions(response.data.id_dec)); // İzinleri al ve store'a ekle
+
+          if (areaName === "cila") {
+            sessionStorage.setItem(
+              `cila-panel-user-${panel}`,
+              JSON.stringify(response.data)
+            );
+            setIsLoggedIn(true);
+            dispatch(setUserInfo(response.data));
+            dispatch(fetchUserPermissions(response.data.id_dec)); // İzinleri al ve store'a ekle
+          } else {
+            setIsLoggedIn(true);
+            dispatch(setUserInfo(response.data));
+            dispatch(fetchUserPermissions(response.data.id_dec)); // İzinleri al ve store'a ekle
+          }
         }
       } catch (err) {
         console.error("Login hatası:", err);

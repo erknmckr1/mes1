@@ -157,9 +157,9 @@ function FinishedWorkPopup() {
     const isFinishedAmountValid = finishedAmount >= 100;
     const isDescriptionProvided = desc.trim().length > 0;
 
-    if(!finishedAmount){
-      toast.error("Hurda miktarı giriniz.")
-      return
+    if (!finishedAmount) {
+      toast.error("Hurda miktarı giriniz.");
+      return;
     }
 
     if (isFinishedAmountValid && !isDescriptionProvided) {
@@ -180,11 +180,16 @@ function FinishedWorkPopup() {
 
     const requestData = {
       uniqIds: selectedOrder.map((order) => order.uniq_id),
-      work_finished_op_dec: user.id_dec,
       areaName,
       field: selectedHammerSectionField,
       repair_amount: finishedAmount,
     };
+
+    if (areaName === "cila") {
+      requestData.work_finished_op_dec = userInfo.id_dec;
+    } else {
+      requestData.work_finished_op_dec = user.id_dec;
+    }
 
     try {
       let response;

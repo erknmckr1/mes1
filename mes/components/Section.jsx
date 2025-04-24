@@ -8,9 +8,11 @@ import ProcessArea from "./ProcessTable";
 import Date from "./ui/Date";
 import GroupArea from "./GroupArea";
 import { useSelector } from "react-redux";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 function Section() {
   const pathName = usePathname();
+  const searchParams = useSearchParams();
+  const panel = searchParams.get("panel"); // 1 veya 2
   const areaName = pathName.split("/")[3];
   const { theme } = useSelector((theme) => theme.global);
   return (
@@ -36,31 +38,42 @@ function Section() {
           </div>
           {/* 40% h break process vs. area */}
           <div className="w-full h-[40%] flex">
-            <div className=" w-[80%] h-full  flex justify-between ">
+            <div className={`${areaName !== "cila" ? "w-[80%]" : "w-full"} h-full flex`}>
               {/* left side mola area w-1/2  */}
-              {areaName !== "cila" &&  <div className="w-1/2 h-full p-1">
-                {areaName === "kalite" || areaName ==="buzlama" || areaName === "kurutiras"   || areaName === "cila" ?  (
-                  <BreakTable />
-                ) : (
-                  <div className="w-full h-full flex">
-                    <div className="w-1/2 h-full">
-                      <GroupArea />
+              {areaName !== "cila" && (
+                <div className="w-1/2 h-full p-1">
+                  {areaName === "kalite" ||
+                  areaName === "buzlama" ||
+                  areaName === "kurutiras" ||
+                  areaName === "cila" ? (
+                    <BreakTable />
+                  ) : (
+                    <div className="w-full h-full flex">
+                      <div className="w-1/2 h-full">
+                        <GroupArea />
+                      </div>
+                      <div className="w-1/2 h-full overflow-x-auto">
+                        <BreakTable />
+                      </div>
                     </div>
-                    <div className="w-1/2 h-full overflow-x-auto">
-                      <BreakTable />
-                    </div>
-                  </div>
-                )}
-              </div>}
+                  )}
+                </div>
+              )}
               {/* w-1/2 Process area... */}
-              <div className={`${areaName === "cila" ? "w-full h-full p-1" : "w-1/2 h-full p-1"}`}>
+              <div
+                className={`${
+                  areaName === "cila" ? "w-full h-full p-1" : "w-1/2 h-full p-1"
+                }`}
+              >
                 <ProcessArea />
               </div>
             </div>
             {/* 20% saat tarıh  alanı  */}
-            <div className="w-[20%] h-full ">
-              <Date addProps={"lg:text-[80px]"} />
-            </div>
+            { areaName !== "cila" ? (
+              <div className="w-[20%] h-full ">
+                <Date addProps="lg:text-[80px]" />
+              </div>
+            ) : ""}
           </div>
         </div>
       </div>

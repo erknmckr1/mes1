@@ -252,7 +252,7 @@ function StopJobPopup() {
                   </tr>
                 </thead>
                 <tbody className="text-lg text-center bg-gray-800">
-                  {areaName === "kalite" && (
+                  {(areaName === "kalite" || areaName === "cila") && (
                     <tr className="h-16 text-white text-xl">
                       <td className="border border-gray-700">
                         {userInfo.id_dec}
