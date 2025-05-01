@@ -56,7 +56,11 @@ const {
   rWork,
   finishedWork,
   transferOrder,
+  getWorksLogData,
 } = require("../services/orderServices");
+const Processes = require("../../models/Processes");
+const Machines = require("../../models/Machines");
+const sequelize = require("../..//lib/dbConnect");
 
 //! Siparişi bitirecek metot...
 router.post("/finishedWork", async (req, res) => {
@@ -109,7 +113,7 @@ router.post("/restartWork", async (req, res) => {
     selectedOrders,
     areaName,
     field,
-    machine_name
+    machine_name,
   } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -121,7 +125,7 @@ router.post("/restartWork", async (req, res) => {
       selectedOrders,
       area_name: areaName,
       field,
-      machine_name
+      machine_name,
     });
     if (result.status && result.status !== 200) {
       return res.status(result.status).json({ message: result.message });
@@ -249,6 +253,99 @@ router.get("/getProcessTypes", async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     console.error("Error getting stop reasons:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Tüm makineleri getirecek rota
+router.get("/getMachineListInProcess", async (req, res) => {
+  const { process } = req.query;
+  console.log("x");
+  try {
+    const result = await Machines.findAll({
+      where: {
+        process_name: process,
+      },
+      raw: true,
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Seçilen bölümün proseslerini getirecek rota
+router.get("/getProcessInSection", async (req, res) => {
+  const { areaName } = req.query;
+  try {
+    const result = await Processes.findAll({
+      attributes: ["process_id", "process_name", "section", "area_name"],
+      raw: true,
+      where: {
+        area_name: areaName,
+      },
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! proses listesinden tekrarsız bölümleri getirecek rota...
+router.get("/getSectionList", async (req, res) => {
+  try {
+    const result = await Processes.findAll({
+      attributes: [
+        [sequelize.fn("DISTINCT", sequelize.col("section")), "section"],
+      ],
+      raw: true,
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! proses listesinden birimleri getirecek rota...
+router.get("/getAreaList", async (req, res) => {
+  const { section } = req.query;
+  try {
+    const result = await Processes.findAll({
+      attributes: [
+        [sequelize.fn("DISTINCT", sequelize.col("area_name")), "area_name"],
+      ],
+      raw: true,
+      where: {
+        section,
+      },
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+//! Filtrelere göre işlerin listesini getirecek rota...
+router.get("/getWorksLogData", async (req, res) => {
+  const { areaName, section, machine, process, startDate, endDate } = req.query;
+  try {
+    const result = await getWorksLogData(
+      areaName,
+      section,
+      machine,
+      process,
+      startDate,
+      endDate
+    );
+
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Internal server error." });
   }
 });
@@ -674,8 +771,12 @@ router.post("/check-participation", async (req, res) => {
 
 //! Bölümden ayrılma route
 router.put("/exit-section", async (req, res) => {
-  const { selectedPersonInField, areaName, selectedHammerSectionField,machine_name } =
-    req.body;
+  const {
+    selectedPersonInField,
+    areaName,
+    selectedHammerSectionField,
+    machine_name,
+  } = req.body;
   const result = await exitSection(
     selectedPersonInField,
     areaName,
@@ -707,11 +808,11 @@ router.post("/finishedToSetup", async (req, res) => {
 });
 //! prosese baslatma route...
 router.put("/startToProces", async (req, res) => {
-  const { workIds, user_id_dec, area_name,field } = req.body;
+  const { workIds, user_id_dec, area_name, field } = req.body;
   if (!user_id_dec) {
     return res.status(400).json("Kullanıcı ID bulunamadı.");
   }
-  const result = await startToProces(workIds, user_id_dec, area_name,field);
+  const result = await startToProces(workIds, user_id_dec, area_name, field);
   return res.status(result.status).json(result.message);
 });
 

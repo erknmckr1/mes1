@@ -123,7 +123,7 @@ function HomeLayout({ children }) {
             <HomeSidebars />
           </div>
           {/* section sag tarafın genıslıgı 100vh - sidebar kadar */}
-          <section className="flex-1 w-full">
+          <section className="w-[calc(100vw-16rem)] h-full ml-auto">
             {/* header */}
             <div className="h-[100px]  bg-black  border-secondary border-b shadow-lg flex items-center justify-between px-4">
               <div className="text-xs sm:text-[30px] text-white">
@@ -145,7 +145,7 @@ function HomeLayout({ children }) {
                 </div>
               </div>
             </div>
-            <main className="flex-1 w-full  "> {children}</main>
+            <main className="flex-1 w-full  h-[calc(100%-100px)] "> {children}</main>
           </section>
           {isSurveyPopup && <SurveyPopup />}
           {shiftReportPopup && <ShiftReportPopup />}

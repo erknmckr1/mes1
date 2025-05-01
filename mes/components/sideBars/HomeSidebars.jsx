@@ -1,6 +1,6 @@
 import React from "react";
 import { CgMenuRight } from "react-icons/cg";
-import { FaEdit, FaPaperPlane,FaUserSecret } from "react-icons/fa";
+import { FaEdit, FaPaperPlane, FaUserSecret } from "react-icons/fa";
 import { useState } from "react";
 import {
   MdKeyboardArrowDown,
@@ -16,7 +16,7 @@ import Button from "../ui/Button";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { TbNurse } from "react-icons/tb";
+import { TbNurse, TbDeviceAnalytics } from "react-icons/tb";
 import { FcOvertime } from "react-icons/fc";
 import Link from "next/link";
 function HomeSidebars() {
@@ -55,7 +55,7 @@ function HomeSidebars() {
         break;
     }
   };
-  
+
   //! Logout fonksıyonu...
   const logoutUser = async () => {
     try {
@@ -169,11 +169,17 @@ function HomeSidebars() {
         },
       ],
     },
-    // {
-    //   label: "Midas 2024 Memnuniyet Anketi",
-    //   flow: "anket",
-    //   href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
-    // },
+    {
+      label: "Analytics",
+      icon: <TbDeviceAnalytics />,
+      flow: "analytics",
+      href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/analytics`,
+    },
+    {
+      label: "Midas 2024 Memnuniyet Anketi",
+      flow: "anket",
+      href: `${process.env.NEXT_PUBLIC_BASE_URL}/home/anket`,
+    },
     // {
     //   label: "Satın Alma Yönetimi",
     //   icon: <FaMoneyBill />,
@@ -192,15 +198,15 @@ function HomeSidebars() {
     // { label: "Raporlar", icon: <TbChartInfographic /> },
   ];
 
-  // alt kategory secımını tutacak state... 
+  // alt kategory secımını tutacak state...
   const handleSelection = (item) => {
     dispatch(setSelectedFlow(item));
   };
-  // menu ıtemı tutacak statee ıtemı gonderen fonksıyon... 
+  // menu ıtemı tutacak statee ıtemı gonderen fonksıyon...
   const handleSelectionManagement = (item) => {
     dispatch(setSelectedManagement(item));
   };
-  console.log(selectedFlow)
+  console.log(selectedFlow);
   return (
     <div className="relative h-full">
       <button
@@ -238,62 +244,80 @@ function HomeSidebars() {
             <ul className="w-full">
               {menuItems.map((item, index) => (
                 <React.Fragment key={index}>
-                  <li
-                    onClick={() => {
-                      item.flow && toggleSection(item.flow);
-                      handleSelectionManagement(item.label);
-                    }}
-                    className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
-                      selectedManagement === item.label ? "bg-gray-700" : ""
-                    }`}
-                  >
-                    <div className="flex gap-x-3 items-center">
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </div>
-                    {item.items &&
-                      (item.isOpen ? (
-                        <MdKeyboardArrowLeft className="text-[20px]" />
-                      ) : (
-                        <MdKeyboardArrowDown className="text-[20px]" />
-                      ))}
-                  </li>
-                  {item.isOpen && item.items && (
-                    <ul className="ps-4">
-                      {item.items.map((subItem, subIndex) => (
-                        <li
-                          onClick={() => {
-                            if (subItem.onClick) {
-                              // Eğer onClick fonksiyonu varsa onu çalıştır
-                              subItem.onClick();
-                              handleSelection(subItem.label);
-                            } else if (subItem.href) {
-                              // Eğer href varsa yönlendir
-                              handleSelection(subItem.label);
-                            }
-                          }}
-                        >
-                          {subItem.href ? (
-                            <Link
-                              href={subItem.href}
-                              className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
-                                selectedFlow === subItem.label
-                                  ? "bg-gray-700"
-                                  : ""
-                              }`}
-                            >
-                              {subItem.icon}
-                              {subItem.label}
-                            </Link>
+                  {item.href ? (
+                    // Link ile sarmalanmış ana öğe (örneğin Analytics, Anket)
+                    <Link
+                      href={item.href}
+                      className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between px-3 ${
+                        selectedManagement === item.label ? "bg-gray-700" : ""
+                      }`}
+                      onClick={() => handleSelectionManagement(item.label)}
+                    >
+                      <div className="flex gap-x-3 items-center">
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </div>
+                    </Link>
+                  ) : (
+                    // Alt menüsü olan öğeler (örneğin İzin Yönetimi)
+                    <>
+                      <li
+                        onClick={() => {
+                          item.flow && toggleSection(item.flow);
+                          handleSelectionManagement(item.label);
+                        }}
+                        className={`border-b border-gray-700 py-3 hover:bg-gray-500 cursor-pointer flex justify-between ${
+                          selectedManagement === item.label ? "bg-gray-700" : ""
+                        }`}
+                      >
+                        <div className="flex gap-x-3 items-center">
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </div>
+                        {item.items &&
+                          (item.isOpen ? (
+                            <MdKeyboardArrowLeft className="text-[20px]" />
                           ) : (
-                            <span className="mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2">
-                              {subItem.icon}
-                              {subItem.label}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                            <MdKeyboardArrowDown className="text-[20px]" />
+                          ))}
+                      </li>
+                      {item.isOpen && item.items && (
+                        <ul className="ps-4">
+                          {item.items.map((subItem, subIndex) => (
+                            <li
+                              key={subIndex}
+                              onClick={() => {
+                                if (subItem.onClick) {
+                                  subItem.onClick();
+                                  handleSelection(subItem.label);
+                                } else if (subItem.href) {
+                                  handleSelection(subItem.label);
+                                }
+                              }}
+                            >
+                              {subItem.href ? (
+                                <Link
+                                  href={subItem.href}
+                                  className={`mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2 ${
+                                    selectedFlow === subItem.label
+                                      ? "bg-gray-700"
+                                      : ""
+                                  }`}
+                                >
+                                  {subItem.icon}
+                                  {subItem.label}
+                                </Link>
+                              ) : (
+                                <span className="mt-1 py-3 ps-2 hover:bg-gray-500 cursor-pointer flex items-center gap-x-2">
+                                  {subItem.icon}
+                                  {subItem.label}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   )}
                 </React.Fragment>
               ))}

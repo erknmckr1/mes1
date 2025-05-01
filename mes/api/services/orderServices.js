@@ -18,6 +18,7 @@ const Processes = require("../../models/Processes");
 const Machines = require("../../models/Machines");
 const Sequelize = require("sequelize");
 const { current } = require("@reduxjs/toolkit");
+const { data } = require("autoprefixer");
 
 //! Seçili işi bitirecek query...
 const finishedWork = async ({
@@ -34,7 +35,7 @@ const finishedWork = async ({
   repair_reason_3,
   repair_reason_4,
   repair_section,
-  end_desc,
+  end_desc
 }) => {
   try {
     const result = await WorkLog.update(
@@ -484,7 +485,7 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
-  if (area_name === "telcekme" && process_name !== "ÖN HADDELEME") {  
+  if (area_name === "telcekme" && process_name !== "ÖN HADDELEME") {
     const work = await WorkLog.findOne({
       where: {
         area_name: "telcekme",
@@ -3350,18 +3351,18 @@ async function finishedToSetup(workIds, currentDateTimeOffset, operator_id) {
       };
     }
 
-    const isSectionParticipated = await SectionParticiptionLogs.findOne({
-      where: {
-        operator_id,
-        exit_time: null,
-      },
-    });
-    if (!isSectionParticipated) {
-      return {
-        status: 400,
-        message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
-      };
-    }
+    // const isSectionParticipated = await SectionParticiptionLogs.findOne({
+    //   where: {
+    //     operator_id,
+    //     exit_time: null,
+    //   },
+    // });
+    // if (!isSectionParticipated) {
+    //   return {
+    //     status: 400,
+    //     message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
+    //   };
+    // }
     // Belirtilen ID'lere sahip işlerin olup olmadığını kontrol et
     let works = await WorkLog.findAll({
       where: {
@@ -3424,20 +3425,20 @@ async function startToSetup(workIds, currentDateTimeOffset, operator_id) {
     }
     // Mola...
 
-    // Bölümde mi ?
-    const isSectionParticipated = await SectionParticiptionLogs.findOne({
-      where: {
-        operator_id,
-        exit_time: null,
-      },
-    });
-    if (!isSectionParticipated) {
-      return {
-        status: 400,
-        message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
-      };
-    }
-    // bölüm ?
+    // // Bölümde mi ?
+    // const isSectionParticipated = await SectionParticiptionLogs.findOne({
+    //   where: {
+    //     operator_id,
+    //     exit_time: null,
+    //   },
+    // });
+    // if (!isSectionParticipated) {
+    //   return {
+    //     status: 400,
+    //     message: "Bölüme katılım sağlamadan işe başlayamazsınız.",
+    //   };
+    // }
+    // // bölüm ?
 
     // Belirtilen ID'lere sahip işlerin olup olmadığını kontrol et
     let works = await WorkLog.findAll({
@@ -3651,6 +3652,76 @@ async function transferOrder(
   }
 }
 
+//! Filtreli worklog verilerini getirecek servis
+async function getWorksLogData(
+  areaName,
+  section,
+  machine,
+  process,
+  startDate,
+  endDate
+) {
+  const where = {};
+
+  if (
+    areaName === "all" &&
+    section === "all" &&
+    machine === "all" &&
+    process === "all"
+  ) {
+    return {
+      status: 400,
+      message: "En az bir filtre seçmelisiniz.",
+    };
+  }
+
+  if (startDate && endDate) {
+    where.work_start_date = {
+      [Op.between]: [new Date(startDate), new Date(endDate)],
+    };
+  } else {
+    return {
+      status: 400,
+      message: "Başlangıç ve bitiş tarihleri gereklidir.",
+    };
+  }
+
+  if (areaName && areaName !== "all") {
+    where.area_name = areaName;
+  }
+  if (section && section !== "all") {
+    where.section = section;
+  }
+  if (machine && machine !== "all") {
+    where.machine_name = machine;
+  }
+
+  if (process && process !== "all") {
+    where.process_name = process;
+  }
+
+  try {
+    const works = await WorkLog.findAll({ where });
+    const aktif = works.filter((work) => work.work_status === "1");
+    const tamamlanmis = works.filter((work) => work.work_status === "4");
+    const iptal = works.filter((work) => work.work_status === "2");
+    const durdurulmus = works.filter((work) => work.work_status === "3");
+
+    const result = [
+      { status: "all", data: works },
+      { status: "aktif", data: aktif },
+      { status: "tamamlanmis", data: tamamlanmis },
+      { status: "iptal", data: iptal },
+      { status: "durdurulmus", data: durdurulmus },
+    ];
+
+    return { status: 200, message: "Veriler başarıyla çekildi", data: result };
+  } catch (error) {
+    console.error("Error in getWorksLogData function:", error);
+    return { status: 500, message: "İç sunucu hatası: " + error.message };
+  }
+}
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -3707,4 +3778,5 @@ module.exports = {
   rWork,
   finishedWork,
   transferOrder,
+  getWorksLogData,
 };

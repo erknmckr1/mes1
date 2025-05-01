@@ -12,6 +12,7 @@ const userRoutes = require("../api/routers/userRoutes");
 const orderRoutes = require("../api/routers/orderRoutes");
 const shiftRoutes = require("../api/routers/shiftRoutes");
 const leaveServices = require("../api/services/leaveServices");
+const analiticsRoutes = require("../api/routers/analyticsRoutes");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -30,7 +31,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 
 // **HTTP Sunucusu ve Socket.io Başlatma**
 //* ✅ Burada HTTP sunucusunu (http.createServer(app)) manuel olarak oluşturduk ve Express uygulamasını bu sunucunun içine verdik.
@@ -90,5 +90,6 @@ app.use("/api/user", userRoutes);
 app.use("/api/order", orderRoutes);
 
 app.use("/api/shift", shiftRoutes);
+app.use("/api/analytics", analiticsRoutes);
 
 module.exports = { io };
