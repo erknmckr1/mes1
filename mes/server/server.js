@@ -13,6 +13,7 @@ const orderRoutes = require("../api/routers/orderRoutes");
 const shiftRoutes = require("../api/routers/shiftRoutes");
 const leaveServices = require("../api/services/leaveServices");
 const analiticsRoutes = require("../api/routers/analyticsRoutes");
+const aiRoutes = require("../api/routers/aiRoutes");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -91,5 +92,6 @@ app.use("/api/order", orderRoutes);
 
 app.use("/api/shift", shiftRoutes);
 app.use("/api/analytics", analiticsRoutes);
+app.use("/api/ai", aiRoutes);
 
 module.exports = { io };

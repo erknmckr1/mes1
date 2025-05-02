@@ -5,11 +5,13 @@ import {
   setIsOpen,
   setCheckBoxMessage,
   setAiChatBoxMessages,
+  setAiGeneratedQuery
 } from "@/redux/dashboardSlice";
 import { useDispatch } from "react-redux";
+import axios from "axios";
 
 function ChatBox() {
-  const { isOpen, chatBoxMessage, aiChatBoxMessages } = useSelector(
+  const { isOpen, chatBoxMessage, aiChatBoxMessages,aiGeneratedQuery } = useSelector(
     (state) => state.dashboard
   );
   const dispatch = useDispatch();
@@ -18,21 +20,39 @@ function ChatBox() {
     dispatch(setCheckBoxMessage(e.target.value));
   };
 
-  // send message handler
-  const handleSendMessage = () => {
-    if (!chatBoxMessage.trim()) return; // boş mesaj gönderme
-
-    dispatch(
-      setAiChatBoxMessages([
-        ...aiChatBoxMessages,
-        { role: "user", message: chatBoxMessage },
-        { role: "ai", message: "Bu bir yapay zeka mesajıdır." },
-      ])
-    );
-
-    dispatch(setCheckBoxMessage("")); // inputu temizle
+  //! send message handler
+  const handleSendMessage = async () => {
+    if (!chatBoxMessage.trim()) return;
+  
+    const newUserMessage = { role: "user", message: chatBoxMessage };
+    const updatedMessages = [...aiChatBoxMessages, newUserMessage];
+  
+    dispatch(setAiChatBoxMessages(updatedMessages));
+    dispatch(setCheckBoxMessage(""));
+  
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ai/ask`,
+        { message: chatBoxMessage }
+      );
+  
+      const newAiMessage = {
+        role: "ai",
+        message: response.data.message,
+      };
+      console.group(response.data.query)
+      dispatch(setAiChatBoxMessages([...updatedMessages, newAiMessage]));
+      setAiGeneratedQuery(response.data.query);
+    } catch (err) {
+      const failMessage = {
+        role: "ai",
+        message: "Bir hata oluştu lütfen tekrar deneyin",
+      };
+      dispatch(setAiChatBoxMessages([...updatedMessages, failMessage]));
+    }
   };
-
+  
+  console.log(aiGeneratedQuery)
 
   return (
     <>
@@ -59,7 +79,9 @@ function ChatBox() {
                 <p
                   key={index}
                   className={`max-w-xs px-4 py-2 rounded-lg ${
-                    msg.role === "user" ? "bg-blue-100 self-end" : "bg-gray-300 self-start"
+                    msg.role === "user"
+                      ? "bg-blue-100 self-end"
+                      : "bg-gray-300 self-start"
                   }`}
                 >
                   {msg.message}

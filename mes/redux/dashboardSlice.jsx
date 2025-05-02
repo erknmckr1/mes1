@@ -92,6 +92,7 @@ const initialState = {
   aiChatBoxMessages: [
     { role: "ai", message: "Merhaba! Size nasıl yardımcı olabilirim?" },
   ],
+  aiGeneratedQuery: null,
 };
 
 const dashboardSlice = createSlice({
@@ -121,7 +122,11 @@ const dashboardSlice = createSlice({
     },
     setAiChatBoxMessages: (state, action) => {
       state.aiChatBoxMessages = action.payload;
-    }
+    },
+    setAiGeneratedQuery: (state, action) => {
+      state.aiGeneratedQuery = action.payload;
+    },
+    
     
   },
   extraReducers: (builder) => {
@@ -189,6 +194,7 @@ export const {
   setIsOpen,
   setCheckBoxMessage,
   setAiChatBoxMessages,
+  setAiGeneratedQuery
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;
