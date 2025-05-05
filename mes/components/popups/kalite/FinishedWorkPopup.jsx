@@ -162,7 +162,7 @@ function FinishedWorkPopup() {
       return;
     }
 
-    if (isFinishedAmountValid && !isDescriptionProvided) {
+    if (areaName !== "cila" && isFinishedAmountValid && !isDescriptionProvided) {
       toast.error("Hurda açıklaması giriniz.");
       return;
     }
@@ -182,7 +182,9 @@ function FinishedWorkPopup() {
       uniqIds: selectedOrder.map((order) => order.uniq_id),
       areaName,
       field: selectedHammerSectionField,
-      repair_amount: finishedAmount,
+      scrap_amount: scrapAmount,
+      produced_amount: finishedAmount,
+      repair_amount: repairAmount,
     };
 
     if (areaName === "cila") {
@@ -277,7 +279,7 @@ function FinishedWorkPopup() {
             <Input
               addProps="h-20 text-[30px] text-center font-semibold text-black"
               placeholder={
-                areaName === "kalite"
+               ( areaName === "kalite" || areaName === "cila")
                   ? "Sağlam Çıkan Ürün (gr)"
                   : "Hurda Miktarı (gr)"
               }
@@ -285,6 +287,18 @@ function FinishedWorkPopup() {
               onChange={(e) => setFinishedAmount(e.target.value)}
               type="number"
             />
+            {/* hurda input  */}
+             {areaName === "cila" && (
+              <Input
+                addProps="h-20 text-[30px] text-center font-semibold text-black"
+                placeholder="Hurda Miktarı (gr)"
+                value={scrapAmount}
+                onChange={(e) => setScrapAmount(e.target.value)}
+                disabled={finishedAmount > 0 ? false : true}
+                type="number"
+              />
+            )}
+            {/* tamir input */}
             {areaName === "kalite" && (
               <Input
                 addProps="h-20 text-[30px] text-center font-semibold text-black"

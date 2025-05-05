@@ -179,7 +179,7 @@ router.get("/getWorks", async (req, res) => {
     const userWorks = await getWorks({ area_name, user_id_dec });
 
     // Belirli bir area_name ile durdurulmuş tüm işler
-    const stoppedWorks = await getStoppedWorks({ area_name });
+    const stoppedWorks = await getStoppedWorks({ area_name,user_id_dec });
 
     // Kullanıcının işleri ile durdurulmuş işleri birleştir
     const allWorks = [...userWorks, ...stoppedWorks];
@@ -721,14 +721,16 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount } =
+  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount,produced_amount,scrap_amount } =
     req.body;
   const result = await fwork(
     uniqIds,
     work_finished_op_dec,
     areaName,
     field,
-    repair_amount
+    repair_amount,
+    scrap_amount,
+    produced_amount
   );
   return res.status(result.status).json(result.message);
 });

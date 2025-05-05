@@ -35,7 +35,7 @@ const finishedWork = async ({
   repair_reason_3,
   repair_reason_4,
   repair_section,
-  end_desc
+  end_desc,
 }) => {
   try {
     const result = await WorkLog.update(
@@ -444,19 +444,28 @@ const getWorks = async ({ area_name, user_id_dec }) => {
 };
 
 //! Bir birimin durdurulmus işlerini çekecek query...
-const getStoppedWorks = async ({ area_name }) => {
+const getStoppedWorks = async ({ area_name, user_id_dec }) => {
+ 
   try {
-    const result = await WorkLog.findAll({
-      where: {
-        area_name: area_name,
-        work_status: "2",
-      },
-    });
+    if (!area_name) throw new Error("area_name is required.");
+
+    const where = {
+      area_name,
+      work_status: "2",
+    };
+
+    if (area_name === "cila" && user_id_dec) {
+      where.user_id_dec = user_id_dec;
+    }
+
+    const result = await WorkLog.findAll({ where });
     return result;
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    throw new Error("Stopped works could not be fetched.");
   }
 };
+
 
 //! yeni bir iş başlatacak query
 const createWork = async ({ work_info, currentDateTimeOffset }) => {
@@ -2893,7 +2902,9 @@ const fwork = async (
   work_finished_op_dec,
   areaName,
   field,
-  repair_amount
+  repair_amount,
+  scrap_amount,
+  produced_amount
 ) => {
   const work_end_date = new Date().toISOString();
 
@@ -3005,7 +3016,14 @@ const fwork = async (
 
     // İşleri bitmiş olarak güncelleme
     const [updatedCount] = await WorkLog.update(
-      { work_status: "4", work_finished_op_dec, work_end_date, repair_amount }, // Doğru kolon ismi
+      {
+        work_status: "4",
+        work_finished_op_dec,
+        work_end_date,
+        repair_amount,
+        produced_amount,
+        scrap_amount,
+      }, // Doğru kolon ismi
       { where: { uniq_id: uniqIds } }
     );
 
