@@ -11,7 +11,7 @@ import { useDispatch } from "react-redux";
 import axios from "axios";
 
 function ChatBox() {
-  const { isOpen, chatBoxMessage, aiChatBoxMessages,aiGeneratedQuery } = useSelector(
+  const { isOpen, chatBoxMessage, aiChatBoxMessages,aiGeneratedQuery,filters } = useSelector(
     (state) => state.dashboard
   );
   const dispatch = useDispatch();
@@ -33,7 +33,7 @@ function ChatBox() {
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ai/ask`,
-        { message: chatBoxMessage }
+        { message: chatBoxMessage,filters }
       );
   
       const newAiMessage = {

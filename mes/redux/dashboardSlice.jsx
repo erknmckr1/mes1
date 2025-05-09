@@ -80,19 +80,27 @@ const initialState = {
     endDate: "",
   },
   dailyChartData: [],
-  machineData: [],
-  areaData: [],
-  processData: [],
-  sectionData: [],
+  machineData: [], // makine bılgısını tutacak state
+  areaData: [], // birim listesini tutacak state
+  processData: [], // process listesini tutacak state
+  sectionData: [], // section listesini tutacak state
   dashboardData: null,
   isLoading: false,
   error: null,
   isOpen: false, // chatbox ı acıp kapatacak state
-  chatBoxMessage: "",
+  chatBoxMessage: "", // chatbox a yazılan mesajı tutacak state
   aiChatBoxMessages: [
     { role: "ai", message: "Merhaba! Size nasıl yardımcı olabilirim?" },
   ],
   aiGeneratedQuery: null,
+  analyticsData: {
+    workStatusData: [],
+    machineStatusData: null,
+    activeMachineDuration: null,
+    repairReasonStats: null,
+    stoppedWorkDuration:null
+  },
+  activeView:"stopped"
 };
 
 const dashboardSlice = createSlice({
@@ -126,8 +134,13 @@ const dashboardSlice = createSlice({
     setAiGeneratedQuery: (state, action) => {
       state.aiGeneratedQuery = action.payload;
     },
-    
-    
+    setAnalyticsData: (state, action) => {
+      const { key, data } = action.payload;
+      state.analyticsData[key] = data;
+    },
+    setActiveView:(state,action) =>{
+      state.activeView = action.payload;
+    }
   },
   extraReducers: (builder) => {
     // Makineleri çekerken
@@ -194,7 +207,9 @@ export const {
   setIsOpen,
   setCheckBoxMessage,
   setAiChatBoxMessages,
-  setAiGeneratedQuery
+  setAiGeneratedQuery,
+  setAnalyticsData,
+  setActiveView
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;

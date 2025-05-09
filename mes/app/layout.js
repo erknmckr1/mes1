@@ -145,7 +145,7 @@ function HomeLayout({ children }) {
                 </div>
               </div>
             </div>
-            <main className="flex-1 w-full  h-[calc(100%-100px)] "> {children}</main>
+            <main className={` flex-1 w-full  h-[calc(100%-100px)]`}> {children}</main>
           </section>
           {isSurveyPopup && <SurveyPopup />}
           {shiftReportPopup && <ShiftReportPopup />}

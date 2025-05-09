@@ -7,6 +7,7 @@ import { fetchSectionsData } from "@/redux/dashboardSlice";
 function page() {
   const dispatch = useDispatch();
 
+  // bölümleri cekecek useEffect... 
   useEffect(() => {
     dispatch(fetchSectionsData());
   }, []);

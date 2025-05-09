@@ -1,42 +1,55 @@
 import * as React from "react";
 import { PieChart } from "@mui/x-charts";
 
-export default function Pie() {
-  // Aynı datayı grafik ve legend için kullanıyoruz
-  const data = [
-    { id: 0, value: 10, label: "Tel Çekme", color: "#06b6d4" },  // cyan-500
-    { id: 1, value: 20, label: "Cila", color: "#3b82f6" },        // blue-500
-    { id: 2, value: 15, label: "Buzlama", color: "#a855f7" },     // purple-500
-    { id: 3, value: 25, label: "Kalite", color: "#7c3aed" },      // violet-600
-    { id: 4, value: 30, label: "Diğer", color: "#1d4ed8" },       // indigo-700
-  ];
+// İş durumu etiketi
+const getStatusLabel = (status) => {
+  switch (status) {
+    case "1":
+      return "Devam Ediyor";
+    case "2":
+      return "Durduruldu";
+    case "3":
+      return "İptal Edildi";
+    case "4":
+      return "Tamamlandı";
+    default:
+      return "Bilinmiyor";
+  }
+};
+
+// Renk paleti (opsiyonel dışa taşıyabilirsin)
+const tokens = ["#0284c7", "#16a34a", "#dc2626", "#f59e0b"];
+
+
+export default function Pie({ data }) {
+  const chartData = data?.map((item, index) => ({
+    id: index,
+    value: Number(item.total),
+    label: getStatusLabel(item.work_status),
+    color: tokens[index % tokens.length],
+  })) || [];
 
   return (
-    <div className="w-full flex items-center justify-between">
-      {/* PieChart */}
+    <div className="w-full flex items-center">
+      {/* Grafik */}
       <PieChart
         series={[
           {
+            data: chartData,
             innerRadius: 30,
             outerRadius: 90,
             paddingAngle: 5,
             cornerRadius: 5,
             startAngle: -45,
             endAngle: 315,
-            cx:30,
+            cx: 30,
             cy: 150,
-            data: data.map(({ id, value, label, color }) => ({
-              id,
-              value,
-              label,
-              color,
-            })),
           },
         ]}
-        width={300}
+        width={200}
         height={300}
         slotProps={{
-          legend: { hidden: true }, // default legend kapat
+          legend: { hidden: true },
         }}
         sx={{
           ".MuiChartsArc-label": {
@@ -46,15 +59,15 @@ export default function Pie() {
         }}
       />
 
-      {/* Manuel Legend */}
-      <ul className="space-y-2 text-white text-sm">
-        {data.map((item) => (
+      {/* Legend */}
+      <ul className="space-y-2 text-white text-sm ">
+        {chartData.map((item) => (
           <li key={item.id} className="flex items-center gap-2">
             <span
               className="w-3 h-3 rounded-sm inline-block"
               style={{ backgroundColor: item.color }}
-            ></span>
-            {item.label}
+            />
+            {item.label} ({item.value})
           </li>
         ))}
       </ul>
