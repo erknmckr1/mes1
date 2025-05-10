@@ -19,6 +19,7 @@ function FinishedWorkPopup() {
   // veriler Bu verilere globalde ıhtıyac duyulursa redux a tası...
   const [finishedAmount, setFinishedAmount] = useState(0);
   const [scrapAmount, setScrapAmount] = useState(0);
+  const [productCount,setProductCount] = useState(0);
   const [repairAmount, setRepairAmount] = useState(0);
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
@@ -189,6 +190,7 @@ function FinishedWorkPopup() {
 
     if (areaName === "cila") {
       requestData.work_finished_op_dec = userInfo.id_dec;
+      requestData.product_count = productCount
     } else {
       requestData.work_finished_op_dec = user.id_dec;
     }
@@ -266,7 +268,7 @@ function FinishedWorkPopup() {
       }`}
     >
       {/* Popup İçeriği */}
-      <div className="w-[90%] max-w-[1800px] h-[90%] max-h-[900px] popup-content shadow-2xl rounded-xl p-6 relative flex flex-col">
+      <div className="w-[90%] max-w-[1800px] h-[90%] max-h-[900px]  popup-content shadow-2xl rounded-xl p-6 relative flex flex-col">
         {/* Başlık */}
         <div className="popup-header h-[20%] text-white font-bold text-6xl flex items-center justify-center rounded-t-xl shadow-md">
           Siparişi Bitir
@@ -298,6 +300,17 @@ function FinishedWorkPopup() {
                 type="number"
               />
             )}
+            {/* hurda input  */}
+             {areaName === "cila" && (
+              <Input
+                addProps="h-20 text-[30px] text-center font-semibold text-black"
+                placeholder="Ürün Adeti"
+                value={productCount}
+                onChange={(e) => setProductCount(e.target.value)}
+                disabled={false}
+                type="number"
+              />
+            )}
             {/* tamir input */}
             {areaName === "kalite" && (
               <Input
@@ -310,6 +323,7 @@ function FinishedWorkPopup() {
               />
             )}
           </div>
+          
 
           {/* Tamir Nedenleri ve Açıklama Alanı */}
           <div className="flex gap-x-4">

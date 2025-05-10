@@ -153,6 +153,10 @@ const WorkLog = sequelize.define('WorkLog', {
   old_code:{
     type:DataTypes.STRING,
     allowNull:true
+  },
+  product_count:{
+    type:DataTypes.INTEGER,
+    allowNull:true
   }
 }, {
   tableName: 'work_log',

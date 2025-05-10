@@ -721,7 +721,7 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount,produced_amount,scrap_amount } =
+  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount,produced_amount,scrap_amount,product_count } =
     req.body;
   const result = await fwork(
     uniqIds,
@@ -730,7 +730,8 @@ router.put("/fwork", async (req, res) => {
     field,
     repair_amount,
     scrap_amount,
-    produced_amount
+    produced_amount,
+    product_count
   );
   return res.status(result.status).json(result.message);
 });

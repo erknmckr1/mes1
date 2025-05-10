@@ -2904,7 +2904,8 @@ const fwork = async (
   field,
   repair_amount,
   scrap_amount,
-  produced_amount
+  produced_amount,
+  product_count
 ) => {
   const work_end_date = new Date().toISOString();
 
@@ -3023,6 +3024,7 @@ const fwork = async (
         repair_amount,
         produced_amount,
         scrap_amount,
+        product_count
       }, // Doğru kolon ismi
       { where: { uniq_id: uniqIds } }
     );

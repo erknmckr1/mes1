@@ -26,6 +26,7 @@ const corsOptions = {
     "http://localhost:3002",
     "http://192.168.0.76:3000",
     "http://192.168.1.246:3000",
+    "http://192.168.1.227:3000"
   ], // Burada uygun origin'i belirleyin
   credentials: true, // Credentials (cookies, authorization headers vs.) ile isteklere izin ver
   methods: ["GET", "POST", "PUT", "DELETE"], // İzin verilen HTTP metodları
