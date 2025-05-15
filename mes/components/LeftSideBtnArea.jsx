@@ -75,7 +75,7 @@ function LeftSideBtnArea() {
   };
 
   const openOzelAra = () => {
-    if (isRequiredUserId || areaName === "kalite") {
+    if (isRequiredUserId) {
       if (!user || !user.id_dec) {
         dispatch(setUserIdPopup(true));
         setRetryAction("openOzelAra");
@@ -102,7 +102,7 @@ function LeftSideBtnArea() {
     // Güncel tarihi ISO 8601 standardında oluşturur
     const end_time = new Date().toISOString();
     try {
-      if (isRequiredUserId || areaName === "kalite") {
+      if (isRequiredUserId) {
         if (!user || !user.id_dec) {
           dispatch(setUserIdPopup(true));
           setRetryAction("returnToBreak");

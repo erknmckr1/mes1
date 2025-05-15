@@ -85,12 +85,21 @@ function ProcessArea() {
   };
 
   const filteredMachine = () => {
-    if (!machineList || !selectedProcess) {
-      return;
+    if (!machineList || !selectedProcess) return;
+
+    let filtered = [];
+
+    // tel cekme gibi ekranıda bir makine birden fazla proses için kullanıldıgından grupladık. 
+    if (pageName === "telcekme") {
+      filtered = machineList.filter(
+        (item) => item.machine_group === selectedProcess.process_group
+      );
+    } else {
+      filtered = machineList.filter(
+        (item) => item.process_name === selectedProcess.process_name
+      );
     }
-    const filtered = machineList.filter(
-      (item) => item.process_name === selectedProcess.process_name
-    );
+
     setOnMachine(filtered);
   };
 

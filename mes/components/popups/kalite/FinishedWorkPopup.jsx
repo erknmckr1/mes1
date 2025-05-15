@@ -19,7 +19,7 @@ function FinishedWorkPopup() {
   // veriler Bu verilere globalde ıhtıyac duyulursa redux a tası...
   const [finishedAmount, setFinishedAmount] = useState(0);
   const [scrapAmount, setScrapAmount] = useState(0);
-  const [productCount,setProductCount] = useState(0);
+  const [productCount, setProductCount] = useState(0);
   const [repairAmount, setRepairAmount] = useState(0);
   const [repairReasonsList, setRepairReasonsList] = useState([]);
   const [selectedScrapReason, setSelectedScrapReason] = useState("");
@@ -158,12 +158,16 @@ function FinishedWorkPopup() {
     const isFinishedAmountValid = finishedAmount >= 100;
     const isDescriptionProvided = desc.trim().length > 0;
 
-    if (!finishedAmount) {
-      toast.error("Hurda miktarı giriniz.");
-      return;
-    }
+    // if (!finishedAmount) {
+    //   toast.error("Hurda miktarı giriniz.");
+    //   return;
+    // }
 
-    if (areaName !== "cila" && isFinishedAmountValid && !isDescriptionProvided) {
+    if (
+      areaName !== "cila" &&
+      isFinishedAmountValid &&
+      !isDescriptionProvided
+    ) {
       toast.error("Hurda açıklaması giriniz.");
       return;
     }
@@ -190,7 +194,7 @@ function FinishedWorkPopup() {
 
     if (areaName === "cila") {
       requestData.work_finished_op_dec = userInfo.id_dec;
-      requestData.product_count = productCount
+      requestData.product_count = productCount;
     } else {
       requestData.work_finished_op_dec = user.id_dec;
     }
@@ -203,12 +207,20 @@ function FinishedWorkPopup() {
       );
 
       if (response.status === 200) {
-        toast.success(`${selectedOrder.length} iş bitirildi.`);
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
-        dispatch(setFinishedWorkPopup(false));
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(getJoinTheField({ areaName }));
+        if (areaName === "cila") {
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          toast.success(`${selectedOrder.length} iş bitirildi.`);
+          dispatch(setSelectedOrder([]));
+          dispatch(setUser(null));
+          dispatch(setFinishedWorkPopup(false));
+        } else {
+          toast.success(`${selectedOrder.length} iş bitirildi.`);
+          dispatch(setSelectedOrder([]));
+          dispatch(setUser(null));
+          dispatch(setFinishedWorkPopup(false));
+          dispatch(getWorksWithoutId({ areaName }));
+          dispatch(getJoinTheField({ areaName }));
+        }
       }
     } catch (err) {
       console.error("İş bitirme hatası:", err);
@@ -278,30 +290,30 @@ function FinishedWorkPopup() {
         <div className="flex flex-col gap-y-10 mt-6">
           {/* Input Alanı */}
           <div className="flex justify-evenly w-full">
-            <Input
-              addProps="h-20 text-[30px] text-center font-semibold text-black"
-              placeholder={
-               ( areaName === "kalite" || areaName === "cila")
-                  ? "Sağlam Çıkan Ürün (gr)"
-                  : "Hurda Miktarı (gr)"
-              }
-              value={finishedAmount}
-              onChange={(e) => setFinishedAmount(e.target.value)}
-              type="number"
-            />
+            {areaName === "kalite" ||
+              (areaName === "cila" || areaName ==="telcekme" && (
+                <Input
+                  addProps="h-20 text-[30px] text-center font-semibold text-black"
+                  placeholder={"Sağlam Çıkan Ürün (gr)"}
+                  value={finishedAmount}
+                  onChange={(e) => setFinishedAmount(e.target.value)}
+                  type="number"
+                />
+              ))}
             {/* hurda input  */}
-             {areaName === "cila" && (
-              <Input
-                addProps="h-20 text-[30px] text-center font-semibold text-black"
-                placeholder="Hurda Miktarı (gr)"
-                value={scrapAmount}
-                onChange={(e) => setScrapAmount(e.target.value)}
-                disabled={finishedAmount > 0 ? false : true}
-                type="number"
-              />
-            )}
-            {/* hurda input  */}
-             {areaName === "cila" && (
+            {areaName === "cila" ||
+              (areaName === "cekic" || areaName === "telcekme" && (
+                <Input
+                  addProps="h-20 text-[30px] text-center font-semibold text-black"
+                  placeholder="Hurda Miktarı (gr)"
+                  value={scrapAmount}
+                  onChange={(e) => setScrapAmount(e.target.value)}
+                 //  disabled={areaName !== "cekic" && finishedAmount > 0 ? false : true}
+                  type="number"
+                />
+              ))}
+            {/*  çıkan adet input  */}
+            {areaName === "cila" && (
               <Input
                 addProps="h-20 text-[30px] text-center font-semibold text-black"
                 placeholder="Ürün Adeti"
@@ -323,7 +335,6 @@ function FinishedWorkPopup() {
               />
             )}
           </div>
-          
 
           {/* Tamir Nedenleri ve Açıklama Alanı */}
           <div className="flex gap-x-4">

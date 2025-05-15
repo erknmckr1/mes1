@@ -28,6 +28,10 @@ const Machines = sequelize.define(
     machine_barcode:{
       type: DataTypes.STRING,
       allowNull: true,
+    },
+     machine_group:{
+      type: DataTypes.STRING,
+      allowNull: true,
     }
   },
   {

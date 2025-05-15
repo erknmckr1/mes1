@@ -360,15 +360,38 @@ function RightSideBtnArea() {
     }
   }
 
-  // iş bitirme popını acacak...
+  // iş bitirme popupını belirli şartlara göre acacak fonksiyon...
   const handleOpenFinishedPopup = () => {
-    if (
-      (selectedOrder.length === 1 && selectedOrder[0]?.work_status === "1") ||
-      selectedOrder[0]?.work_status === "2"
-    ) {
-      dispatch(setFinishedWorkPopup(true));
+    if (!selectedOrder.length) {
+      return toast.error("En az bir sipariş seçmelisiniz.");
+    }
+
+    // Kalite ekranı için: sadece 1 sipariş ve work_status 1 veya 2 olmalı
+    if (areaName === "kalite") {
+      const order = selectedOrder[0];
+      if (
+        selectedOrder.length === 1 &&
+        (order?.work_status === "1" || order?.work_status === "2")
+      ) {
+        dispatch(setFinishedWorkPopup(true));
+      } else {
+        toast.error(
+          "Sadece aktif ya da durdurulmuş 1 sipariş seçerek bitirme yapabilirsiniz."
+        );
+      }
     } else {
-      toast.error("Bitireceğiniz siparişi seçiniz.");
+      // Diğer alanlar için: tüm seçilen siparişlerin work_status'u 1 veya 2 olmalı
+      const allValid = selectedOrder.every(
+        (order) => order?.work_status === "1" || order?.work_status === "2"
+      );
+
+      if (allValid) {
+        dispatch(setFinishedWorkPopup(true));
+      } else {
+        toast.error(
+          "Seçilen tüm siparişlerin durumu 'aktif' veya 'durdurulmuş' olmalıdır."
+        );
+      }
     }
   };
 
@@ -417,7 +440,7 @@ function RightSideBtnArea() {
 
   //! Tekli yada coklu ıslemler ıcın ıkı farklı fonksıyon yazdık bunu teke dusur.
   const handleFinishedFunc = () => {
-    if (areaName === "telcekme") {
+    if (areaName === "telcekme" || areaName === "cekic") {
       handleOpenFinishedPopup();
     } else if (isRequiredUserId) {
       handleFinishWork();
@@ -1037,7 +1060,7 @@ function RightSideBtnArea() {
             selectedPersonInField,
             areaName,
             selectedHammerSectionField,
-            machine_name:selectedMachine?.machine_name
+            machine_name: selectedMachine?.machine_name,
           }
         );
       }
@@ -1460,7 +1483,7 @@ function RightSideBtnArea() {
       type: "button",
       className:
         "w-[140px] bg-orange-500 hover:bg-orange-600 sm:py-4 text-sm sm:px-1",
-      // disabled: isCurrentBreak,
+      disabled: isCurrentBreak,
     },
   ];
 
@@ -1480,7 +1503,7 @@ function RightSideBtnArea() {
       areaName === "kalite" ||
       areaName === "kurutiras" ||
       areaName === "buzlama" ||
-      areaName === "cila" 
+      areaName === "cila"
     ) {
       return (
         <div className="w-full flex flex-col gap-y-5 justify-center items-center ">
@@ -1491,7 +1514,7 @@ function RightSideBtnArea() {
               children={button.children}
               type={button.type}
               onClick={button.onClick}
-              disabled={false}
+              disabled={areaName === "kalite" && isCurrentBreak}
             />
           ))}
         </div>
@@ -1507,7 +1530,7 @@ function RightSideBtnArea() {
                 children={button.children}
                 type={button.type}
                 onClick={button.onClick}
-                disabled={isCurrentBreak}
+                // disabled={isCurrentBreak}
               />
             ))}
           </div>

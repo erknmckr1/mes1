@@ -18,6 +18,10 @@ const Processes = sequelize.define('Processes', {
   area_name: {
     type: DataTypes.TEXT,
     allowNull: false
+  },
+  process_group:{
+    type:DataTypes.TEXT,
+    allowNull:true
   }
 }, {
   tableName: 'process_table',

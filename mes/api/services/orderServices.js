@@ -19,6 +19,8 @@ const Machines = require("../../models/Machines");
 const Sequelize = require("sequelize");
 const { current } = require("@reduxjs/toolkit");
 const { data } = require("autoprefixer");
+// utils
+const { closeOpenStops } = require("../utils/orderUtils");
 
 //! Seçili işi bitirecek query...
 const finishedWork = async ({
@@ -38,6 +40,8 @@ const finishedWork = async ({
   end_desc,
 }) => {
   try {
+    await closeOpenStops({ uniq_id, closeDate: currentDateTimeOffset });
+
     const result = await WorkLog.update(
       {
         work_status: "4",
@@ -445,7 +449,6 @@ const getWorks = async ({ area_name, user_id_dec }) => {
 
 //! Bir birimin durdurulmus işlerini çekecek query...
 const getStoppedWorks = async ({ area_name, user_id_dec }) => {
- 
   try {
     if (!area_name) throw new Error("area_name is required.");
 
@@ -465,7 +468,6 @@ const getStoppedWorks = async ({ area_name, user_id_dec }) => {
     throw new Error("Stopped works could not be fetched.");
   }
 };
-
 
 //! yeni bir iş başlatacak query
 const createWork = async ({ work_info, currentDateTimeOffset }) => {
@@ -494,7 +496,8 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
-  if (area_name === "telcekme" && process_name !== "ÖN HADDELEME") {
+  // TELCEKME ŞART...
+  if (area_name === "telcekme" && (process_name !== "ÖN HADDELEME" && process_name !== "TAMİR")) {
     const work = await WorkLog.findOne({
       where: {
         area_name: "telcekme",
@@ -766,6 +769,8 @@ const cancelWork = async ({
       }
     }
     // bölüm ?
+
+    await closeOpenStops({ uniq_id, closeDate: currentDateTimeOffset });
 
     const result = await WorkLog.update(
       {
@@ -3024,7 +3029,7 @@ const fwork = async (
         repair_amount,
         produced_amount,
         scrap_amount,
-        product_count
+        product_count,
       }, // Doğru kolon ismi
       { where: { uniq_id: uniqIds } }
     );
