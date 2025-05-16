@@ -100,6 +100,7 @@ const initialState = {
     repairReasonStats: null,
     stoppedWorkDuration:null
   },
+  exportData:[],
   activeView:"stopped"
 };
 
@@ -140,6 +141,9 @@ const dashboardSlice = createSlice({
     },
     setActiveView:(state,action) =>{
       state.activeView = action.payload;
+    },
+    setExportData:(state,action) =>{
+      state.exportData = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -209,7 +213,8 @@ export const {
   setAiChatBoxMessages,
   setAiGeneratedQuery,
   setAnalyticsData,
-  setActiveView
+  setActiveView,
+  setExportData
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;

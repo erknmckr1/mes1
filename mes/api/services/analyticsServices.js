@@ -328,9 +328,65 @@ const getStoppedWorksDuration = async () => {
       raw: true,
     });
 
-    return {status : 200,message:"Duran iş süreleri başarıyla çekildi.",data:stoppedDuration}
+    return {
+      status: 200,
+      message: "Duran iş süreleri başarıyla çekildi.",
+      data: stoppedDuration,
+    };
   } catch (err) {
     console.log(err);
+  }
+};
+
+//! WorkLog tablosundan verileri çekecek servis
+const getWorkLogData = async (section, areaName, process, machine,startDate, endDate) => {
+  const whereClause = {};
+
+  if (section && section !== "all")
+    whereClause.section = section
+  if (areaName && areaName !== "all")
+    whereClause.area_name = areaName
+  if (process && process !== "all") whereClause.process_name = process;
+  if (machine && machine !== "all") whereClause.machine_name = machine;
+
+  if (startDate && endDate) {
+    whereClause.work_start_date = {
+      [Op.between]: [new Date(startDate), new Date(endDate)],
+    };
+  }
+
+  if (startDate && !endDate) {
+    whereClause.work_start_date = {
+      [Op.gte]: new Date(startDate),
+    };
+  }
+
+  try {
+    const workLogs = await WorkLog.findAll({
+      where: whereClause,
+      order: [["work_start_date", "DESC"]],
+      raw: true,
+    });
+
+    if (workLogs.length > 0) {
+      return {
+        status: 200,
+        message: "Çalışma günlüğü verileri başarıyla alındı",
+        data: workLogs,
+      };
+    } else if (workLogs.length === 0) {
+      return {
+        status: 404,
+        message: "Çalışma günlüğü verisi bulunamadı",
+        data: workLogs,
+      };
+    }
+  } catch (error) {
+    console.error("Work log error:", error);
+    return {
+      status: 500,
+      message: "Error while fetching work log data",
+    };
   }
 };
 
@@ -352,4 +408,5 @@ module.exports = {
   getOpenDurationOfActiveWorks,
   getRepairReasonStats,
   getStoppedWorksDuration,
+  getWorkLogData,
 };

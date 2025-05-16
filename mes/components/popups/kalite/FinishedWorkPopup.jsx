@@ -290,25 +290,28 @@ function FinishedWorkPopup() {
         <div className="flex flex-col gap-y-10 mt-6">
           {/* Input Alanı */}
           <div className="flex justify-evenly w-full">
-            {areaName === "kalite" ||
-              (areaName === "cila" || areaName ==="telcekme" && (
-                <Input
-                  addProps="h-20 text-[30px] text-center font-semibold text-black"
-                  placeholder={"Sağlam Çıkan Ürün (gr)"}
-                  value={finishedAmount}
-                  onChange={(e) => setFinishedAmount(e.target.value)}
-                  type="number"
-                />
-              ))}
+            {(areaName === "kalite" ||
+  areaName === "cila" ||
+  areaName === "telcekme") && (
+  <Input
+    addProps="h-20 text-[30px] text-center font-semibold text-black"
+    placeholder={"Sağlam Çıkan Ürün (gr)"}
+    value={finishedAmount}
+    onChange={(e) => setFinishedAmount(e.target.value)}
+    type="number"
+  />
+)}
+
             {/* hurda input  */}
             {areaName === "cila" ||
-              (areaName === "cekic" || areaName === "telcekme" && (
+              areaName === "cekic" ||
+              (areaName === "telcekme" && (
                 <Input
                   addProps="h-20 text-[30px] text-center font-semibold text-black"
                   placeholder="Hurda Miktarı (gr)"
                   value={scrapAmount}
                   onChange={(e) => setScrapAmount(e.target.value)}
-                 //  disabled={areaName !== "cekic" && finishedAmount > 0 ? false : true}
+                  //  disabled={areaName !== "cekic" && finishedAmount > 0 ? false : true}
                   type="number"
                 />
               ))}

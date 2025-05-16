@@ -7,7 +7,8 @@ const {
   getMachineStatusOverview,
   getOpenDurationOfActiveWorks,
   getRepairReasonStats,
-  getStoppedWorksDuration
+  getStoppedWorksDuration,
+  getWorkLogData
 } = require("../services/analyticsServices.js");
 
 router.get("/getWorksCountSummary", async (req, res) => {
@@ -81,12 +82,10 @@ router.get("/getMachineStatusOverview", async (req, res) => {
 router.get("/getOpenDurationOfActiveWorks", async (req, res) => {
   try {
     const result = await getOpenDurationOfActiveWorks();
-    res
-      .status(200)
-      .json({
-        message: "Aktif sipariş üretim süre bilgileri çekildi.",
-        data: result.data,
-      });
+    res.status(200).json({
+      message: "Aktif sipariş üretim süre bilgileri çekildi.",
+      data: result.data,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal Server Error" });
@@ -95,15 +94,13 @@ router.get("/getOpenDurationOfActiveWorks", async (req, res) => {
 
 //! tamir nedenlerini neden - count bazında getırecek endpoint
 router.get("/getRepairReasonStats", async (req, res) => {
-  const {work_start_date,work_end_date} = req.params;
+  const { work_start_date, work_end_date } = req.params;
   try {
-    const result = await getRepairReasonStats(work_start_date,work_end_date);
-    res
-      .status(200)
-      .json({
-        message: "Tamir nedenlerine göre en cık karsılasılan hatalar cekildi.",
-        data: result.data,
-      });
+    const result = await getRepairReasonStats(work_start_date, work_end_date);
+    res.status(200).json({
+      message: "Tamir nedenlerine göre en cık karsılasılan hatalar cekildi.",
+      data: result.data,
+    });
   } catch (err) {
     console.log(err);
     res.status(200).json({ message: "Internal Server Error" });
@@ -111,15 +108,33 @@ router.get("/getRepairReasonStats", async (req, res) => {
 });
 
 //! stoppenWorks tablosundan hangi iş ne kadar süredir durmus onu dönecek endpoint...
-router.get("/getStoppedWorksDuration",async (req,res)=>{
+router.get("/getStoppedWorksDuration", async (req, res) => {
   const {} = req.params;
   try {
     const result = await getStoppedWorksDuration();
-    res.status(result.status).json({message:result.message,data:result.data})
+    res
+      .status(result.status)
+      .json({ message: result.message, data: result.data });
   } catch (err) {
     console.log(err);
-    res.status(500).json({message:"Internal Server Error"});
+    res.status(500).json({ message: "Internal Server Error" });
   }
-})
+});
+
+//! work_log verisini cekecek olan endpoint...
+router.get("/getWorkLogData", async (req, res) => {
+  const { section, area_name, machine, process, startDate, endDate } =
+    req.query.params;
+    try {
+      const result = await getWorkLogData(section, area_name, machine, process, startDate, endDate );
+      return res.status(result.status).json({
+        message: result.message,
+        data: result.data,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+});
 
 module.exports = router;

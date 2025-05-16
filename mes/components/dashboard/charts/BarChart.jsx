@@ -1,17 +1,16 @@
 import React from "react";
 import { BarChart } from "@mui/x-charts";
 
-import ChartCard from "./ChartCard";
-
-function DailyProductionChart({items,title}) {
-
+function DailyProductionChart({ items }) {
+ const chartWidth = Math.max(items.labels.length * 60, 800); // minimum 800px
   return (
-    
+    <div style={{ minWidth: chartWidth }}>
       <BarChart
-        series={[{ data: items.values }]}
+        width={chartWidth}
         height={290}
+        series={[{ data: items.values }]}
         xAxis={[
-          {
+          { 
             data: items.labels,
             scaleType: "band",
             tickLabelStyle: {
@@ -43,7 +42,7 @@ function DailyProductionChart({items,title}) {
           },
         }}
       />
-   
+    </div>
   );
 }
 

@@ -125,7 +125,6 @@ function DashboardSection() {
     );
   //* duran iş süresi variable end
 
-  console.log(activeView)
   return (
     <div className="w-full h-full">
       <ChatBox />

@@ -2,16 +2,18 @@ import React from "react";
 import { setFilters } from "@/redux/dashboardSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   fetchProcessesData,
   fetchAreaData,
   fetchMachinesData,
   setDashboardData,
-  setDailyChartData
+  setDailyChartData,
+  setExportData,
 } from "@/redux/dashboardSlice";
 import axios from "axios";
 import { toast } from "react-toastify";
-
+import Button from "@/components/ui/Button";
 const FilterPanel = () => {
   const {
     filters,
@@ -20,7 +22,9 @@ const FilterPanel = () => {
     areaData,
     machineData,
     dashboardData,
+    exportData,
   } = useSelector((state) => state.dashboard);
+  const router = useRouter();
   const dispatch = useDispatch();
   // filter objesini güncelleyen fonksiyon
   const handleChangeFilterObj = (name, value) => {
@@ -70,7 +74,6 @@ const FilterPanel = () => {
       } else {
         toast.error(response.data.message || "Beklenmeyen bir hata oluştu.");
       }
-      
     } catch (err) {
       console.log(err);
       toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
@@ -101,12 +104,44 @@ const FilterPanel = () => {
     }
   };
 
-   // Filtre butonuna basınca hem özet hem günlük verileri getir
-   const handleFetchAllData = async () => {
+  // Filtre butonuna basınca hem özet hem günlük verileri getir
+  const handleFetchAllData = async () => {
     await fetchFilteredData();
     await fetchDailyProductionStats();
   };
-  
+
+  //! Export için veri cekecek ve sonrasında sayfa yönlendirmesi yapacak fonksiyon...
+  const handleExportData = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getWorkLogData`,
+        {
+          params: {
+            params: {
+              section: filters.section.toLowerCase(),
+              area_name: filters.areaName.toLowerCase(),
+              machine: filters.machine,
+              process: filters.prosess,
+              startDate: filters.startDate,
+              endDate: filters.endDate,
+            },
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        dispatch(setExportData(response.data.data));
+        router.push(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/home/analytics/export`
+        );
+      }else if (response.status === 404){
+        toast.error(`${response.data.message}` || "Filtrelenen veri bulunamadı.");
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error(`${err.response.data.message}` || "Filtrelenen veri çekilemedi.");
+    }
+  };
 
   return (
     <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 space-y-5 text-black ">
@@ -208,13 +243,19 @@ const FilterPanel = () => {
           />
         </div>
       </div>
-      <div>
-        <button
+      <div className="flex gap-x-3 items-center w-full">
+        <Button
           onClick={handleFetchAllData}
-          className="w-full bg-blue-600 text-white rounded-lg p-2.5 shadow-sm hover:bg-blue-700 transition duration-200"
+          className=" bg-blue-600 text-white rounded-lg p-2.5 shadow-sm hover:bg-blue-700 transition duration-200"
         >
           Filtrele
-        </button>
+        </Button>
+        <Button
+          onClick={handleExportData}
+          className="bg-blue-600 text-white rounded-lg p-2.5 shadow-sm hover:bg-blue-700 transition duration-200"
+        >
+          Dışarıya Veri Al
+        </Button>
       </div>
     </div>
   );
