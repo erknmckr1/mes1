@@ -134,7 +134,7 @@ const FilterPanel = () => {
         router.push(
           `${process.env.NEXT_PUBLIC_BASE_URL}/home/analytics/export`
         );
-      }else if (response.status === 404){
+      } else if (response.status === 404) {
         toast.error(`${response.data.message}` || "Filtrelenen veri bulunamadı.");
       }
     } catch (err) {
@@ -142,6 +142,18 @@ const FilterPanel = () => {
       toast.error(`${err.response.data.message}` || "Filtrelenen veri çekilemedi.");
     }
   };
+
+
+  const dataType = [
+    {
+      name: "Sipariş Verisi",
+      key: "work_log"
+    },
+    {
+      name: "Ölçüm Verisi",
+      key: "measurement_data"
+    }
+  ]
 
   return (
     <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 space-y-5 text-black ">
@@ -243,6 +255,19 @@ const FilterPanel = () => {
           />
         </div>
       </div>
+      {/*Data filters checkbox*/}
+      <div className="flex items-center gap-6 my-4">
+        {
+          dataType.map((item) => (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" className="accent-blue-600 w-4 h-4" />
+              {item.name}
+            </label>
+          ))
+        }
+      </div>
+
+      {/* buttons */}
       <div className="flex gap-x-3 items-center w-full">
         <Button
           onClick={handleFetchAllData}

@@ -176,7 +176,7 @@ function DashboardSection() {
               </ChartCard>
             )}
           </div>
-          <div className="w-full h-full grid grid-cols-2 gap-4">
+          <div className="w-full h-auto grid grid-cols-2 gap-4">
             <ChartCard title="İş Durumu Dağılımı">
               <Pie data={analyticsData?.workStatusData} />
             </ChartCard>
