@@ -497,7 +497,11 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
   }
 
   // TELCEKME ŞART...
-  if (area_name === "telcekme" && (process_name !== "ÖN HADDELEME" && process_name !== "TAMİR")) {
+  if (
+    area_name === "telcekme" &&
+    process_name !== "ÖN HADDELEME" &&
+    process_name !== "TAMİR"
+  ) {
     const work = await WorkLog.findOne({
       where: {
         area_name: "telcekme",
@@ -770,7 +774,28 @@ const cancelWork = async ({
     }
     // bölüm ?
 
-    await closeOpenStops({ uniq_id, closeDate: currentDateTimeOffset });
+       // durdurulmuş iş var mı kontrol et...
+       const stoppedWorks = await StoppedWorksLogs.findAll({
+        where: {
+          work_log_uniq_id: uniq_id,
+          stop_end_date: null,
+        },
+      });
+  
+      // eğer iş durdurulmuşsa ve durdurma tarihi yoksa durdurma tarihini güncelle...
+      for (const stop of stoppedWorks) {
+        await StoppedWorksLogs.update(
+          {
+            stop_end_date: currentDateTimeOffset,
+          },
+          {
+            where: {
+              work_log_uniq_id: stop.work_log_uniq_id,
+              stop_end_date: null,
+            },
+          }
+        );
+      }
 
     const result = await WorkLog.update(
       {

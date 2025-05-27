@@ -108,7 +108,7 @@ const User = sequelize.define('User', {
     allowNull: true
   },
   izin_bakiye: {
-    type: DataTypes.DECIMAL(10, 0),
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true
   }
 }, {

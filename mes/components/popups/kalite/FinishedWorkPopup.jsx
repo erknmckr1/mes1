@@ -154,20 +154,16 @@ function FinishedWorkPopup() {
   };
 
   //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
-  const handleFinishWork = async () => {
+ const handleFinishWork = async () => {
     const isFinishedAmountValid = finishedAmount >= 100;
     const isDescriptionProvided = desc.trim().length > 0;
 
-    // if (!finishedAmount) {
-    //   toast.error("Hurda miktarı giriniz.");
-    //   return;
-    // }
+    if (!finishedAmount) {
+      toast.error("Hurda miktarı giriniz.");
+      return;
+    }
 
-    if (
-      areaName !== "cila" &&
-      isFinishedAmountValid &&
-      !isDescriptionProvided
-    ) {
+    if (areaName !== "cila" && isFinishedAmountValid && !isDescriptionProvided) {
       toast.error("Hurda açıklaması giriniz.");
       return;
     }
@@ -194,7 +190,7 @@ function FinishedWorkPopup() {
 
     if (areaName === "cila") {
       requestData.work_finished_op_dec = userInfo.id_dec;
-      requestData.product_count = productCount;
+      requestData.product_count = productCount
     } else {
       requestData.work_finished_op_dec = user.id_dec;
     }
@@ -207,20 +203,21 @@ function FinishedWorkPopup() {
       );
 
       if (response.status === 200) {
-        if (areaName === "cila") {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          toast.success(`${selectedOrder.length} iş bitirildi.`);
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
-          dispatch(setFinishedWorkPopup(false));
-        } else {
-          toast.success(`${selectedOrder.length} iş bitirildi.`);
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
-          dispatch(setFinishedWorkPopup(false));
-          dispatch(getWorksWithoutId({ areaName }));
-          dispatch(getJoinTheField({ areaName }));
+        if(areaName === "cila"){
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+        toast.success(`${selectedOrder.length} iş bitirildi.`);
+        dispatch(setSelectedOrder([]));
+        dispatch(setUser(null));
+        dispatch(setFinishedWorkPopup(false));
+        }else{
+        toast.success(`${selectedOrder.length} iş bitirildi.`);
+        dispatch(setSelectedOrder([]));
+        dispatch(setUser(null));
+        dispatch(setFinishedWorkPopup(false));
+        dispatch(getWorksWithoutId({ areaName }));
+        dispatch(getJoinTheField({ areaName }));
         }
+        
       }
     } catch (err) {
       console.error("İş bitirme hatası:", err);

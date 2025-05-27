@@ -1,39 +1,64 @@
 const express = require("express");
 const router = express.Router();
-const { getAllUsers, getUserWithId,getUserWithArea } = require("../services/userServices");
+const {
+  getAllUsers,
+  getUserWithId,
+  getUserWithArea,
+  updateLeaveBalance,
+} = require("../services/userServices");
+const { authorize } = require("../middleware/authMiddleware");
 const User = require("../../models/User");
 const Permissions = require("../../models/Permissions");
 const Role = require("../../models/Roles");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+const dotenv = require("dotenv");
 const {
   getBreakReason,
   getIsUserOnBreak,
   returnToBreak,
   onBreakUsers,
-  checkUserBreakStatus
+  checkUserBreakStatus,
 } = require("../services/breakOperations");
-const SECRET_KEY = crypto.randomBytes(32).toString("hex");
+dotenv.config();
+const SECRET_KEY = process.env.SECRET_KEY;
 const currentDateTimeOffset = new Date().toISOString();
 //! Gelen operator_id (veri tabanında id_dec) ile kullanıcı eşleştirmesi yapıp cookie ye token olusturan metot
 router.post("/login", async (req, res) => {
   const { operator_id } = req.body;
-  console.log(SECRET_KEY);
+
   try {
     const currentUser = await User.findOne({
       where: {
         [Op.or]: [{ id_dec: operator_id }, { id_hex: operator_id }],
       },
+      include: {
+        model: Role,
+        include: {
+          model: Permissions,
+        },
+      },
     });
-    if (currentUser) {
-      const token = jwt.sign({ operator_id }, SECRET_KEY, { expiresIn: "1h" });
-      res.cookie("token", token, { httpOnly: false, secure: false });
-      res.status(200).json(currentUser);
-    } else {
-      res.status(401).send("Kullanici bulunamadi.");
+
+    if (!currentUser) {
+      return res.status(401).send("Kullanici bulunamadi.");
     }
+
+    //  Kullanıcının tüm izinlerini çekiyoruz
+    const permissions = currentUser.Role?.Permissions?.map((p) => p.name) || [];
+
+    // Token'a hem operator_id hem de permissions ekliyoruz
+    const token = jwt.sign(
+      { operator_id, permissions },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    res.cookie("token", token, { httpOnly: false, secure: false });
+    res.status(200).json(currentUser);
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -183,6 +208,22 @@ router.get("/getAllUsers", async (req, res) => {
   const result = await getAllUsers();
   return res.status(result.status).json(result.message);
 });
+
+//! Kullanıcı izinlerini güncelleyecek route
+router.put(
+  "/updateLeaveBalance",
+  authorize("BakiyeGüncelleme"),
+  async (req, res) => {
+    const { leaveInputs } = req.body;
+    try {
+      const result = await updateLeaveBalance(leaveInputs);
+      res.status(result.status).json(result.message);
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Internal server error." });
+    }
+  }
+);
 
 //! Kullanıcı izinlerini alacak route
 router.get("/:userId/permissions", async (req, res) => {
