@@ -9,6 +9,7 @@ import Date from "./ui/Date";
 import GroupArea from "./GroupArea";
 import { useSelector } from "react-redux";
 import { usePathname, useSearchParams } from "next/navigation";
+import WorkHistoryBox from "./modals/WorkHistoryBox";
 function Section() {
   const pathName = usePathname();
   const searchParams = useSearchParams();
@@ -17,7 +18,7 @@ function Section() {
   const { theme } = useSelector((theme) => theme.global);
   return (
     <div
-      className={`w-screen h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}
+      className={`w-screen relative h-[calc(100vh_-_150px)] relative section ${theme} transition-all`}
     >
       <div className="flex w-full h-full lg:p-3">
         {/* left side Image vs. %20 */}
@@ -38,7 +39,11 @@ function Section() {
           </div>
           {/* 40% h break process vs. area */}
           <div className="w-full h-[40%] flex">
-            <div className={`${areaName !== "cila" ? "w-[80%]" : "w-full"} h-full flex`}>
+            <div
+              className={`${
+                areaName !== "cila" ? "w-[80%]" : "w-full"
+              } h-full flex`}
+            >
               {/* left side mola area w-1/2  */}
               {areaName !== "cila" && (
                 <div className="w-1/2 h-full p-1">
@@ -69,14 +74,19 @@ function Section() {
               </div>
             </div>
             {/* 20% saat tarıh  alanı  */}
-            { areaName !== "cila" ? (
+            {areaName !== "cila" ? (
               <div className="w-[20%] h-full ">
                 <Date addProps="lg:text-[80px]" />
               </div>
-            ) : ""}
+            ) : (
+              ""
+            )}
           </div>
         </div>
       </div>
+      {/* İş geçmişi kutusu */}
+
+      <WorkHistoryBox />
     </div>
   );
 }

@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
-import { getWorksWithoutId } from "@/redux/orderSlice";
+import { getWorksWithoutId, setWorkHistoryData } from "@/redux/orderSlice";
 import {
   setUser,
   setUserIdPopup,
@@ -23,8 +23,12 @@ function OrderSearch() {
   const dispatch = useDispatch();
   const [orderList, setOrderList] = useState([]);
   const [order_id, setOrderId] = useState("");
-  const { selectedProcess, selectedHammerSectionField, selectedMachine } =
-    useSelector((state) => state.order);
+  const {
+    selectedProcess,
+    selectedHammerSectionField,
+    selectedMachine,
+    workHistoryData,
+  } = useSelector((state) => state.order);
   const { isCurrentBreak } = useSelector((state) => state.break);
   const { isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
@@ -149,10 +153,24 @@ function OrderSearch() {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrder`,
         { params: { id: order_id } }
       );
-
       if (response.status === 200) {
         dispatch(setReadOrder(response.data));
         setOrderId("");
+        try {
+          const historyResponse = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkHistory`,
+            { params: { id: order_id } }
+          );
+
+          if (historyResponse.data?.data) {
+            dispatch(setWorkHistoryData(historyResponse.data.data));
+          } else {
+            dispatch(setWorkHistoryData([])); // Boş veri de gönder
+          }
+        } catch (error) {
+          console.error("Geçmiş veriler çekilemedi:", error);
+          dispatch(setWorkHistoryData([])); // Hata olsa bile engelleme
+        }
 
         const work_info = {
           user_id_dec: userInfo.id_dec,

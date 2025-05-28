@@ -110,6 +110,7 @@ const orderSlice = createSlice({
     selectedHammerSectionField: "", // Cekic ekranındaki alan ismini tutacak state...
     usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
     selectedPersonInField:"", // alana katılmıs secılmıs kullanıyı tutacak state...
+    workHistoryData: [], // İş geçmişi verilerini tutacak state
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -190,7 +191,10 @@ const orderSlice = createSlice({
     },
     setSelectedPersonInField:(state,action) => {
       state.selectedPersonInField = action.payload
-    }
+    },
+    setWorkHistoryData: (state, action) => {
+      state.workHistoryData = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -265,6 +269,7 @@ export const {
   setConditionalFinishPopup,
   setSelectedHammerSectionField,
   setSelectedPersonInField,
+  setWorkHistoryData
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

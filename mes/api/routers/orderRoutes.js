@@ -57,6 +57,7 @@ const {
   finishedWork,
   transferOrder,
   getWorksLogData,
+  getWorksHistoryLogData,
 } = require("../services/orderServices");
 const Processes = require("../../models/Processes");
 const Machines = require("../../models/Machines");
@@ -179,7 +180,7 @@ router.get("/getWorks", async (req, res) => {
     const userWorks = await getWorks({ area_name, user_id_dec });
 
     // Belirli bir area_name ile durdurulmuş tüm işler
-    const stoppedWorks = await getStoppedWorks({ area_name,user_id_dec });
+    const stoppedWorks = await getStoppedWorks({ area_name, user_id_dec });
 
     // Kullanıcının işleri ile durdurulmuş işleri birleştir
     const allWorks = [...userWorks, ...stoppedWorks];
@@ -343,7 +344,6 @@ router.get("/getWorksLogData", async (req, res) => {
     );
 
     res.status(200).json(result);
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error." });
@@ -721,8 +721,16 @@ router.put("/updateMeasure", async (req, res) => {
 
 //? Toplu Sipariş İptal Rotası
 router.put("/fwork", async (req, res) => {
-  const { uniqIds, work_finished_op_dec, areaName, field, repair_amount,produced_amount,scrap_amount,product_count } =
-    req.body;
+  const {
+    uniqIds,
+    work_finished_op_dec,
+    areaName,
+    field,
+    repair_amount,
+    produced_amount,
+    scrap_amount,
+    product_count,
+  } = req.body;
   const result = await fwork(
     uniqIds,
     work_finished_op_dec,
@@ -841,6 +849,18 @@ router.put("/transferOrder", async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(400).json({ message: err.message });
+  }
+});
+
+//! Sipariş geçmişini getirecek endpoint
+router.get("/getWorkHistory", async (req, res) => {
+  const { id } = req.query;
+  try {
+    const { status, message, data } = await getWorksHistoryLogData(id);
+    return res.status(status).json({ message, data });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Internal server error." });
   }
 });
 module.exports = router;

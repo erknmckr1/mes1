@@ -20,7 +20,6 @@ const AuthProvider = ({ children }) => {
         if (areaName === "cila" && panel) {
           // CILA özel: Session'dan kullanıcıyı al
           const storedUser = sessionStorage.getItem(`cila-panel-user-${panel}`);
-          console.log(storedUser)
           if (storedUser) {
             const user = JSON.parse(storedUser);
             setIsLoggedIn(true);

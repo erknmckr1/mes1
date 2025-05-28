@@ -774,28 +774,28 @@ const cancelWork = async ({
     }
     // bölüm ?
 
-       // durdurulmuş iş var mı kontrol et...
-       const stoppedWorks = await StoppedWorksLogs.findAll({
-        where: {
-          work_log_uniq_id: uniq_id,
-          stop_end_date: null,
+    // durdurulmuş iş var mı kontrol et...
+    const stoppedWorks = await StoppedWorksLogs.findAll({
+      where: {
+        work_log_uniq_id: uniq_id,
+        stop_end_date: null,
+      },
+    });
+
+    // eğer iş durdurulmuşsa ve durdurma tarihi yoksa durdurma tarihini güncelle...
+    for (const stop of stoppedWorks) {
+      await StoppedWorksLogs.update(
+        {
+          stop_end_date: currentDateTimeOffset,
         },
-      });
-  
-      // eğer iş durdurulmuşsa ve durdurma tarihi yoksa durdurma tarihini güncelle...
-      for (const stop of stoppedWorks) {
-        await StoppedWorksLogs.update(
-          {
-            stop_end_date: currentDateTimeOffset,
+        {
+          where: {
+            work_log_uniq_id: stop.work_log_uniq_id,
+            stop_end_date: null,
           },
-          {
-            where: {
-              work_log_uniq_id: stop.work_log_uniq_id,
-              stop_end_date: null,
-            },
-          }
-        );
-      }
+        }
+      );
+    }
 
     const result = await WorkLog.update(
       {
@@ -3772,6 +3772,39 @@ async function getWorksLogData(
   }
 }
 
+//! Okutulan işin geçmişini getirecek servis...
+const getWorksHistoryLogData = async (id) => {
+  try {
+    const works = await WorkLog.findAll({
+      where: {
+        order_no: id,
+        work_status: "4",
+      },
+      attributes: [
+        "uniq_id",
+        "order_no",
+        "area_name",
+        "process_name",
+        "machine_name",
+        "user_id_dec",
+      ],
+    });
+
+    if (!works || works.length === 0) {
+      return { status: 404, message: "Geçmiş iş verisi bulunamadı." };
+    } else {
+      return {
+        status: 200,
+        message: "Geçmiş iş verisi başarıyla çekildi.",
+        data: works,
+      };
+    }
+  } catch (err) {
+    console.error("Error in getWorksHistoryLogData function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+};
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -3829,4 +3862,5 @@ module.exports = {
   finishedWork,
   transferOrder,
   getWorksLogData,
+  getWorksHistoryLogData,
 };
