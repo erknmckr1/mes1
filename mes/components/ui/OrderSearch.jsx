@@ -39,6 +39,7 @@ function OrderSearch() {
   );
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
   const [lastMachineId, setLastMachineId] = useState(null);
+  const { workList } = useSelector((state) => state.order);
 
   const userTimeoutEnabledScreens = ["buzlama"];
 
@@ -145,6 +146,17 @@ function OrderSearch() {
         })
       );
       return; // Kullanıcı giriş yapana kadar devam etme
+    }
+
+    // cila da her proses için 1 sipariş okutulabilir...
+    if (areaName === "cila") {
+      const existingOrder = workList.find(
+        (order) => order.process_id === selectedProcess?.process_id
+      );
+      if (existingOrder) {
+        toast.error("Bu proses için zaten bir sipariş okutulmuş.");
+        return;
+      }
     }
 
     try {

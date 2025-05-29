@@ -5,6 +5,8 @@ import {
   setSelectedOrder,
   getJoinTheField,
   getWorksWithoutId,
+  setFinishedPopupMode,
+  setSelectedProcess,
 } from "@/redux/orderSlice";
 import { useState, useEffect } from "react";
 import Button from "../../ui/Button";
@@ -37,9 +39,8 @@ function FinishedWorkPopup() {
   const [retryAction, setRetryAction] = useState(null); // retry action statei store a tasınabılır
   // veriler
   const dispatch = useDispatch();
-  const { selectedOrder, selectedHammerSectionField } = useSelector(
-    (state) => state.order
-  );
+  const { selectedOrder, selectedHammerSectionField, finishedPopupMode,selectedProcess } =
+    useSelector((state) => state.order);
   const { userInfo, user } = useSelector((state) => state.user);
   const { theme, isRequiredUserId } = useSelector((state) => state.global);
   const pathName = usePathname();
@@ -103,6 +104,39 @@ function FinishedWorkPopup() {
     }
   };
 
+  //! Sıralı işlemlerde bitir ve sipariş başlatma işlemlerini tek butonla yapacak fonksiyon
+  const nextProcess = async () => {
+    if (!selectedOrder || selectedOrder.length === 0) {
+      toast.error("Sonraki prosese geçmek için sipariş seçiniz.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/nextProcess`,
+        {
+          uniq_id: selectedOrder[0].uniq_id,
+          process_name: selectedProcess?.process_name,
+          process_id: selectedProcess?.process_id,
+          product_count: productCount,
+          produced_amount: finishedAmount,
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Sonraki prosese geçildi.");
+        dispatch(setSelectedOrder([]));
+        dispatch(getWorksWithoutId({ areaName }));
+        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+        dispatch(setFinishedWorkPopup(false));
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.response?.data || "Bir hata oluştu.");
+    }
+  };
+
+   console.log(selectedProcess)
   //! Siparişi bitirmek için tetiklenecek fonksiyon...
   const finishedWork = async () => {
     try {
@@ -154,7 +188,7 @@ function FinishedWorkPopup() {
   };
 
   //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
- const handleFinishWork = async () => {
+  const handleFinishWork = async () => {
     const isFinishedAmountValid = finishedAmount >= 100;
     const isDescriptionProvided = desc.trim().length > 0;
 
@@ -163,7 +197,11 @@ function FinishedWorkPopup() {
       return;
     }
 
-    if (areaName !== "cila" && isFinishedAmountValid && !isDescriptionProvided) {
+    if (
+      areaName !== "cila" &&
+      isFinishedAmountValid &&
+      !isDescriptionProvided
+    ) {
       toast.error("Hurda açıklaması giriniz.");
       return;
     }
@@ -190,7 +228,7 @@ function FinishedWorkPopup() {
 
     if (areaName === "cila") {
       requestData.work_finished_op_dec = userInfo.id_dec;
-      requestData.product_count = productCount
+      requestData.product_count = productCount;
     } else {
       requestData.work_finished_op_dec = user.id_dec;
     }
@@ -203,21 +241,20 @@ function FinishedWorkPopup() {
       );
 
       if (response.status === 200) {
-        if(areaName === "cila"){
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-        toast.success(`${selectedOrder.length} iş bitirildi.`);
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
-        dispatch(setFinishedWorkPopup(false));
-        }else{
-        toast.success(`${selectedOrder.length} iş bitirildi.`);
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
-        dispatch(setFinishedWorkPopup(false));
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(getJoinTheField({ areaName }));
+        if (areaName === "cila") {
+          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
+          toast.success(`${selectedOrder.length} iş bitirildi.`);
+          dispatch(setSelectedOrder([]));
+          dispatch(setUser(null));
+          dispatch(setFinishedWorkPopup(false));
+        } else {
+          toast.success(`${selectedOrder.length} iş bitirildi.`);
+          dispatch(setSelectedOrder([]));
+          dispatch(setUser(null));
+          dispatch(setFinishedWorkPopup(false));
+          dispatch(getWorksWithoutId({ areaName }));
+          dispatch(getJoinTheField({ areaName }));
         }
-        
       }
     } catch (err) {
       console.error("İş bitirme hatası:", err);
@@ -245,6 +282,14 @@ function FinishedWorkPopup() {
     }
   };
 
+  const handleClickBasedOnMode = () => {
+    if (finishedPopupMode === "nextProcess" && areaName === "cila") {
+      nextProcess(); // Bu, iş bitirme ve yeni başlatmayı içeriyor
+    } else {
+      handFinishWork(); // Sadece iş bitirme senaryosu
+    }
+  };
+
   const buttons = [
     {
       onClick: handleClosePopup,
@@ -253,7 +298,7 @@ function FinishedWorkPopup() {
       className: "",
     },
     {
-      onClick: handFinishWork,
+      onClick: handleClickBasedOnMode,
       children: "Prosesi Bitir",
       type: "submit",
       className: "bg-red-600 hover:bg-red-500",
@@ -288,16 +333,16 @@ function FinishedWorkPopup() {
           {/* Input Alanı */}
           <div className="flex justify-evenly w-full">
             {(areaName === "kalite" ||
-  areaName === "cila" ||
-  areaName === "telcekme") && (
-  <Input
-    addProps="h-20 text-[30px] text-center font-semibold text-black"
-    placeholder={"Sağlam Çıkan Ürün (gr)"}
-    value={finishedAmount}
-    onChange={(e) => setFinishedAmount(e.target.value)}
-    type="number"
-  />
-)}
+              areaName === "cila" ||
+              areaName === "telcekme") && (
+              <Input
+                addProps="h-20 text-[30px] text-center font-semibold text-black"
+                placeholder={"Sağlam Çıkan Ürün (gr)"}
+                value={finishedAmount}
+                onChange={(e) => setFinishedAmount(e.target.value)}
+                type="number"
+              />
+            )}
 
             {/* hurda input  */}
             {areaName === "cila" ||

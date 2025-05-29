@@ -21,6 +21,7 @@ import {
   setSelectedPersonInField,
   setSelectedHammerSectionField,
   getJoinTheField,
+  setFinishedPopupMode,
 } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -43,6 +44,7 @@ function RightSideBtnArea() {
     selectedHammerSectionField,
     selectedPersonInField,
     workList,
+    finishedPopupMode,
   } = useSelector((state) => state.order);
   const { isRequiredUserId } = useSelector((state) => state.global);
   const { userInfo, user } = useSelector((state) => state.user);
@@ -1258,7 +1260,7 @@ function RightSideBtnArea() {
     }
   };
 
-  // Kalite buttons || kurutiras || telcekme
+  // Kalite buttons || kurutiras || telcekme // cila
   const buttons_r = [
     {
       onClick: restartWork,
@@ -1288,6 +1290,20 @@ function RightSideBtnArea() {
       className: "w-[130px] lg:w-[200px] bg-red-600 hover:bg-red-500",
       // disabled: isCurrentBreak,
     },
+    areaName === "cila" && {
+      onClick: () => {
+        if (selectedProcess) {
+          dispatch(setFinishedPopupMode("nextProcess")); // ✅ doğru mod adı
+          handleOpenFinishedPopup();
+        } else {
+          toast.error("Lütfen sonraki prosesi seçiniz.");
+        }
+      },
+      children: "Sonraki Proses",
+      type: "button",
+      className: "w-[130px] lg:w-[200px] bg-orange-500 hover:bg-orange-600",
+    },
+
     isRequiredUserId && {
       onClick: handleOpenMeasurementPopup,
       children: "Ölçüm V. Girişi",

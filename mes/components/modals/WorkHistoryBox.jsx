@@ -53,7 +53,7 @@ const WorkHistoryBox = () => {
 
   return (
     areaName === "cila" && (
-      <div className="absolute left-1 top-0 z-50">
+      <div className="absolute left-1 top-0 z-40">
         <div className="flex justify-between items-center bg-gray-800 border border-gray-600 rounded-md shadow px-3 py-1 text-white">
           <span className="text-base text-xs font-semibold">İşlem Geç.</span>
           <button

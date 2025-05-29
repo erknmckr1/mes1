@@ -75,7 +75,7 @@ function LoginPopUp({ setIsLoggedIn }) {
 
   return (
     <div
-      className={`w-screen h-screen top-0 left-0 absolute bg-black bg-opacity-85 ${
+      className={`w-screen z-50 h-screen top-0 left-0 absolute bg-black bg-opacity-85 ${
         theme === "dark" ? "dark-mode" : "light-mode"
       } `}
     >

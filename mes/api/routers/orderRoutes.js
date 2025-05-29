@@ -58,6 +58,7 @@ const {
   transferOrder,
   getWorksLogData,
   getWorksHistoryLogData,
+  nextProcess
 } = require("../services/orderServices");
 const Processes = require("../../models/Processes");
 const Machines = require("../../models/Machines");
@@ -860,6 +861,17 @@ router.get("/getWorkHistory", async (req, res) => {
     return res.status(status).json({ message, data });
   } catch (err) {
     console.log(err);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+router.post("/nextProcess", async (req, res) => {
+  const { uniq_id,process_name,process_id,product_count,produced_amount } = req.body;
+  try {
+    const result = await nextProcess(uniq_id,process_name,process_id,product_count,produced_amount);
+    return res.status(result.status).json(result.message);
+  } catch (error) {
+    console.error("Error fetching next process:", error);
     return res.status(500).json({ message: "Internal server error." });
   }
 });

@@ -488,6 +488,26 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     old_code,
   } = work_info;
 
+  // cila ekranı iş baslatma sartı her proseste sadece 1 iş baslatılabilir...
+  if (area_name === "cila") {
+    const isCilaProcessExist = await WorkLog.findOne({
+      where: {
+        area_name: "cila",
+        process_id,
+        work_status: {
+          [Op.in]: ["1", "2"], // '1' veya '2' durumundaki işleri getir
+        },
+      },
+    });
+
+    if (isCilaProcessExist) {
+      return {
+        status: 400,
+        message: "Cila bölümünde bu proseste zaten bir iş başlatılmış.",
+      };
+    }
+  }
+
   // Eğer "buzlama" ekranındaysak ve machine_name boşsa hata döndür
   if (area_name === "buzlama" && !machine_name) {
     return {
@@ -3805,6 +3825,79 @@ const getWorksHistoryLogData = async (id) => {
   }
 };
 
+//! İşin sonraki adımına gececek fonksiyon... şimdilik sadece cila ekranında kullanılıyor.
+const nextProcess = async (uniq_id, process_name, process_id,product_count,produced_amount) => {
+  try {
+    const work = await WorkLog.findOne({
+      where: {
+        uniq_id,
+        work_status: "1", // Sadece aktif işleri kontrol et
+      },
+    });
+
+    console.log(work)
+
+    if (!work) {
+      return { status: 404, message: "İş bulunamadı." };
+    }
+
+    // öncelikle iş bitirilsin
+    await WorkLog.update(
+      {
+        work_status: "4",
+        work_end_date: new Date().toISOString(),
+        work_finished_op_dec: work.user_id_dec,
+        product_count,
+        produced_amount,
+
+      },
+      {
+        where: {
+          uniq_id,
+        },
+      }
+    );
+
+    // Benzersiz group_record_id oluşturma
+    const latestRecordId = await GroupRecords.findOne({
+      order: [["group_record_id", "DESC"]],
+    });
+
+    let newUniqId;
+    if (latestRecordId) {
+      const latestId = parseInt(latestRecordId.group_record_id, 10);
+      newUniqId = String(latestId + 1).padStart(6, "0");
+    } else {
+      newUniqId = "000001";
+    }
+
+    const newWorkInfo = {
+      order_no: work.order_no,
+      area_name: work.area_name,
+      process_name,
+      machine_name: work.machine_name,
+      user_id_dec: work.user_id_dec,
+      op_username: work.op_username,
+      work_status: "1", // Yeni işin durumu
+      work_start_date: new Date().toISOString(),
+      process_id, // Yeni işin process_id'si
+      uniq_id: newUniqId, // Yeni benzersiz ID
+      work_start_date: new Date().toISOString(),
+      section: work.section,
+      old_code: work.old_code,
+      production_amount: work.production_amount,
+    };
+
+    // Yeni işi oluşturma
+    await WorkLog.create(newWorkInfo);
+
+    return { status: 200, message: "İş durumu güncellendi." };
+  } catch (err) {
+    console.error("Error in nextProcess function:", err);
+    return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+};
+
 module.exports = {
   getOrderById,
   createOrderGroup,
@@ -3863,4 +3956,5 @@ module.exports = {
   transferOrder,
   getWorksLogData,
   getWorksHistoryLogData,
+  nextProcess,
 };
