@@ -1,50 +1,47 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  setFinishedWorkPopup,
-  setSelectedOrder,
-  getJoinTheField,
-  getWorksWithoutId,
-  setFinishedPopupMode,
-  setSelectedProcess,
-} from "@/redux/orderSlice";
+import { useSelector } from "react-redux";
+import { setFinishedWorkPopup } from "@/redux/orderSlice";
 import { useState, useEffect } from "react";
-import Button from "../../ui/Button";
-import Input from "../../ui/Input";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { getWorkList } from "@/api/client/cOrderOperations";
-import { usePathname } from "next/navigation";
-import { setUser, setUserIdPopup } from "@/redux/userSlice";
+import Button from "../../../ui/Button";
+import Input from "../../../ui/Input";
+import { useFinishedWorkLogic } from "./useFinishedWorkLogic";
+import { setUser } from "@/redux/userSlice";
 
 function FinishedWorkPopup() {
   // veriler Bu verilere globalde ıhtıyac duyulursa redux a tası...
-  const [finishedAmount, setFinishedAmount] = useState(0);
-  const [scrapAmount, setScrapAmount] = useState(0);
-  const [productCount, setProductCount] = useState(0);
-  const [repairAmount, setRepairAmount] = useState(0);
-  const [repairReasonsList, setRepairReasonsList] = useState([]);
-  const [selectedScrapReason, setSelectedScrapReason] = useState("");
-  const [repairReasons, setRepairReasons] = useState([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
-  const [desc, setDesc] = useState("");
-  const [selectedArea, setSelectedArea] = useState("");
-  const [retryAction, setRetryAction] = useState(null); // retry action statei store a tasınabılır
-  // veriler
-  const dispatch = useDispatch();
-  const { selectedOrder, selectedHammerSectionField, finishedPopupMode,selectedProcess } =
-    useSelector((state) => state.order);
-  const { userInfo, user } = useSelector((state) => state.user);
-  const { theme, isRequiredUserId } = useSelector((state) => state.global);
-  const pathName = usePathname();
-  const areaName = pathName.split("/")[3];
+
+  const {
+    getRepairReason,
+    nextProcess,
+    resetFinishedPopupState,
+    finishedWork,
+    handleFinishWork,
+    repairReasonsList,
+    selectedScrapReason,
+    finishedAmount,
+    setFinishedAmount,
+    scrapAmount,
+    setScrapAmount,
+    productCount,
+    setProductCount,
+    repairAmount,
+    setRepairAmount,
+    desc,
+    setDesc,
+    retryAction,
+    setRetryAction,
+    repairReasons,
+    setRepairReasons,
+    user,
+    userInfo,
+    dispatch,
+    areaName,
+    selectedArea,
+    setSelectedArea,
+  } = useFinishedWorkLogic();
+
+  const { finishedPopupMode } = useSelector((state) => state.order);
+  const { theme } = useSelector((state) => state.global);
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
@@ -62,20 +59,6 @@ function FinishedWorkPopup() {
     setSelectedArea(event.target.value);
   };
 
-  //! Tamir nedenlerını getıren metot...
-  const getRepairReason = async () => {
-    try {
-      const result = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getRepairReason`,
-        { params: { area_name: areaName } } // get metodu ıle parametre yolluyorsan params ı kullan.
-      );
-      setRepairReasonsList(result.data);
-      return result.data;
-    } catch (err) {
-      console.error("Error fetching break reasons:", err);
-    }
-  };
-
   const areas = ["YALDIZ", "CİLA", "LAZER", "TAMİR TEZGAHI", "MİNE", "MONTAJ"];
 
   useEffect(() => {
@@ -85,7 +68,6 @@ function FinishedWorkPopup() {
   //* tamir nedenleri state ini guncelleyecek fonksıyon...
   const updateRepairReason = (index, value) => {
     // ID ile eşleşen repair reason'u bul ve güncelle
-    console.log(index, value);
     const selectedReason = repairReasonsList.find(
       (item) => item.repair_reason_id === value
     );
@@ -101,169 +83,6 @@ function FinishedWorkPopup() {
         newReasons[index] = "";
         return newReasons;
       });
-    }
-  };
-
-  //! Sıralı işlemlerde bitir ve sipariş başlatma işlemlerini tek butonla yapacak fonksiyon
-  const nextProcess = async () => {
-    if (!selectedOrder || selectedOrder.length === 0) {
-      toast.error("Sonraki prosese geçmek için sipariş seçiniz.");
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/nextProcess`,
-        {
-          uniq_id: selectedOrder[0].uniq_id,
-          process_name: selectedProcess?.process_name,
-          process_id: selectedProcess?.process_id,
-          product_count: productCount,
-          produced_amount: finishedAmount,
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success("Sonraki prosese geçildi.");
-        dispatch(setSelectedOrder([]));
-        dispatch(getWorksWithoutId({ areaName }));
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-        dispatch(setFinishedWorkPopup(false));
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error(err?.response?.data || "Bir hata oluştu.");
-    }
-  };
-
-   console.log(selectedProcess)
-  //! Siparişi bitirmek için tetiklenecek fonksiyon...
-  const finishedWork = async () => {
-    try {
-      if (finishedAmount > 0) {
-        // tamir miktarı gırılmısse tamır nedenı secılmedıyse uyarı ver...
-        if (repairAmount > 0 && !repairReasons.some((reason) => reason)) {
-          toast.error("Lütfen tamir nedeni giriniz.");
-          return;
-        }
-
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishedWork`,
-          {
-            uniq_id: selectedOrder[0].uniq_id,
-            work_finished_op_dec: userInfo.id_dec,
-            produced_amount: finishedAmount,
-            repair_amount: repairAmount,
-            scrap_amount: scrapAmount,
-            repair_reason: JSON.stringify(repairReasons),
-            repair_reason_1: repairReasons[0],
-            repair_reason_2: repairReasons[1],
-            repair_reason_3: repairReasons[2],
-            repair_reason_4: repairReasons[3],
-            scrap_reason: selectedScrapReason?.repair_reason,
-            repair_section: selectedArea,
-            end_desc: desc,
-          }
-        );
-        // işlem eger basarılı ise workList i guncelle ve stateleri baslangıc durumuna getır
-        if (response.status === 200) {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          toast.success("Prosesi bitirme işlemi başarılı...");
-          dispatch(setFinishedWorkPopup(false));
-          setRepairAmount("");
-          dispatch(setSelectedOrder(null));
-          setScrapAmount("");
-          setFinishedAmount("");
-          setSelectedScrapReason("");
-          setRepairReasons(["", "", "", ""]);
-          setDesc("");
-        }
-      } else {
-        toast.error("Sağlam çikan ürün miktarini giriniz.");
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error("İşlem başarısız oldu.");
-    }
-  };
-
-  //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
-  const handleFinishWork = async () => {
-    const isFinishedAmountValid = finishedAmount >= 100;
-    const isDescriptionProvided = desc.trim().length > 0;
-
-    if (!finishedAmount) {
-      toast.error("Hurda miktarı giriniz.");
-      return;
-    }
-
-    if (
-      areaName !== "cila" &&
-      isFinishedAmountValid &&
-      !isDescriptionProvided
-    ) {
-      toast.error("Hurda açıklaması giriniz.");
-      return;
-    }
-
-    if (!selectedOrder || selectedOrder.length === 0) {
-      toast.error("Bitireceğiniz siparişleri seçin.");
-      return;
-    }
-
-    if (isRequiredUserId && (!user || !user.id_dec)) {
-      setRetryAction("finishwork"); // İşlem kaydediliyor
-      dispatch(setUserIdPopup(true));
-      return;
-    }
-
-    const requestData = {
-      uniqIds: selectedOrder.map((order) => order.uniq_id),
-      areaName,
-      field: selectedHammerSectionField,
-      scrap_amount: scrapAmount,
-      produced_amount: finishedAmount,
-      repair_amount: repairAmount,
-    };
-
-    if (areaName === "cila") {
-      requestData.work_finished_op_dec = userInfo.id_dec;
-      requestData.product_count = productCount;
-    } else {
-      requestData.work_finished_op_dec = user.id_dec;
-    }
-
-    try {
-      let response;
-      response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/fwork`,
-        requestData
-      );
-
-      if (response.status === 200) {
-        if (areaName === "cila") {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          toast.success(`${selectedOrder.length} iş bitirildi.`);
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
-          dispatch(setFinishedWorkPopup(false));
-        } else {
-          toast.success(`${selectedOrder.length} iş bitirildi.`);
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
-          dispatch(setFinishedWorkPopup(false));
-          dispatch(getWorksWithoutId({ areaName }));
-          dispatch(getJoinTheField({ areaName }));
-        }
-      }
-    } catch (err) {
-      console.error("İş bitirme hatası:", err);
-      toast.error(
-        `${err.response.data}` || "Sipariş bitirme sırasında hata olustu."
-      );
-      dispatch(setUser(null));
-      dispatch(setFinishedWorkPopup(false));
-      dispatch(setSelectedOrder([]));
     }
   };
 

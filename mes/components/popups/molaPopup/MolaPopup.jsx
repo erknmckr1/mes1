@@ -1,137 +1,22 @@
 import React from "react";
-import axios from "axios";
-import { useState, useEffect } from "react";
-import Button from "../ui/Button";
+import Button from "../../ui/Button";
 import { useSelector } from "react-redux";
-import { setMolaPopup } from "@/redux/globalSlice";
-import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { useBreakPopupLogic } from "./useBreakPopupLogic";
 import { usePathname } from "next/navigation";
-import { setUser } from "@/redux/userSlice";
-import { getJoinTheField } from "@/redux/orderSlice";
-import {
-  fetchOnBreakUsers,
-  setİsCurrentBreak,
-} from "@/redux/breakOperationsSlice";
+
 function MolaPopup() {
-  const dispatch = useDispatch();
-  const [molaReason, setMolaReason] = useState(null);
-  const [araSebebi, setAraSebebi] = useState("");
-  const { userInfo, user, userIdPopup } = useSelector((state) => state.user);
+  const {
+    createBreakFunc,
+    molaReason,
+    araSebebi,
+    closeMolaPopup,
+    setAraSebebi,
+  } = useBreakPopupLogic();
+
+  const { userInfo, user } = useSelector((state) => state.user);
   const { theme, isRequiredUserId } = useSelector((state) => state.global);
   const pathname = usePathname();
   const areaName = pathname.split("/")[3];
-  const section = pathname.split("/")[2];
-
-  // popup ın durumnu kontrol eden state (acık kapalı)
-  const closeMolaPopup = () => {
-    dispatch(setMolaPopup(false));
-    setAraSebebi("");
-    dispatch(setUser(null));
-  };
-
-  //! Ara sebeplerini getiren metot
-  const getOzelAraReason = async () => {
-    try {
-      const getReason = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/breakReason`
-      );
-      if (getReason.status === 200) {
-        setMolaReason(getReason.data);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  useEffect(() => {
-    getOzelAraReason();
-  }, []);
-
-  //! Özel ara oluşturmak için gerekli fonksıyon, servis fonksıoyonlarının renkleri kırmızı renkte
-  //! Kullanıcı hangı sayfada araya cıkıyorsa tabloda main_section ona gore dolduruluyor.
-  const createBreak = async (userInfo, araSebebi) => {
-    if (!araSebebi) {
-      toast.error("Ara sebebini seçmeden işlem yapamazsınız.");
-      return;
-    }
-    const startLog = {
-      break_reason_id: araSebebi,
-      operator_id: userInfo.id_dec,
-      area_name: areaName,
-      op_name: userInfo.op_username,
-      section: section,
-    };
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/createBreak`,
-        startLog
-      );
-
-      if (response.data.isAlreadyOnBreak === false) {
-        await dispatch(fetchOnBreakUsers({ areaName }));
-        toast.success(`${userInfo.op_name} için mola oluşturuldu.`);
-        if (areaName === "cila") {
-          await axios.post(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/logout`,
-            {},
-            { withCredentials: true }
-          );
-          window.location.href = pathname; // çıkıs yaptıktan sonra aynı sayfaya gıt
-        }
-        dispatch(setMolaPopup(false));
-      } else if (response.data.isAlreadyOnBreak === true) {
-        toast.error("Bu kullanici zateb molada...");
-      }
-    } catch (err) {
-      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
-      console.log(err);
-    }
-  };
-
-  //! Molaya cıkmak ıcın ekranlarda ekstra ıd ıstıyorsak yanı gırıs yapılması ıle ısımız yoksa asagıdakı fonksıyon calısacak
-  const createBreakWıthId = async (araSebebi) => {
-    if (!araSebebi) {
-      toast.error("Ara sebebini seçmeden işlem yapamazsınız.");
-      return;
-    }
-    const startLog = {
-      break_reason_id: araSebebi,
-      operator_id: user.id_dec,
-      area_name: areaName,
-      op_name: user.op_username,
-      section,
-    };
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/createBreak`,
-        startLog
-      );
-
-      if (response.data.isAlreadyOnBreak === false) {
-        await dispatch(fetchOnBreakUsers({ areaName }));
-        toast.success(`${user.op_name} için mola oluşturuldu.`);
-        dispatch(setUser(""));
-        dispatch(setMolaPopup(false));
-        dispatch(getJoinTheField({ areaName }));
-      } else if (response.data.isAlreadyOnBreak === true) {
-        toast.error("Bu kullanici zateb molada...");
-        dispatch(setUser(""));
-      }
-    } catch (err) {
-      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
-      console.log(err);
-      dispatch(setUser(""));
-    }
-  };
-
-  const createBreakFunc = () => {
-    if (isRequiredUserId) {
-      createBreakWıthId(araSebebi);
-    } else {
-      createBreak(userInfo, araSebebi);
-    }
-  };
 
   const buttons = [
     {

@@ -7,6 +7,7 @@ import { setSelectedOrder } from "@/redux/orderSlice";
 import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { getWorksWithoutId } from "@/redux/orderSlice";
+import { areaSelectionConfig } from "@/utils/config/areaConfig";
 const theme = createTheme({
   components: {
     MuiDataGrid: {
@@ -45,28 +46,21 @@ function JobTable() {
 
   // Tekli veya çoklu seçim yönetimi
   const handleRowSelection = (params) => {
-    const isSelected = selectedOrder?.some((item) => item.id === params.row.id);
+    const { row } = params;
+    const isSelected = selectedOrder?.some((item) => item.id === row.id);
+
     if (isSelected) {
-      // Zaten seçili ise, kaldır
       const updatedSelection = selectedOrder.filter(
-        (item) => item.id !== params.row.id
+        (item) => item.id !== row.id
       );
       dispatch(setSelectedOrder(updatedSelection));
-    } else {
-      // Seçili değilse, ekle
-      if (areaName === "kalite") {
-        // Kalite ekranında sadece tek seçim yapılabilir
-        dispatch(setSelectedOrder([params.row]));
-      } else if (
-        areaName === "buzlama" ||
-        areaName === "cekic" ||
-        areaName === "kurutiras" ||
-        areaName === "telcekme" || 
-        areaName === "cila"
-      ) {
-        // Buzlama ekranında çoklu seçim yapılabilir
-        dispatch(setSelectedOrder([...selectedOrder, params.row]));
-      }
+      return;
+    }
+
+    if (areaSelectionConfig.singleSelect.includes(areaName)) {
+      dispatch(setSelectedOrder([row]));
+    } else if (areaSelectionConfig.multiSelect.includes(areaName)) {
+      dispatch(setSelectedOrder([...selectedOrder, row]));
     }
   };
 
@@ -107,14 +101,15 @@ function JobTable() {
     let interval;
 
     const fetchData = () => {
-      if ((areaName === "kalite" || areaName === "cila") && userInfo) {
-        // ID ile siparişleri çek
-        getWorkList({ areaName, userId: userInfo?.id_dec, dispatch });
+      const userId = userInfo?.id_dec;
+
+      if (!isRequiredUserId && userId) {
+        // ID isteyen ekran değilse ve kullanıcı varsa
+        getWorkList({ areaName, userId, dispatch });
       } else if (isRequiredUserId) {
-        // ID olmadan tüm siparişleri çek
+        // ID zorunlu ekranlardaysa
         dispatch(getWorksWithoutId({ areaName }));
       }
-      console.log("veri çekildi...");
     };
 
     // İlk veri çekme işlemi
@@ -127,157 +122,79 @@ function JobTable() {
     return () => clearInterval(interval);
   }, [areaName, userInfo, dispatch, selectedHammerSectionField]);
 
+  const mapRowData = (item, index) => {
+    const workStartDate = item.work_start_date
+      ? new Date(item.work_start_date)
+      : null;
+    return {
+      id: index,
+      user_id_dec: item.user_id_dec,
+      op_username: item.op_username,
+      order_no: item.order_no,
+      old_code: item.old_code,
+      process_id: item.process_id,
+      section: item.section,
+      area_name: item.area_name,
+      process_name: item.process_name,
+      produced_amount: item.produced_amount,
+      production_amount: item.production_amount,
+      work_start_date: workStartDate ? workStartDate.toLocaleString() : null,
+      work_end_date: item.work_end_date,
+      work_finished_op_dec: item.work_finished_op_dec,
+      work_status: item.work_status,
+      uniq_id: item.uniq_id,
+      group_no: item.group_no,
+      group_record_id: item.group_record_id,
+      machine_name: item.machine_name,
+      field: item?.field,
+    };
+  };
+
+  const shouldFilterByMachine = ["buzlama", "telcekme", "cekic"];
+  const shouldFilterByHammer =
+    areaName === "cekic" && selectedHammerSectionField !== "makine";
+
   const getFilteredRows = () => {
-    if (areaName === "buzlama" || areaName === "telcekme") {
-      // Buzlama ekranı için filtreleme yap
-      return workList
-        ?.filter((item) => item.machine_name === selectedMachine.machine_name)
-        .map((item, index) => {
-          const workStartDate = item.work_start_date
-            ? new Date(item.work_start_date)
-            : null;
-          return {
-            id: index,
-            user_id_dec: item.user_id_dec,
-            op_username: item.op_username,
-            order_no: item.order_no,
-            old_code:item.old_code,
-            process_id: item.process_id,
-            section: item.section,
-            area_name: item.area_name,
-            process_name: item.process_name,
-            produced_amount: item.produced_amount,
-            production_amount: item.production_amount,
-            work_start_date: workStartDate
-              ? workStartDate.toLocaleString()
-              : null,
-            work_end_date: item.work_end_date,
-            work_finished_op_dec: item.work_finished_op_dec,
-            work_status: item.work_status,
-            uniq_id: item.uniq_id,
-            group_no: item.group_no,
-            group_record_id: item.group_record_id,
-            machine_name: item.machine_name,
-          };
-        });
-    } else if (areaName === "kalite") {
-      // Kalite ekranı için filtreleme yapma, tüm verileri göster
-      return workList?.map((item, index) => {
-        const workStartDate = item.work_start_date
-          ? new Date(item.work_start_date)
-          : null;
-        return {
-          id: index,
-          user_id_dec: item.user_id_dec,
-          op_username: item.op_username,
-          order_no: item.order_no,
-          old_code:item.old_code,
-          process_id: item.process_id,
-          section: item.section,
-          area_name: item.area_name,
-          process_name: item.process_name,
-          produced_amount: item.produced_amount,
-          production_amount: item.production_amount,
-          work_start_date: workStartDate
-            ? workStartDate.toLocaleString()
-            : null,
-          work_end_date: item.work_end_date,
-          work_finished_op_dec: item.work_finished_op_dec,
-          work_status: item.work_status,
-          uniq_id: item.uniq_id,
-          group_no: item.group_no,
-          group_record_id: item.group_record_id,
-        };
-      });
-    } else if (areaName === "cekic") {
-      return workList
-        ?.filter(
-          (item) =>
-            selectedHammerSectionField === "makine"
-              ? item.machine_name === selectedMachine.machine_name // Eğer "makine" ise machine_name ile filtrele
-              : item.field === selectedHammerSectionField // Değilse field ile filtrele
-        )
-        .map((item, index) => {
-          const workStartDate = item.work_start_date
-            ? new Date(item.work_start_date)
-            : null;
-          return {
-            id: index,
-            user_id_dec: item.user_id_dec,
-            op_username: item.op_username,
-            order_no: item.order_no,
-            process_id: item.process_id,
-            section: item.section,
-            area_name: item.area_name,
-            process_name: item.process_name,
-            produced_amount: item.produced_amount,
-            production_amount: item.production_amount,
-            work_start_date: workStartDate
-              ? workStartDate.toLocaleString()
-              : null,
-            work_end_date: item.work_end_date,
-            work_finished_op_dec: item.work_finished_op_dec,
-            work_status: item.work_status,
-            uniq_id: item.uniq_id,
-            group_no: item.group_no,
-            group_record_id: item.group_record_id,
-            field: item?.field,
-          };
-        });
-    } else {
-      // Diğer durumlar için (örneğin "cekic") varsayılan davranış
-      return workList?.map((item, index) => {
-        const workStartDate = item.work_start_date
-          ? new Date(item.work_start_date)
-          : null;
-        return {
-          id: index,
-          user_id_dec: item.user_id_dec,
-          op_username: item.op_username,
-          order_no: item.order_no,
-          old_code:item.old_code,
-          process_id: item.process_id,
-          section: item.section,
-          area_name: item.area_name,
-          process_name: item.process_name,
-          produced_amount: item.produced_amount,
-          production_amount: item.production_amount,
-          work_start_date: workStartDate
-            ? workStartDate.toLocaleString()
-            : null,
-          work_end_date: item.work_end_date,
-          work_finished_op_dec: item.work_finished_op_dec,
-          work_status: item.work_status,
-          uniq_id: item.uniq_id,
-          group_no: item.group_no,
-          group_record_id: item.group_record_id,
-        };
-      });
+    let filteredList = workList;
+
+    if (shouldFilterByMachine.includes(areaName)) {
+      filteredList = workList?.filter(
+        (item) => item.machine_name === selectedMachine?.machine_name
+      );
     }
+
+    if (shouldFilterByHammer) {
+      filteredList = workList?.filter(
+        (item) => item.field === selectedHammerSectionField
+      );
+    }
+    return filteredList?.map(mapRowData);
   };
 
   const rows = getFilteredRows();
+  // filtered rows for color
   const getRowClassName = (params) => {
     const { row } = params;
-    // Seçili satırların stilini belirle
-    if (selectedOrder?.some((item) => item.id === row.id)) {
+
+    if (selectedOrder?.some((item) => item.id === row.id))
       return "selected-row";
+
+    switch (row.work_status) {
+      case "1":
+        return "green-row";
+      case "2":
+        return "red-row";
+        case "9":
+        return "red-row"
+      case "0":
+        return "bg-[#138d75]";
+      case "6":
+        return "yellow-row";
+      case "7":
+        return "bg-blue-600";
+      default:
+        return "";
     }
-    // İş durumuna göre stil ayarlama
-    if (row.work_status === "1") {
-      return "green-row";
-    } else if (row.work_status === "2") {
-      return "red-row";
-    } else if (row.work_status === "0") {
-      return "bg-[#138d75]";
-    } else if (row.work_status === "6") {
-      return "yellow-row";
-    } else if (row.work_status === "0") {
-      return "grey-row";
-    } else if (row.work_status === "7") {
-      return "bg-blue-600";
-    }
-    return "";
   };
 
   return (

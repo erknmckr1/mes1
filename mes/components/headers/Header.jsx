@@ -2,7 +2,7 @@
 import React from "react";
 import Logo from "../ui/Logo";
 import Button from "../ui/Button";
-import OrderSearch from "../ui/OrderSearch";
+import OrderSearch from "../ui/orderSearch/OrderSearch";
 import { usePathname, useSearchParams } from "next/navigation";
 import ThemeButton from "../ui/ThemaButton";
 import { useSelector } from "react-redux";

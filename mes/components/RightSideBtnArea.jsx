@@ -6,21 +6,10 @@ import {
   setStopReasonPopup,
   setFinishedWorkPopup,
   setSelectedOrder,
-  setOrderGroupManagement,
-  setSendToMachinePopup,
   setMeasurementPopup,
-  setFilteredGroup,
-  setSelectedGroupNos,
   handleGetGroupList,
   setConditionalFinishPopup,
-  setPastGroupOperationsPopup,
-  setSelectedProcess,
-  setSelectedMachine,
-  fetchBuzlamaWorks,
-  getWorksWithoutId,
   setSelectedPersonInField,
-  setSelectedHammerSectionField,
-  getJoinTheField,
   setFinishedPopupMode,
 } from "@/redux/orderSlice";
 import { useDispatch } from "react-redux";
@@ -30,6 +19,18 @@ import { getWorkList } from "@/api/client/cOrderOperations";
 import { usePathname } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice"; // buzlama gıbı ekranlarda operasyon oncesı ıd sorulacaksa bu state ı kullanıyoruz.
 import { setFirePopup } from "@/redux/globalSlice";
+import {
+  isNoOrderSelected,
+  isAllStopped,
+  isMultipleOrdersSelected,
+  isOrderSentToSetup,
+  isOrdersActive,
+} from "@/utils/validations/operationValidationRules";
+import { buildRestartWorkRequest } from "@/utils/validations/requestBuilders";
+import {
+  validateUserPresence,
+  refreshAfterSuccessfulOperation,
+} from "@/utils/handlers/orderHelpers";
 
 function RightSideBtnArea() {
   const [retryAction, setRetryAction] = useState(null); // İşlem türü/ismi tutulacak
@@ -38,13 +39,9 @@ function RightSideBtnArea() {
     selectedOrder,
     selectedProcess,
     selectedMachine,
-    selectedGroupNo,
-    filteredGroup,
-    groupList,
     selectedHammerSectionField,
     selectedPersonInField,
     workList,
-    finishedPopupMode,
   } = useSelector((state) => state.order);
   const { isRequiredUserId } = useSelector((state) => state.global);
   const { userInfo, user } = useSelector((state) => state.user);
@@ -58,9 +55,6 @@ function RightSideBtnArea() {
       switch (retryAction) {
         case "sendToMachine":
           handleSendToMachine();
-          break;
-        case "startToProcess":
-          startToProcess();
           break;
         case "restartToMachine":
           restartToMachine();
@@ -85,9 +79,6 @@ function RightSideBtnArea() {
           break;
         case "restartToMachine":
           restartToMachine();
-          break;
-        case "handleOpenGroupManagementPopup":
-          handleOpenGroupManagementPopup();
           break;
         case "handleOpenStopPopup":
           handleOpenStopPopup("order");
@@ -178,117 +169,99 @@ function RightSideBtnArea() {
 
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
-    // Eğer kullanıcı alanı "buzlama" ise ve kullanıcı ID yoksa ID popup'ını aç
-    if (isRequiredUserId && (!user || !user.id_dec)) {
-      setRetryAction("handleOpenStopPopup"); // İşlem kaydediliyor
-      dispatch(setUserIdPopup(true));
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(
+        user,
+        dispatch,
+        "handleOpenStopPopup",
+        setRetryAction
+      )
+    )
+      return;
+
+    if (actionType !== "order") {
+      toast.error("Geçersiz işlem.");
+      dispatch(setUser(null));
       return;
     }
 
-    // Sipariş veya grup seçimine göre kontrol yapalım
-    if (actionType === "order") {
-      const invalidOrders = selectedOrder.some(
-        (item) => item.work_status !== "1"
-      );
-
-      if (invalidOrders) {
-        toast.error("Sadece aktif siparişleri seçin.");
-        dispatch(setUser(null));
-        dispatch(setSelectedOrder([]));
-      } else if (selectedOrder.length > 0) {
-        dispatch(setStopReasonPopup({ visible: true, actionType }));
-      } else {
-        toast.error("Lütfen en az bir sipariş seçin.");
-        dispatch(setUser(null));
-      }
-    } else {
-      toast.error("Geçersiz işlem.");
+    if (isNoOrderSelected(selectedOrder)) {
+      toast.error("Lütfen en az bir sipariş seçin.");
       dispatch(setUser(null));
+      return;
     }
+
+    if (!isOrdersActive(selectedOrder)) {
+      toast.error("Sadece aktif siparişleri seçin.");
+      dispatch(setUser(null));
+      dispatch(setSelectedOrder([]));
+      return;
+    }
+
+    dispatch(setStopReasonPopup({ visible: true, actionType }));
   };
 
   // Grup yönetimi popup ını acacak fonksiyon
-  const handleOpenGroupManagementPopup = () => {
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("handleOpenGroupManagementPopup");
-      return;
-    }
-    dispatch(setOrderGroupManagement(true));
-    dispatch(handleGetGroupList());
-  };
-
-  // Kapanmıs gruplar ıcın ıslem yapılacak popup ı acacak fonksıyon..
-  // const handleOpenPastGroupsPopup = () => {
-  //   dispatch(setPastGroupOperationsPopup(true));
+  // const handleOpenGroupManagementPopup = () => {
+  //   if (!user || !user.id_dec) {
+  //     // Eğer kullanıcı ID yoksa, pop-up aç
+  //     dispatch(setUserIdPopup(true));
+  //     setRetryAction("handleOpenGroupManagementPopup");
+  //     return;
+  //   }
+  //   dispatch(setOrderGroupManagement(true));
+  //   dispatch(handleGetGroupList());
   // };
 
   //! Seçili ve durdurulmuş siparişi yeniden başlat...
   const restartWork = async () => {
     try {
-      if (selectedOrder.length === 0) {
+      if (isNoOrderSelected(selectedOrder)) {
         toast.error("Durdurulmuş bir iş seçiniz...");
         return;
       }
 
-      // Eğer kalite gibi ekranlardaysak  sadece tek bir iş seçilmesine izin ver
-      if (!isRequiredUserId && selectedOrder.length > 1) {
+      if (isMultipleOrdersSelected(selectedOrder, isRequiredUserId)) {
         toast.error("Bu ekranda yalnızca 1 iş yeniden başlatılabilir.");
         return;
       }
 
-      // Seçilen işlerin hepsi durdurulmuş olmalı
-      const invalidOrders = selectedOrder.some(
-        (item) => item.work_status !== "2"
-      );
-      if (invalidOrders) {
+      if (!isAllStopped(selectedOrder)) {
         toast.error("Sadece durdurulmuş işleri seçiniz.");
         return;
       }
 
-      // Eğer buzlama alanındaysa ve kullanıcı tanımlı değilse, kullanıcı girişi iste
-      if (isRequiredUserId && (!user || !user.id_dec)) {
-        setRetryAction("restartWork");
-        dispatch(setUserIdPopup(true));
+      if (
+        isRequiredUserId &&
+        !validateUserPresence(user, dispatch, "restartWork", setRetryAction)
+      )
         return;
-      }
 
       if (confirm("İş(ler) tekrardan başlatılsın mı?")) {
-        let response;
-        const requestData = {
-          work_log_uniq_id: selectedOrder.map((item) => item.uniq_id), // Birden fazla iş destekleniyor
-          currentUser: userInfo.id_dec,
-          startedUser: selectedOrder.map((item) => item.user_id_dec), // Birden fazla iş için liste
-          selectedOrders: selectedOrder, // Seçili siparişlerin tamamı
+        const requestData = buildRestartWorkRequest({
+          selectedOrders: selectedOrder,
+          user,
+          userInfo,
           areaName,
           field: selectedHammerSectionField,
-          machine_name: selectedMachine?.machine_name,
-        };
+          isRequiredUserId,
+        });
 
-        if (isRequiredUserId) {
-          requestData.currentUser = user.id_dec;
-        }
-
-        // API isteği
-        response = await axios.post(
+        let response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartWork`,
           requestData
         );
 
         if (response.status === 200) {
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (isRequiredUserId) {
-            dispatch(getWorksWithoutId({ areaName }));
-            dispatch(getJoinTheField({ areaName }));
-          } else {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          }
-          toast.success("Tekrardan başlatma işlemi başarılı.");
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
+          refreshAfterSuccessfulOperation(
+            areaName,
+            isRequiredUserId,
+            userInfo,
+            dispatch
+          );
         }
+        toast.success("Tekrardan başlatma işlemi başarılı.");
       }
     } catch (err) {
       console.error(err);
@@ -298,73 +271,9 @@ function RightSideBtnArea() {
     }
   };
 
-  //! Seçili ve durdurulmuş MAKİNEYİ yeniden başlat
-  async function restartToMachine() {
-    try {
-      // Grup seçimi ve grup durumu kontrolü
-      if (selectedGroupNo.length !== 1) {
-        toast.error("Yeniden baslatacagınız grubu seçin.");
-        dispatch(setUser(null));
-        return;
-      }
-      // Grup seçimi ve grup durumu kontrolü
-      if (selectedGroupNo.length > 1) {
-        toast.error("Sadece 1 grup seçin");
-        dispatch(setUser(null));
-        return;
-      }
-
-      if (selectedGroupNo[0].group_status !== "4") {
-        toast.error("Sadece durdurulmuş bir makineyi seçin.");
-        dispatch(setUser(null));
-        return;
-      }
-
-      // Kullanıcı kimliği kontrolü
-      if (!user || !user.id_dec) {
-        dispatch(setUserIdPopup(true));
-        setRetryAction("restartToMachine");
-        return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-      }
-
-      // Onay isteği
-      if (confirm("Makine tekrardan başlatılsın mı?")) {
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartToMachine`,
-          {
-            selectedGroup: selectedGroupNo[0],
-            id_dec: user.id_dec,
-            area_name: areaName,
-          }
-        );
-
-        if (response && response.status === 200) {
-          toast.success(response.data);
-
-          // İlgili alanların yenilenmesi
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-          }
-
-          // Seçimler ve kullanıcı sıfırlama
-          dispatch(handleGetGroupList());
-          dispatch(setSelectedGroupNos([]));
-          dispatch(setFilteredGroup([]));
-        }
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error("Makineyi başlatma sırasında bir hata oluştu.");
-    } finally {
-      dispatch(setUser(null)); // İşlem sonunda kullanıcıyı sıfırlıyoruz
-    }
-  }
-
   // iş bitirme popupını belirli şartlara göre acacak fonksiyon...
   const handleOpenFinishedPopup = () => {
-    if (!selectedOrder.length) {
+    if (isNoOrderSelected(selectedOrder)) {
       return toast.error("En az bir sipariş seçmelisiniz.");
     }
 
@@ -399,16 +308,18 @@ function RightSideBtnArea() {
 
   //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
   const handleFinishWork = async () => {
-    if (!selectedOrder || selectedOrder.length === 0) {
+    if (isNoOrderSelected(selectedOrder)) {
       toast.error("Bitireceğiniz siparişleri seçin.");
       return;
     }
 
-    if (isRequiredUserId && (!user || !user.id_dec)) {
-      setRetryAction("finishwork"); // İşlem kaydediliyor
-      dispatch(setUserIdPopup(true));
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "finishwork", setRetryAction)
+    )
       return;
-    }
 
     const requestData = {
       uniqIds: selectedOrder.map((order) => order.uniq_id),
@@ -425,10 +336,12 @@ function RightSideBtnArea() {
 
       if (response.status === 200) {
         toast.success(`${selectedOrder.length} iş bitirildi.`);
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(getJoinTheField({ areaName }));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.error("İş bitirme hatası:", err);
@@ -442,7 +355,7 @@ function RightSideBtnArea() {
 
   //! Tekli yada coklu ıslemler ıcın ıkı farklı fonksıyon yazdık bunu teke dusur.
   const handleFinishedFunc = () => {
-    if (areaName === "telcekme" || areaName === "cekic") {
+    if (areaName === "telcekme") {
       handleOpenFinishedPopup();
     } else if (isRequiredUserId) {
       handleFinishWork();
@@ -454,47 +367,43 @@ function RightSideBtnArea() {
   // şartlı bıtırme popupını acacak fonksıyon..
   const handleOpenConditionalFinishPopup = () => {
     // Seçilen sipariş kontrolü
-    if (selectedOrder.length <= 0) {
+    if (isNoOrderSelected(selectedOrder)) {
       toast.error("Şartlı bitirmek istediğiniz siparişleri seçiniz");
       return;
     }
 
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("openConditionalFinishPopup");
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "restartWork", setRetryAction)
+    )
       return;
-    }
     dispatch(setConditionalFinishPopup(true));
   };
 
   //! Bir siparişi iptal edecek popup
   const handleCancelWork = async () => {
     try {
-      // Seçili sipariş kontrolü
-      if (!selectedOrder || selectedOrder.length === 0) {
+      if (isNoOrderSelected(selectedOrder)) {
         toast.error("İptal etmek için en az bir sipariş seçmelisiniz.");
         return;
       }
 
-      if (isRequiredUserId && (!user || !user.id_dec)) {
-        setRetryAction("cancelWork");
-        dispatch(setUserIdPopup(true));
+      // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+      // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+      if (
+        isRequiredUserId &&
+        !validateUserPresence(user, dispatch, "cancelWork", setRetryAction)
+      )
         return;
-      }
 
       const requestData = {
         uniq_id: isRequiredUserId
-          ? selectedOrder.map((order) => order.uniq_id) // Çoklu sipariş için dizi
-          : selectedOrder[0].uniq_id, // Tek sipariş için string
+          ? selectedOrder.map((order) => order.uniq_id)
+          : selectedOrder[0].uniq_id,
         areaName,
         field: selectedHammerSectionField,
-        currentUser: userInfo.id_dec,
+        currentUser: isRequiredUserId ? user.id_dec : userInfo.id_dec,
       };
-
-      if (isRequiredUserId) {
-        requestData.currentUser = user.id_dec;
-      }
 
       if (confirm("Sipariş iptal edilsin mi ?")) {
         const response = await axios.post(
@@ -507,16 +416,13 @@ function RightSideBtnArea() {
               ? `${selectedOrder.length} sipariş başarıyla iptal edildi.`
               : `${selectedOrder[0]?.uniq_id} numaralı sipariş iptal edildi.`
           );
-          dispatch(setSelectedOrder([]));
-          dispatch(setUser(null));
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (isRequiredUserId) {
-            dispatch(getWorksWithoutId({ areaName }));
-            dispatch(getJoinTheField({ areaName }));
-          } else {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          }
+          // İlgili alanların yenilenmesi
+          refreshAfterSuccessfulOperation(
+            areaName,
+            isRequiredUserId,
+            userInfo,
+            dispatch
+          );
         }
       }
     } catch (err) {
@@ -530,60 +436,6 @@ function RightSideBtnArea() {
       dispatch(setSelectedOrder([]));
     }
   };
-
-  //! Seçili orderı ıptal edecek fonksıyon SADECE GRUPLU EKRANLARDA...
-  async function cancelOrdersInGroup() {
-    if (selectedOrder.length <= 0) {
-      toast.error("İptal edeceğiniz siparişi seçin.");
-      dispatch(setUser(null));
-      return;
-    }
-
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("cancelOrderInGroup");
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/cancelOrderInGroup`,
-        {
-          orders: selectedOrder,
-          id_dec: user.id_dec,
-        }
-      );
-
-      if (response.status === 200) {
-        // Başarı mesajı dönerse bildirim göster
-        toast.success(response.data);
-        dispatch(setSelectedOrder([]));
-        if (areaName === "kalite") {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-        } else if (areaName === "buzlama") {
-          dispatch(getWorksWithoutId({ areaName }));
-        }
-        dispatch(handleGetGroupList());
-        dispatch(fetchBuzlamaWorks({ areaName }));
-        dispatch(setSelectedGroupNos([]));
-        dispatch(setUser(null));
-      }
-    } catch (error) {
-      console.error("Sipariş iptali sırasında hata oluştu:", error);
-      dispatch(setUser(null));
-      // Hata mesajını daha detaylı gösterebiliriz
-      const errorMessage =
-        error.response?.data || "Sipariş iptali sırasında hata oluştu.";
-      toast.error(errorMessage);
-      dispatch(setSelectedOrder([]));
-      if (areaName === "kalite") {
-        getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-      } else if (areaName === "buzlama") {
-        dispatch(getWorksWithoutId({ areaName }));
-      }
-    }
-  }
 
   //! Seçilenleri bitirme isteği... GRUP TANTANASI...
   const finishSelectedOrder = async () => {
@@ -605,12 +457,18 @@ function RightSideBtnArea() {
       return;
     }
 
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("finishSelectedOrders");
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(
+        user,
+        dispatch,
+        "finishSelectedOrders",
+        setRetryAction
+      )
+    )
       return;
-    }
 
     if (confirm("Seçili siparişler bitirilsin mi?")) {
       try {
@@ -624,14 +482,14 @@ function RightSideBtnArea() {
 
         if (response.status === 200) {
           toast.success(response.data);
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-          }
-          dispatch(setSelectedOrder([]));
+          // İlgili alanların yenilenmesi
+          refreshAfterSuccessfulOperation(
+            areaName,
+            isRequiredUserId,
+            userInfo,
+            dispatch
+          );
           dispatch(handleGetGroupList());
-          dispatch(setUser(null));
         }
       } catch (err) {
         toast.error(
@@ -643,333 +501,20 @@ function RightSideBtnArea() {
     }
   };
 
-  //! Makineye sipariş gönderme (başlatma) fonksiyonu...
-  const handleSendToMachine = async () => {
-    // Makine ve proses secılı mı ?
-    if (!selectedGroupNo || !selectedProcess || !selectedMachine) {
-      toast.error("Makine ve Proses seçiniz.");
-      return;
-    }
-
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("sendToMachine");
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-
-    const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
-    const id_dec = user && user.id_dec;
-
-    // sadece bir grup mu secılı ?
-    if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
-      toast.error("Makineye göndermek için sadece bir grup seçiniz");
-      return;
-    }
-
-    try {
-      if (confirm("Grup makineye gönderilsin mi ?")) {
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/sendToMachine`,
-          {
-            group_record_id: group.group_record_id, // Artık JSON değil direkt string
-            machine_name: selectedMachine.machine_name,
-            process_name: selectedProcess?.process_name,
-            process_id: selectedProcess?.process_id,
-            id_dec,
-          }
-        );
-
-        if (response.status === 200) {
-          toast.success("Gruba gönderme işlemi başarılı...");
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-          }
-          dispatch(handleGetGroupList());
-          dispatch(fetchBuzlamaWorks({ areaName }));
-          dispatch(setSelectedGroupNos([]));
-          dispatch(setFilteredGroup([]));
-          dispatch(setSelectedProcess(""));
-          dispatch(setSelectedMachine(""));
-          dispatch(setUser(null));
-        } else {
-          toast.error(
-            response.data.message || "İşlem sırasında bir hata oluştu."
-          );
-        }
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error(err.response.data || "İşlem sırasında bir hata oluştu.");
-      dispatch(setUser(null));
-    }
-  };
-
-  //! makineyi başlatacak query...
-  async function startToProcess() {
-    const id_dec = user && user.id_dec;
-    const group = selectedGroupNo[0]; // Sadece ilk grup numarasını alıyoruz
-
-    if (selectedGroupNo.length > 1 || selectedGroupNo.length === 0) {
-      toast.error("Başlatmak için sadece bir grup seçin...");
-      dispatch(setUser(null));
-      return;
-    } else if (group.group_status !== "2") {
-      toast.error(
-        "Prosesi başlatmak için makineye gönderilmiş bir grup seçin..."
-      );
-      dispatch(setUser(null));
-      return;
-    }
-
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("startToProcess"); // İşlem türünü belirle
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/startToProcess`,
-        {
-          id_dec,
-          group_record_id: group.group_record_id,
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success("Prosesi başlatma işlemi başarılı");
-        if (areaName === "kalite") {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-        } else if (areaName === "buzlama") {
-          dispatch(getWorksWithoutId({ areaName }));
-        }
-        dispatch(fetchBuzlamaWorks({ areaName }));
-        dispatch(handleGetGroupList());
-        dispatch(setSelectedGroupNos([]));
-        dispatch(setFilteredGroup([]));
-        dispatch(setUser(null));
-      }
-    } catch (err) {
-      console.log(err);
-      toast.error(err.response.data || "İşlem sırasında bir hata oluştu.");
-      dispatch(setUser(null));
-    }
-  }
-
-  //! Seçili grubu tekrardan makineye yollayacak fonksiyon...
-  const handleSendRepeatMachine = async () => {
-    if (selectedGroupNo.length <= 0) {
-      toast.error("Yeniden baslatacagınız grubu seçin");
-      return;
-    }
-    // Eğer birden fazla grup seçildiyse ya da grup seçilmediyse hata verelim ve fonksiyonu sonlandıralım
-    if (selectedGroupNo.length !== 1) {
-      toast.error("Sadece bir grup seçmelisiniz.");
-      return;
-    }
-
-    // Eğer selectedGroupNo dizisi boşsa, hata ver
-    if (!selectedGroupNo[0]) {
-      toast.error("Geçersiz grup seçimi. Lütfen geçerli bir grup seçin.");
-      return;
-    }
-
-    const { group_no, group_record_id } = selectedGroupNo[0];
-    const { process_name, process_id } = selectedProcess;
-    const { machine_name, machine_id } = selectedMachine;
-
-    // Grup durumu kontrolü
-    if (selectedGroupNo[0].group_status !== "5") {
-      toast.error("Bitmiş bir proses seçiniz.");
-      return;
-    }
-
-    // Makine ve proses kontrolü
-    if (!selectedMachine) {
-      toast.error("İşi başlatacağınız makineyi seçiniz.");
-      return;
-    }
-
-    if (!selectedProcess) {
-      toast.error("İşi başlatacağınız prosesi seçiniz.");
-      return;
-    }
-
-    // Kullanıcı kimliği kontrolü
-    if (!user || !user.id_dec) {
-      dispatch(setUserIdPopup(true));
-      setRetryAction("sendRepeatMachine");
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/restartGroupProcess`,
-        {
-          areaName,
-          section,
-          id_dec: user.id_dec,
-          process_id,
-          machine_name,
-          process_name,
-          group_no,
-          group_record_id,
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success(response.data);
-        if (areaName === "kalite") {
-          getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-        } else if (areaName === "buzlama") {
-          dispatch(getWorksWithoutId({ areaName }));
-        }
-        dispatch(setSelectedProcess(""));
-        dispatch(setSelectedMachine(""));
-        dispatch(setSelectedGroupNos([]));
-        dispatch(fetchBuzlamaWorks({ areaName }));
-        dispatch(handleGetGroupList());
-      } else {
-        toast.error(
-          response.data.message || "İşlem sırasında bir hata oluştu."
-        );
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        err.response?.data?.message || "İşlem sırasında bir hata oluştu."
-      );
-    } finally {
-      dispatch(setUser(null));
-    }
-  };
-
-  //! Seçili grubu teslim et...
-  const handleFinishGroup = async () => {
-    const orders = filteredGroup;
-    const groups = selectedGroupNo;
-    const id_dec = user && user.id_dec;
-
-    if (groups.length !== 1 || groups[0].group_status === "5") {
-      toast.error("Bitirmek istediğiniz sadece aktif 1 grubu seçiniz.");
-      return;
-    }
-
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("finishGroup"); // status 5
-      return;
-    }
-
-    try {
-      if (confirm("Grup bitirlsin mi?")) {
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/finishTheGroup`,
-          {
-            orders,
-            groups,
-            id_dec,
-          }
-        );
-
-        if (response.status === 200) {
-          toast.success(response.data);
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-          }
-          dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
-          dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
-          dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
-          dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
-          dispatch(handleGetGroupList());
-          dispatch(setUser(null));
-        } else {
-          toast.error(
-            response.data.message || "İşlem sırasında bir hata oluştu."
-          );
-          dispatch(setUser(null));
-        }
-      }
-    } catch (err) {
-      console.error("Teslim işlemi sırasında hata oluştu:", err);
-      toast.error(
-        err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
-      );
-      dispatch(setUser(null));
-    }
-  };
-
-  //! seçili grubu teslim edecek istek...
-  const handleDeliverGroup = async () => {
-    if (selectedGroupNo.length !== 1) {
-      toast.error("Teslim etmek istediğiniz sadece aktif 1 grubu seçiniz.");
-      return;
-    }
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("deliverGroup"); // İşlem türünü belirle
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
-    const id_dec = user && user.id_dec;
-
-    try {
-      if (confirm("Grup teslim edilsin mi ?")) {
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/deliverTheGroup`,
-          {
-            group: selectedGroupNo[0],
-            id_dec,
-          }
-        );
-        if (response.status === 200) {
-          toast.success(response.data);
-          if (areaName === "kalite") {
-            getWorkList({ areaName, userId: userInfo.id_dec, dispatch });
-          } else if (areaName === "buzlama") {
-            dispatch(getWorksWithoutId({ areaName }));
-          }
-          dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
-          dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
-          dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
-          dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
-          dispatch(handleGetGroupList());
-          dispatch(setUser(null));
-        } else {
-          toast.error(
-            response.data.message || "İşlem sırasında bir hata oluştu."
-          );
-        }
-      }
-    } catch (err) {
-      console.error("Teslim işlemi sırasında hata oluştu:", err);
-      toast.error(
-        err.response?.data || "Sunucu hatası, lütfen daha sonra tekrar deneyin."
-      );
-      dispatch(setUser(null));
-      //  dispatch(setSelectedGroupNos([])); // Seçilen grup temizleniyor
-      //  dispatch(setFilteredGroup([])); // Filtrelenmiş grup temizleniyor
-      dispatch(setSelectedProcess("")); // Proses seçimi temizleniyor
-      dispatch(setSelectedMachine("")); // Makine seçimi temizleniyor
-      // dispatch(handleGetGroupList());
-    }
-  };
-
   // ölçüm veri girişi popup ını açacak fonksıyon...
   const handleOpenMeasurementPopup = () => {
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("openMeasurementPopup"); // İşlem türünü belirle
-      return; // ID kontrolü yapılmadan önce işleme devam edilmemeli
-    }
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(
+        user,
+        dispatch,
+        "openMeasurementPopup",
+        setRetryAction
+      )
+    )
+      return;
 
     dispatch(setMeasurementPopup(true));
   };
@@ -984,12 +529,14 @@ function RightSideBtnArea() {
   //? CEKİC EKRANI METOTLARI...
   //! Bölüme katılmak için gerekli query...
   const joinTheSection = async () => {
-    if (!user || !user.id_dec) {
-      // Kullanıcı ID kontrolü
-      dispatch(setUserIdPopup(true));
-      setRetryAction("joinTheSection");
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "joinTheSection", setRetryAction)
+    )
       return;
-    }
+
     // Çekiç bölüme katılma şartı
     if (areaName === "cekic" && !selectedHammerSectionField) {
       toast.error("Katılacağınız bölümü seçiniz.");
@@ -1038,8 +585,13 @@ function RightSideBtnArea() {
 
       if (response.status === 200) {
         toast.success("Bölüme katılma işlemi başarıyla gerçekleştirildi.");
-        dispatch(setUser(""));
-        dispatch(getJoinTheField({ areaName }));
+        // İlgili alanların yenilenmesi
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.log(err);
@@ -1070,7 +622,12 @@ function RightSideBtnArea() {
       if (response.status === 200) {
         toast.success("Bölümden cıkıs ıslemı basarılı.");
         dispatch(setSelectedPersonInField(""));
-        dispatch(getJoinTheField({ areaName }));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.log(err);
@@ -1079,38 +636,18 @@ function RightSideBtnArea() {
   //! setup u baslatacak fonksıyon...
   const startToSetup = async () => {
     try {
-      if (selectedOrder.length <= 0) {
+      if (isNoOrderSelected(selectedOrder)) {
         toast.error("Setup başlatacağınız siparişleri seçiniz.");
         return;
       }
 
-      if (!user || !user.id_dec) {
-        // Eğer kullanıcı ID yoksa, pop-up aç
-        dispatch(setUserIdPopup(true));
-        setRetryAction("startToSetup");
+      // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+      // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+      if (
+        isRequiredUserId &&
+        !validateUserPresence(user, dispatch, "startToSetup", setRetryAction)
+      )
         return;
-      }
-      // if (!read_order) {
-      //   toast.error("Setup başlatacağınız siparişi okutunuz.");
-      //   return;
-      // }
-
-      // if (!selectedProcess || !selectedMachine) {
-      //   toast.error("Setup başlatmak için proses ve makine seçimi yapınız.");
-      //   return;
-      // }
-
-      // const work_info = {
-      //   user_id_dec: userInfo.id_dec,
-      //   op_username: userInfo.op_username,
-      //   order_id: read_order?.ORDER_ID, // response'dan gelen sipariş bilgileri kullanılıyor
-      //   section,
-      //   area_name: areaName,
-      //   work_status: "6",
-      //   process_id: selectedProcess?.process_id,
-      //   process_name: selectedProcess?.process_name,
-      //   production_amount: read_order?.PRODUCTION_AMOUNT,
-      // };
 
       const workIds = selectedOrder.map((order) => order.uniq_id);
 
@@ -1121,9 +658,12 @@ function RightSideBtnArea() {
 
       if (workLogResponse.status === 200) {
         toast.success("Setup başlatıldı.");
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.log(err);
@@ -1134,23 +674,18 @@ function RightSideBtnArea() {
   };
   //! setup ı bıtırecek işi baslatacak  fonksiyon...
   const finishedToStop = async () => {
-    if (!user || !user.id_dec) {
-      // Eğer kullanıcı ID yoksa, pop-up aç
-      dispatch(setUserIdPopup(true));
-      setRetryAction("finishedToStop");
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "finishedToStop", setRetryAction)
+    )
       return;
-    }
 
-    const onGoingOrder = selectedOrder.every(
-      (item) => item.work_status === "6"
-    );
-
-    if (selectedOrder.length <= 0) {
+    if (isNoOrderSelected(selectedOrder)) {
       toast.error("Setup ı bıtırıp baslatacagınız siparişi seçiniz.");
       dispatch(setUser(null));
       return;
     }
-    if (!onGoingOrder) {
+    if (!isOrderSentToSetup(selectedOrder)) {
       toast.error("Seçilen sipariş setup a başlanmıs bir sipariş olmalıdır.");
       return;
     }
@@ -1164,9 +699,12 @@ function RightSideBtnArea() {
 
       if (response.status === 200) {
         toast.success("Setup bitirildi.");
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.log(err);
@@ -1178,17 +716,19 @@ function RightSideBtnArea() {
 
   //! Setup bıtmıs işi baslatacak query...
   const startToProces = async () => {
-    if (selectedOrder.length <= 0) {
+    if (isNoOrderSelected(selectedOrder)) {
       toast.error("Başlatacağınız siparişleri seçiniz.");
       dispatch(setUser(null));
       return;
     }
 
-    if (!user || !user.id_dec) {
-      dispatch(setUserIdPopup(true));
-      setRetryAction("startToProces");
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "startToProces", setRetryAction)
+    )
       return;
-    }
 
     const workIds = selectedOrder.map((order) => order.uniq_id);
     try {
@@ -1204,9 +744,12 @@ function RightSideBtnArea() {
 
       if (response.status === 200) {
         toast.success(response.data || "İşlem başarılı.");
-        dispatch(getWorksWithoutId({ areaName }));
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (error) {
       console.error("Hata:", error);
@@ -1220,16 +763,18 @@ function RightSideBtnArea() {
 
   //! Bir işi başka bir kullanıcıya devredecek query...
   const transferOrder = async () => {
-    if (!selectedOrder || selectedOrder.length === 0) {
+    if (isNoOrderSelected(selectedOrder)) {
       toast.error("Devredeceğiniz siparişi seçiniz.");
       return;
     }
 
-    if (!user || !user.id_dec) {
-      dispatch(setUserIdPopup(true));
-      setRetryAction("transferOrder");
+    // Bu işlem, kullanıcı ID'si gerektiren (örneğin buzlama, çekic gibi) ekranlarda çalışır.
+    // Ayrıca `retryAction` olarak işlem adı atanır ki, kullanıcı ID girdikten sonra ilgili işlem tekrar denensin.
+    if (
+      isRequiredUserId &&
+      !validateUserPresence(user, dispatch, "transferOrder", setRetryAction)
+    )
       return;
-    }
 
     const workIds = selectedOrder.map((order) => order.uniq_id);
     const requestData = {
@@ -1246,9 +791,12 @@ function RightSideBtnArea() {
       );
       if (response.status === 200) {
         toast.success(response.data);
-        dispatch(setSelectedOrder([]));
-        dispatch(setUser(null));
-        dispatch(getWorksWithoutId({ areaName }));
+        refreshAfterSuccessfulOperation(
+          areaName,
+          isRequiredUserId,
+          userInfo,
+          dispatch
+        );
       }
     } catch (err) {
       console.error("Devir işlemi sırasında hata oluştu:", err);
@@ -1315,42 +863,42 @@ function RightSideBtnArea() {
   // buzlama da kullanılan btn...
   const buttons_rtwo = [
     {
-      onClick: handleOpenGroupManagementPopup,
-      children: "Grup Yönetimi",
-      type: "button",
-      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      // onClick: handleOpenGroupManagementPopup,
+      // children: "Grup Yönetimi",
+      // type: "button",
+      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       //  disabled: isCurrentBreak,
     },
     {
-      onClick: handleDeliverGroup,
-      children: "Grubu Teslim Et",
-      type: "button",
-      className:
-        "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
+      // onClick: handleDeliverGroup,
+      // children: "Grubu Teslim Et",
+      // type: "button",
+      // className:
+      //   "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
       // disabled: isCurrentBreak,
     },
     {
-      onClick: handleSendToMachine, // Gönderme işlemi
-      children: "Makineye Gönder",
-      type: "button",
-      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      // onClick: handleSendToMachine, // Gönderme işlemi
+      // children: "Makineye Gönder",
+      // type: "button",
+      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       // disabled: isCurrentBreak,
     },
 
     {
-      onClick: handleFinishGroup,
-      children: "Prosesi Bitir",
-      type: "button",
-      className:
-        "w-[140px] sm:px-1 sm:py-4 text-sm bg-red-600 hover:bg-red-500",
+      // onClick: handleFinishGroup,
+      // children: "Prosesi Bitir",
+      // type: "button",
+      // className:
+      //   "w-[140px] sm:px-1 sm:py-4 text-sm bg-red-600 hover:bg-red-500",
       //disabled: isCurrentBreak,
     },
     {
-      onClick: startToProcess, // Gönderme işlemi
-      children: "Prosese Başla",
-      type: "button",
-      className:
-        "w-[140px] bg-green-500 hover:bg-green-600 sm:px-1 sm:py-4  text-sm",
+      // onClick: startToProcess, // Gönderme işlemi
+      // children: "Prosese Başla",
+      // type: "button",
+      // className:
+      //   "w-[140px] bg-green-500 hover:bg-green-600 sm:px-1 sm:py-4  text-sm",
       // disabled: isCurrentBreak,
     },
     {
@@ -1362,10 +910,10 @@ function RightSideBtnArea() {
       // disabled: isCurrentBreak,
     },
     {
-      onClick: restartToMachine,
-      children: "Yeniden Başlat",
-      type: "button",
-      className: "w-[140px] sm:px-1 sm:py-4  text-sm",
+      // onClick: restartToMachine,
+      // children: "Yeniden Başlat",
+      // type: "button",
+      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       // disabled: isCurrentBreak,
     },
     {
@@ -1377,11 +925,11 @@ function RightSideBtnArea() {
       //disabled: isCurrentBreak,
     },
     {
-      onClick: handleSendRepeatMachine,
-      children: "Yeni Makine",
-      type: "button",
-      className:
-        "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-green-600 hover:bg-green-500",
+      // onClick: handleSendRepeatMachine,
+      // children: "Yeni Makine",
+      // type: "button",
+      // className:
+      //   "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-green-600 hover:bg-green-500",
       // disabled: isCurrentBreak,
     },
     {
@@ -1401,11 +949,11 @@ function RightSideBtnArea() {
       onClick: handleOpenMeasurementPopup,
     },
     {
-      onClick: cancelOrdersInGroup,
-      children: "Sipariş İptal",
-      type: "button",
-      className:
-        "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-red-600 hover:bg-red-500",
+      // onClick: cancelOrdersInGroup,
+      // children: "Sipariş İptal",
+      // type: "button",
+      // className:
+      //   "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-red-600 hover:bg-red-500",
       //disabled: isCurrentBreak,
     },
   ];

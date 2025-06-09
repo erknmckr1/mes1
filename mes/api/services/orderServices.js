@@ -454,7 +454,7 @@ const getStoppedWorks = async ({ area_name, user_id_dec }) => {
 
     const where = {
       area_name,
-      work_status: "2",
+      work_status: {[Op.in]:["2","9"]},
     };
 
     if (area_name === "cila" && user_id_dec) {
@@ -909,7 +909,7 @@ async function getWorksWithoutId(areaName) {
       where: {
         area_name: areaName,
         work_status: {
-          [Op.in]: ["0", "1", "2", "6", "7"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["0", "1", "2", "6", "7","9"], // '1' veya '2' durumundaki işleri getir
         },
       },
     });
@@ -1938,78 +1938,6 @@ async function restartToMachine(selectedGroup, id_dec, area_name) {
 async function createMeasurementData(measurementsInfo) {
   const currentDateTimeOffset = new Date().toISOString();
   try {
-    // const group = await GroupRecords.findAll({
-    //   where: {
-    //     group_no: measurementsInfo.group_no,
-    //   },
-    // });
-
-    // const sologroup = await GroupRecords.findOne({
-    //   where: {
-    //     group_no: measurementsInfo.group_no,
-    //   },
-    // });
-
-    // if (sologroup.group_status === "3") {
-    //   return {
-    //     status: 404,
-    //     message: "Ölçü alabilmek için önce prosesi bitirin",
-    //   };
-    // }
-
-    // console.log(group);
-
-    // // Grup statüsü 5 ya da 7 olanların kontrolünü yap
-    // const areTheGroupsValid = group.every(
-    //   (item) => item.group_status === "5" || item.group_status === "7"
-    // );
-
-    // if (!areTheGroupsValid) {
-    //   return {
-    //     status: 404,
-    //     message:
-    //       "Grubun diğer prosesleri bitirilmemiş öncelikle o grupları bitirin.",
-    //   };
-    // }
-
-    // if (sologroup.group_status === "3") {
-    //   return {
-    //     status: 404,
-    //     message: "Ölçü alabilmek için önce prosesi bitirin",
-    //   };
-    // }
-
-    // const measure = await MeasureData.findOne({
-    //   where: {
-    //     order_no: measurementsInfo.order_no,
-    //     group_no: measurementsInfo.group_no,
-    //     measure_status: "1",
-    //   },
-    // });
-
-    // if (measure) {
-    //   return {
-    //     status: 400,
-    //     message: `${measure.order_no} numaralı siparişin daha önce ölçümü alınmış.`,
-    //   };
-    // }
-
-    // const allOrderNo = [];
-
-    // for (const grp of group) {
-    //   const orders = await WorkLog.findAll({
-    //     where: {
-    //       group_no: grp.group_no,
-    //     },
-    //   });
-
-    //   orders.forEach((item) => {
-    //     if (!allOrderNo.includes(item.order_no)) {
-    //       allOrderNo.push(item.order_no);
-    //     }
-    //   });
-    // };
-
     // Yeni ölçüm verisini oluştur
     const newMeasurement = await MeasureData.create({
       order_no: measurementsInfo.order_no,

@@ -1,86 +1,41 @@
 import React from "react";
 import { setFirePopup } from "@/redux/globalSlice";
 import { useDispatch } from "react-redux";
-import Button from "../ui/Button";
+import Button from "../../ui/Button";
 import { DataGrid } from "@mui/x-data-grid";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState, useEffect } from "react";
-import Input from "../ui/Input";
-import axios from "axios";
+import Input from "../../ui/Input";
 import { toast } from "react-toastify";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
-import { setSelectedOrder } from "@/redux/orderSlice";
-
+import { isIncorrectOrderNo } from "@/utils/validations/operationValidationRules";
+import { refreshFireFormState } from "@/utils/handlers/orderHelpers";
+import useFireFormLogic from "./useFireFormLogic";
+import {
+  isEntryGramage,
+  isReadOrderNo,
+  isSelectedOrder,
+} from "@/utils/validations/firePopupRules";
+import {
+  fetchOrderById,
+  fetchScrapMeasure,
+  submitScrapMeasure,
+  updateScrapMeasure,
+} from "./firePopupService";
 function FirePopup() {
-  const [formState, setFormState] = useState({
-    orderId: "",
-    goldSetting: "",
-    entryGramage: "",
-    exitGramage: "",
-    gold_pure_scrap: "",
-    diffirence: "",
-  });
-
   const [selectedRow, setSelectedRow] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [allMeasurement, setAllMeasurement] = useState([]);
   const dispatch = useDispatch();
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
-  const { userInfo, user } = useSelector((state) => state.user);
+  const { userInfo } = useSelector((state) => state.user);
+  const { formState, setFormState, handleChange } = useFireFormLogic(orderData);
 
   const handleClosePopup = () => {
     dispatch(setFirePopup(null));
     setOrderData(null);
-  };
-
-  // inputlarda bir degısıklık oldugunda tetıklenecek fonksıyon
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    // Sadece sayısal değerler ve ondalık ayracı kabul et
-    const filteredValue = value.replace(/[^0-9.]/g, "");
-
-    // Eğer sayı beklenen bir alan ise, filtrelenmiş değeri atayın
-    const newFormState = {
-      ...formState,
-      [name]: filteredValue, // Filtrelenmiş değeri doğrudan atayın
-    };
-
-    // Eğer giriş ya da çıkış ölçüsü değiştiyse farkı hesapla
-    if (name === "entryGramage" || name === "exitGramage") {
-      const entry =
-        newFormState.entryGramage === ""
-          ? 0
-          : parseFloat(newFormState.entryGramage);
-      const exit =
-        newFormState.exitGramage === ""
-          ? 0
-          : parseFloat(newFormState.exitGramage);
-      newFormState.diffirence = entry - exit;
-    }
-
-    // Has fire değerini hesapla
-    if (
-      name === "gold_pure_scrap" ||
-      name === "entryGramage" ||
-      name === "exitGramage"
-    ) {
-      const caratMultiplier = {
-        8: 0.33,
-        9: 0.33,
-        10: 0.416,
-        14: 0.585,
-        18: 0.75,
-        21: 0.875,
-      };
-
-      const multiplier = caratMultiplier[orderData?.CARAT] || 1;
-      newFormState.gold_pure_scrap = newFormState.diffirence * multiplier;
-    }
-
-    setFormState(newFormState);
   };
 
   // tablodan veri seç...
@@ -94,14 +49,7 @@ function FirePopup() {
         (item) => item.id !== params.row.id
       );
       setSelectedRow(updatedSelection);
-      setFormState({
-        orderId: "", // Boş olarak sıfırlanıyor
-        goldSetting: 0,
-        entryGramage: 0.0,
-        exitGramage: 0.0,
-        gold_pure_scrap: 0.0,
-        diffirence: 0.0,
-      });
+      refreshFireFormState(setFormState);
     } else {
       // Yeni satırı seç ve formu güncelle
       setSelectedRow([params.row]);
@@ -125,24 +73,12 @@ function FirePopup() {
   //! Girilen order id ye göre fire ölçümünü çekecek servis...
   const handleGetScrapMeasure = async (order_no) => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getScrapMeasure`,
-        {
-          params: { order_no },
-        }
-      );
+      const response = await fetchScrapMeasure(order_no);
       if (response.status === 200) {
         setAllMeasurement(response.data);
         return response.data;
       } else {
-        const emptyData = {
-          orderId: "",
-          goldSetting: 0,
-          entryGramage: 0.0,
-          exitGramage: 0.0,
-          gold_pure_scrap: 0.0,
-          diffirence: 0.0,
-        };
+        const emptyData = refreshFireFormState(setFormState);
         setAllMeasurement(emptyData);
         return emptyData;
       }
@@ -155,15 +91,7 @@ function FirePopup() {
   //! Okutulan siparişi çekecek query...
   const handleGetOrderById = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrderById`,
-        {
-          params: {
-            orderId: formState.orderId,
-          },
-        }
-      );
-      console.log("İlk response:", response.data); // İlk çağrıda gelen veriyi kontrol edin
+      const response = await fetchOrderById(formState.orderId);
       if (response.status === 200) {
         toast.success("Sipariş başarıyla okutuldu...");
         setOrderData(response.data); // Veriyi state'e setliyoruz
@@ -189,13 +117,10 @@ function FirePopup() {
   //! Verileri kaydedecek query...
   const handleSubmit = async () => {
     try {
-      if (!orderData || orderData?.length === 0) {
-        toast.error("Okutulan sipariş hatalı, sipariş bulunamadı.");
-        return;
-      } else if (!formState.entryGramage) {
-        toast.error("Giriş  ölçüsünü girip tekrar deneyiniz.");
-        return;
-      }
+      // Okutulan sipariş kontrolü
+      isIncorrectOrderNo(orderData);
+
+      isEntryGramage(formState);
 
       if (confirm("Ölçüm verisi kaydedilsin mi ? ")) {
         // Önce mevcut fire ölçümünü alıyoruz
@@ -209,70 +134,42 @@ function FirePopup() {
         }
 
         // Eğer ölçüm yoksa kaydı yapıyoruz
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/scrapMeasure`,
-          { formState, user_id: userInfo.id_dec, areaName }
-        );
+
+        const response = await submitScrapMeasure({
+          formState,
+          user_id: userInfo.id_dec,
+          areaName,
+        });
 
         if (response.status === 200) {
           toast.success("Fire veri girişi başarıyla gerçekleştirildi.");
           await handleGetScrapMeasure(orderData.ORDER_ID); // Yeni ölçümü tekrar çekiyoruz
-          setFormState({
-            orderId: "", // String olarak kalıyor
-            goldSetting: 0, // Sayısal başlangıç değeri
-            entryGramage: 0.0, // Sayısal başlangıç değeri
-            exitGramage: 0.0, // Sayısal başlangıç değeri
-            gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-            diffirence: 0.0, // Sayısal başlangıç değeri
-          });
+          refreshFireFormState(setFormState);
         }
       }
     } catch (err) {
       toast.error(err?.response.data);
-      setFormState({
-        orderId: "", // String olarak kalıyor
-        goldSetting: 0, // Sayısal başlangıç değeri
-        entryGramage: 0.0, // Sayısal başlangıç değeri
-        exitGramage: 0.0, // Sayısal başlangıç değeri
-        gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-        diffirence: 0.0, // Sayısal başlangıç değeri
-      });
+      refreshFireFormState(setFormState);
       setSelectedRow(null);
     }
   };
 
   //! Ölçüm verisini güncelleyecek query...
   const handleUpdete = async () => {
-    if (!allMeasurement || allMeasurement.length < 0) {
-      toast.error("Güncelleyeceğiniz ölçüm için iş emrini okutunuz.");
-      return;
-    }
+    isReadOrderNo(allMeasurement);
 
-    if (!selectedRow || selectedRow.length < 0) {
-      toast.error("Güncelleyeceğiniz ölçüm verisini seçiniz.");
-      return;
-    }
+    isSelectedOrder(selectedRow);
 
     try {
       if (confirm("Ölçüm güncellensin mi ?")) {
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/updateMeasure`,
-          {
-            formState,
-            uniq_id: selectedRow[0].uniq_id,
-          }
-        );
+        const response = await updateScrapMeasure({
+          formState,
+          uniq_id: selectedRow[0].uniq_id,
+        });
 
         if (response.status === 200) {
           toast.success("Ölçüm verisi başarıyla güncellendi.");
-          setFormState({
-            orderId: "", // String olarak kalıyor
-            goldSetting: 0, // Sayısal başlangıç değeri
-            entryGramage: 0.0, // Sayısal başlangıç değeri
-            exitGramage: 0.0, // Sayısal başlangıç değeri
-            gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-            diffirence: 0.0, // Sayısal başlangıç değeri
-          });
+          refreshFireFormState(setFormState);
           setSelectedRow(null);
           await handleGetScrapMeasure(orderData.ORDER_ID);
         }
@@ -281,36 +178,7 @@ function FirePopup() {
       console.log(err);
     }
   };
-  //! secılı olcumu sılecek(status u degıstırecek) query...
-  const handleDeletedMeasure = async () => {
-    console.log(selectedRow);
-    if (selectedRow === null || selectedRow.length <= 0) {
-      toast.error("Silmek istediğiniz ölçüyü seçin.");
-      return;
-    }
-    try {
-      const { id } = selectedRow[0];
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/deleteScrapMeasure`,
-        { id }
-      );
-      if (response.status === 200) {
-        toast.success("Ölçüm basarıyla silindi");
-        await handleGetScrapMeasure();
-        setFormState({
-          orderId: "", // String olarak kalıyor
-          goldSetting: 0, // Sayısal başlangıç değeri
-          entryGramage: 0.0, // Sayısal başlangıç değeri
-          exitGramage: 0.0, // Sayısal başlangıç değeri
-          gold_pure_scrap: 0.0, // Sayısal başlangıç değeri
-          diffirence: 0.0, // Sayısal başlangıç değeri
-        });
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-  console.log(selectedRow);
+
   const theme = createTheme({
     components: {
       MuiDataGrid: {

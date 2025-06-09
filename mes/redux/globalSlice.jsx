@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-const requiredUserIdScreens = ["buzlama", "kurutiras", "cekic","telcekme",]; // Kullanıcı ID isteyen ekranlar
+import { requiredUserIdScreens } from "@/utils/config/areaConfig";
 
 const globalSlice = createSlice({
   name: global,
@@ -8,12 +8,12 @@ const globalSlice = createSlice({
     isMolaPopup: false,
     theme: "dark",
     selectedFlow: "İzin Talebi Oluştur", // Sureclerı belırttımız sidebarda ki secenegı tutacak state...
-    returnUrl:"sss",
-    isSurveyPopup:false,
-    isFirePopup:false,
-    isCreateLeavePopup:false,
-    isRequiredUserId:false,
-    areaName:"",
+    returnUrl: "sss",
+    isSurveyPopup: false,
+    isFirePopup: false,
+    isCreateLeavePopup: false,
+    isRequiredUserId: false,
+    areaName: "",
     isErrorPopup: false,
   },
   reducers: {
@@ -30,20 +30,20 @@ const globalSlice = createSlice({
     setSelectedFlow: (state, action) => {
       state.selectedFlow = action.payload;
     },
-    setReturnUrl:(state,action) => {
+    setReturnUrl: (state, action) => {
       state.returnUrl = action.payload;
     },
-    setSurveyPopup:(state,action)=>{
-      state.isSurveyPopup = action.payload
+    setSurveyPopup: (state, action) => {
+      state.isSurveyPopup = action.payload;
     },
     // Fire giriş ekranının açılıp kapalı olayını tutacak state...
-    setFirePopup:(state,action)=>{
-      state.isFirePopup = action.payload
+    setFirePopup: (state, action) => {
+      state.isFirePopup = action.payload;
     },
-    setCreateLeavePopup:(state,action)=>{
-      state.isCreateLeavePopup = action.payload
+    setCreateLeavePopup: (state, action) => {
+      state.isCreateLeavePopup = action.payload;
     },
-    setAreaName:(state,action)=>{
+    setAreaName: (state, action) => {
       state.areaName = action.payload;
       state.isRequiredUserId = requiredUserIdScreens.includes(action.payload);
     },
@@ -65,6 +65,6 @@ export const {
   setFirePopup,
   setCreateLeavePopup,
   setAreaName,
-  setErrorPopup
+  setErrorPopup,
 } = globalSlice.actions;
 export default globalSlice.reducer;

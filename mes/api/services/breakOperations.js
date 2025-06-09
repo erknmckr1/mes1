@@ -2,6 +2,7 @@ const BreakReason = require("../../models/BreakReason");
 const SectionParticiptionLogs = require("../../models/SectionParticiptionLogs");
 const BreakLog = require("../../models/BreakLog");
 const WorkLog = require("../../models/WorkLog");
+const StoppedWorksLog = require("../../models/StoppedWorksLog");
 const { Op } = require("sequelize");
 const pool = require("../../lib/dbConnect");
 const sequelize = require("../../lib/dbConnect");
@@ -97,6 +98,36 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
       );
     }
 
+    const works = await WorkLog.findAll({
+      where: {
+        user_id_dec: operator_id,
+        work_status: "1",
+      },
+    });
+
+    // 1. Tüm insert işlemleri paralel yapılır
+    await Promise.all(
+      works.map((work) =>
+        StoppedWorksLog.create({
+          order_id: work.order_no,
+          stop_start_date: currentDateTimeOffset,
+          work_log_uniq_id: work.uniq_id,
+          stop_reason_id: "9",
+          user_who_stopped: work.user_id_dec,
+        })
+      )
+    );
+
+    // 2. Tüm güncellemeler paralel yapılır
+    await Promise.all(
+      works.map((work) =>
+        WorkLog.update(
+          { work_status: "9" },
+          { where: { user_id_dec: work.user_id_dec, uniq_id:work.uniq_id} }
+        )
+      )
+    );
+
     // Molada değilse yeni mola oluştur
     if (!isStart) {
       const createBreak = await BreakLog.create({
@@ -145,6 +176,48 @@ const returnToBreak = async ({ operator_id, end_time }) => {
         },
       }
     );
+    // moladan dönen kullanıcının mola sebebiyle durdurulan bir işi var mı ?
+    const works = await WorkLog.findAll({
+      where: {
+        user_id_dec: operator_id,
+        work_status: "9",
+      },
+    });
+
+    if (works.length > 0) {
+      await Promise.all(
+        works.map((work) =>
+          StoppedWorksLog.update(
+            {
+              stop_end_date: end_time,
+              user_who_started: work.user_id_dec,
+            },
+            {
+              where: {
+                work_log_uniq_id: work.uniq_id,
+                order_id: work.order_no,
+              },
+            }
+          )
+        )
+      );
+
+      await Promise.all(
+        works.map((work) => {
+          WorkLog.update(
+            {
+              work_status: "1",
+            },
+            {
+              where: {
+                user_id_dec: operator_id,
+                uniq_id: work.uniq_id,
+              },
+            }
+          );
+        })
+      );
+    }
 
     // Güncellenen kayıtları kontrol et
     const updatedRecords = await BreakLog.findAll({
@@ -170,9 +243,9 @@ const returnToBreak = async ({ operator_id, end_time }) => {
         // Sipariş hala aktifse bölüme tekrar giriş yap
         const isActiveOrder = await WorkLog.findOne({
           where: {
-            uniq_id: sectionLog.uniq_id,
+            user_id_dec: operator_id,
             work_status: {
-              [Op.or]: ["1", "2"],
+              [Op.or]: ["1", "2", "9"],
             },
           },
         });
@@ -212,5 +285,5 @@ module.exports = {
   onBreakUsers,
   returnToBreak,
   createBreakReason,
-  checkUserBreakStatus
+  checkUserBreakStatus,
 };

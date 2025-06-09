@@ -19,11 +19,13 @@ import { toast } from "react-toastify";
 import { usePathname, useSearchParams } from "next/navigation";
 import { setUser, setUserIdPopup } from "@/redux/userSlice";
 import { getJoinTheField } from "@/redux/orderSlice";
+import { getWorkList } from "@/api/client/cOrderOperations";
+import { getWorksWithoutId } from "@/redux/orderSlice";
 
 function LeftSideBtnArea() {
   const dispatch = useDispatch();
-  const { userInfo, user, userIdPopup } = useSelector((state) => state.user);
-  const { onBreak_users, loading, error, isCurrentBreak } = useSelector(
+  const { userInfo, user } = useSelector((state) => state.user);
+  const { onBreak_users, isCurrentBreak } = useSelector(
     (state) => state.break
   );
 
@@ -118,6 +120,7 @@ function LeftSideBtnArea() {
           toast.success(`${user.op_name} moladan dönüş işlemi başarılı.`);
           dispatch(setUser(null));
           dispatch(getJoinTheField({ areaName }));
+          dispatch(getWorksWithoutId({areaName}))
         }
       } else {
         if (!userInfo || !userInfo.id_dec) {
@@ -134,6 +137,7 @@ function LeftSideBtnArea() {
           if (response.status === 200) {
             toast.success(`${userInfo.op_name} moladan dönüş işlemi başarılı.`);
             dispatch(setİsCurrentBreak(false));
+            getWorkList({areaName,userId:userInfo.id_dec,dispatch})
           }
         } else {
           toast.error("Kullanıcı molada değil veya bilgiler eksik.");
