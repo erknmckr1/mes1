@@ -121,7 +121,7 @@ export const useBreakPopupLogic = () => {
   };
 
   const createBreakFunc = () => {
-    if (isRequiredUserId) {
+    if (isRequiredUserId || areaName === "kalite") {
       createBreakWıthId(araSebebi);
     } else {
       handleBreakRequest(userInfo, araSebebi);

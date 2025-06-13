@@ -99,7 +99,7 @@ function MolaPopup() {
                 <tbody className="text-lg text-center popup-table-body">
                   <tr className="h-16 text-xl">
                     <td className="border">
-                      {isRequiredUserId
+                      {isRequiredUserId || areaName === "kalite"
                         ? user && user.id_dec
                         : userInfo && userInfo.id_dec}
                     </td>
