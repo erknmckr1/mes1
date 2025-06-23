@@ -388,7 +388,10 @@ const getWorkLogData = async (
       if (area_name && area_name !== "all" && area_name !== "")
         whereClause.area_name = area_name;
       if (material_no && material_no !== "all" && material_no !== "")
-        whereClause.material_no = material_no;
+        whereClause.material_no = {
+          [Op.like]: `%${material_no}%`,
+        };
+
       if (order_no && order_no !== "all" && order_no !== "")
         whereClause.order_no = order_no;
 
