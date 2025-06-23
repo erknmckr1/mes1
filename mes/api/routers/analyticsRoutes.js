@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require("path");
 const fs = require("fs");
 const ExcelJS = require("exceljs");
-const sendMail = require("../services/mailService")
+const sendMail = require("../services/mailService");
 const {
   getWorksLogSummary,
   getDailyProductionStats,
@@ -12,18 +12,29 @@ const {
   getOpenDurationOfActiveWorks,
   getRepairReasonStats,
   getStoppedWorksDuration,
-  getWorkLogData
+  getWorkLogData,
 } = require("../services/analyticsServices.js");
 
 router.get("/getWorksCountSummary", async (req, res) => {
-  const { section, areaName, machine, process, startDate, endDate } = req.query;
+  const {
+    section,
+    areaName,
+    machine,
+    process,
+    startDate,
+    endDate,
+    metarial_no,
+    order_no,
+  } = req.query;
   const result = await getWorksLogSummary(
     section,
     areaName,
     process,
     machine,
     startDate,
-    endDate
+    endDate,
+    metarial_no,
+    order_no
   );
   return res.status(result.status).json({
     message: result.message,
@@ -127,18 +138,40 @@ router.get("/getStoppedWorksDuration", async (req, res) => {
 
 //! work_log verisini cekecek olan endpoint...
 router.get("/getWorkLogData", async (req, res) => {
-  const { section, area_name, machine, process, startDate, endDate } =
-    req.query.params;
-    try {
-      const result = await getWorkLogData(section, area_name, machine, process, startDate, endDate );
-      return res.status(result.status).json({
-        message: result.message,
-        data: result.data,
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
+  const {
+    section,
+    area_name,
+    machine,
+    process,
+    startDate,
+    endDate,
+    dataType,
+    material_no,
+    order_no,
+  } = req.query;
+
+  try {
+    const result = await getWorkLogData(
+      section,
+      area_name,
+      machine,
+      process,
+      startDate,
+      endDate,
+      dataType,
+      material_no,
+      order_no
+    );
+
+    console.log(material_no)
+    return res.status(result.status).json({
+      message: result.message,
+      data: result.data,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 //! export sayfasında olusturulan tabloyu excell formatında ındırecek endpoint
@@ -168,7 +201,11 @@ router.post("/export-data", async (req, res) => {
 
     // 📦 2. BAŞLIKLARI 5. SATIRDAN BAŞLAT
     const startRow = 5;
-    worksheet.spliceRows(startRow, 0, headers.map((h) => h.replace(/_/g, " ").toUpperCase()));
+    worksheet.spliceRows(
+      startRow,
+      0,
+      headers.map((h) => h.replace(/_/g, " ").toUpperCase())
+    );
 
     worksheet.getRow(startRow).font = { bold: true };
 
@@ -187,7 +224,10 @@ router.post("/export-data", async (req, res) => {
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
-    res.setHeader("Content-Disposition", "attachment; filename=ozel-export-logo.xlsx");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=ozel-export-logo.xlsx"
+    );
 
     await workbook.xlsx.write(res);
     res.end();
@@ -197,7 +237,7 @@ router.post("/export-data", async (req, res) => {
   }
 });
 
-//! Maile ek yollayacak fonksiyon... 
+//! Maile ek yollayacak fonksiyon...
 router.post("/send-export-mail", async (req, res) => {
   try {
     const { headers, rows, email } = req.body;
@@ -247,6 +287,5 @@ router.post("/send-export-mail", async (req, res) => {
     return res.status(500).json({ message: "E-posta gönderilemedi." });
   }
 });
-
 
 module.exports = router;

@@ -78,6 +78,9 @@ const initialState = {
     prosess: "",
     startDate: "",
     endDate: "",
+    dataType:"", // veri çekilecek tablo türü
+    order_no:"",
+    metarial_no:""
   },
   dailyChartData: [],
   machineData: [], // makine bılgısını tutacak state

@@ -494,8 +494,9 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
       where: {
         area_name: "cila",
         process_id,
+        user_id_dec,
         work_status: {
-          [Op.in]: ["1", "2"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["1"], // '1' veya '2' durumundaki işleri getir
         },
       },
     });
@@ -3787,13 +3788,13 @@ const nextProcess = async (uniq_id, process_name, process_id,product_count,produ
     );
 
     // Benzersiz group_record_id oluşturma
-    const latestRecordId = await GroupRecords.findOne({
-      order: [["group_record_id", "DESC"]],
+    const latestRecordId = await WorkLog.findOne({
+      order: [["uniq_id", "DESC"]],
     });
 
     let newUniqId;
     if (latestRecordId) {
-      const latestId = parseInt(latestRecordId.group_record_id, 10);
+      const latestId = parseInt(latestRecordId.uniq_id, 10);
       newUniqId = String(latestId + 1).padStart(6, "0");
     } else {
       newUniqId = "000001";

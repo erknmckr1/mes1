@@ -11,7 +11,7 @@ function InsightPanel() {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3 text-sm p-6">
+    <div className="grid grid-cols-2 gap-3 text-sm p-6 text-white">
       <div className="bg-[#111827] p-3 rounded-lg border border-gray-700">
         🏭 <strong>Aktif İş:</strong> {getCountByStatus("1")}
       </div>

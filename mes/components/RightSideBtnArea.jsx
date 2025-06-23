@@ -202,18 +202,6 @@ function RightSideBtnArea() {
     dispatch(setStopReasonPopup({ visible: true, actionType }));
   };
 
-  // Grup yönetimi popup ını acacak fonksiyon
-  // const handleOpenGroupManagementPopup = () => {
-  //   if (!user || !user.id_dec) {
-  //     // Eğer kullanıcı ID yoksa, pop-up aç
-  //     dispatch(setUserIdPopup(true));
-  //     setRetryAction("handleOpenGroupManagementPopup");
-  //     return;
-  //   }
-  //   dispatch(setOrderGroupManagement(true));
-  //   dispatch(handleGetGroupList());
-  // };
-
   //! Seçili ve durdurulmuş siparişi yeniden başlat...
   const restartWork = async () => {
     try {
@@ -863,57 +851,11 @@ function RightSideBtnArea() {
   // buzlama da kullanılan btn...
   const buttons_rtwo = [
     {
-      // onClick: handleOpenGroupManagementPopup,
-      // children: "Grup Yönetimi",
-      // type: "button",
-      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
-      //  disabled: isCurrentBreak,
-    },
-    {
-      // onClick: handleDeliverGroup,
-      // children: "Grubu Teslim Et",
-      // type: "button",
-      // className:
-      //   "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500",
-      // disabled: isCurrentBreak,
-    },
-    {
-      // onClick: handleSendToMachine, // Gönderme işlemi
-      // children: "Makineye Gönder",
-      // type: "button",
-      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
-      // disabled: isCurrentBreak,
-    },
-
-    {
-      // onClick: handleFinishGroup,
-      // children: "Prosesi Bitir",
-      // type: "button",
-      // className:
-      //   "w-[140px] sm:px-1 sm:py-4 text-sm bg-red-600 hover:bg-red-500",
-      //disabled: isCurrentBreak,
-    },
-    {
-      // onClick: startToProcess, // Gönderme işlemi
-      // children: "Prosese Başla",
-      // type: "button",
-      // className:
-      //   "w-[140px] bg-green-500 hover:bg-green-600 sm:px-1 sm:py-4  text-sm",
-      // disabled: isCurrentBreak,
-    },
-    {
       onClick: () => handleOpenStopPopup("group"),
       children: "Makineyi Durdur",
       type: "button",
       className:
         "w-[140px] sm:px-1 sm:py-4 text-sm bg-red-600 hover:bg-red-500",
-      // disabled: isCurrentBreak,
-    },
-    {
-      // onClick: restartToMachine,
-      // children: "Yeniden Başlat",
-      // type: "button",
-      // className: "w-[140px] sm:px-1 sm:py-4  text-sm",
       // disabled: isCurrentBreak,
     },
     {
@@ -923,14 +865,6 @@ function RightSideBtnArea() {
       className:
         "w-[140px] sm:px-1 sm:py-4  text-sm bg-red-600 hover:bg-red-500 ",
       //disabled: isCurrentBreak,
-    },
-    {
-      // onClick: handleSendRepeatMachine,
-      // children: "Yeni Makine",
-      // type: "button",
-      // className:
-      //   "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-green-600 hover:bg-green-500",
-      // disabled: isCurrentBreak,
     },
     {
       onClick: finishSelectedOrder,
@@ -947,14 +881,6 @@ function RightSideBtnArea() {
         "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-orange-500 hover:bg-orange-600",
       // disabled: isCurrentBreak,
       onClick: handleOpenMeasurementPopup,
-    },
-    {
-      // onClick: cancelOrdersInGroup,
-      // children: "Sipariş İptal",
-      // type: "button",
-      // className:
-      //   "w-[140px] sm:px-1 sm:py-4  text-sm  text-sm bg-red-600 hover:bg-red-500",
-      //disabled: isCurrentBreak,
     },
   ];
 

@@ -127,7 +127,7 @@ function JobTable() {
       ? new Date(item.work_start_date)
       : null;
     return {
-      id: index,
+      id: item.uniq_id,
       user_id_dec: item.user_id_dec,
       op_username: item.op_username,
       order_no: item.order_no,

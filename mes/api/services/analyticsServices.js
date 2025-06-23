@@ -4,6 +4,7 @@ const sequelize = require("../../lib/dbConnect.js");
 const Machines = require("../../models/Machines.js");
 const RepairSection = require("../../models/RepairReason.js");
 const { StoppedWorksLogs } = require("../../models/syncDBmodels.js");
+const MeasureData = require("../../models/MeasureData.js");
 const fn = sequelize.fn;
 const col = sequelize.col;
 const literal = sequelize.literal;
@@ -339,53 +340,93 @@ const getStoppedWorksDuration = async () => {
 };
 
 //! WorkLog tablosundan verileri çekecek servis
-const getWorkLogData = async (section, areaName, process, machine,startDate, endDate) => {
-  const whereClause = {};
-
-  if (section && section !== "all")
-    whereClause.section = section
-  if (areaName && areaName !== "all")
-    whereClause.area_name = areaName
-  if (process && process !== "all") whereClause.process_name = process;
-  if (machine && machine !== "all") whereClause.machine_name = machine;
-
-  if (startDate && endDate) {
-    whereClause.work_start_date = {
-      [Op.between]: [new Date(startDate), new Date(endDate)],
-    };
-  }
-
-  if (startDate && !endDate) {
-    whereClause.work_start_date = {
-      [Op.gte]: new Date(startDate),
-    };
-  }
-
+const getWorkLogData = async (
+  section,
+  area_name,
+  machine,
+  process,
+  startDate,
+  endDate,
+  dataType,
+  material_no,
+  order_no
+) => {
   try {
-    const workLogs = await WorkLog.findAll({
-      where: whereClause,
-      order: [["work_start_date", "DESC"]],
-      raw: true,
-    });
+    let fetchData;
+    if (dataType === "work_log") {
+      const whereClause = {};
+      if (section && section !== "all" && section !== "")
+        whereClause.section = section;
+      if (area_name && area_name !== "all" && area_name !== "")
+        whereClause.area_name = area_name;
+      if (machine && machine !== "all" && machine !== "")
+        whereClause.machine_name = machine;
+      if (process && process !== "all" && process !== "")
+        whereClause.process_name = process;
+      if (order_no && order_no !== "all" && order_no !== "")
+        whereClause.order_no = order_no;
+      if (material_no && material_no !== "all" && material_no !== "")
+        whereClause.material_no = material_no;
 
-    if (workLogs.length > 0) {
+      if (startDate && startDate !== "" && endDate && endDate !== "") {
+        whereClause.work_start_date = {
+          [Op.between]: [new Date(startDate), new Date(endDate)],
+        };
+      } else if (startDate && startDate !== "") {
+        whereClause.work_start_date = {
+          [Op.gte]: new Date(startDate),
+        };
+      }
+
+      fetchData = await WorkLog.findAll({
+        where: whereClause,
+        order: [["work_start_date", "DESC"]],
+        raw: true,
+      });
+    } else if (dataType === "measurement_data") {
+      const whereClause = {};
+      if (area_name && area_name !== "all" && area_name !== "")
+        whereClause.area_name = area_name;
+      if (material_no && material_no !== "all" && material_no !== "")
+        whereClause.material_no = material_no;
+      if (order_no && order_no !== "all" && order_no !== "")
+        whereClause.order_no = order_no;
+
+      if (startDate && startDate !== "" && endDate && endDate !== "") {
+        whereClause.data_entry_date = {
+          [Op.between]: [new Date(startDate), new Date(endDate)],
+        };
+      } else if (startDate && startDate !== "") {
+        whereClause.data_entry_date = {
+          [Op.gte]: new Date(startDate),
+        };
+      }
+
+      fetchData = await MeasureData.findAll({
+        where: whereClause,
+        order: [["data_entry_date", "DESC"]],
+        raw: true,
+      });
+    }
+
+    if (fetchData && fetchData.length > 0) {
       return {
         status: 200,
-        message: "Çalışma günlüğü verileri başarıyla alındı",
-        data: workLogs,
+        message: `${dataType} verileri başarıyla alındı`,
+        data: fetchData,
       };
-    } else if (workLogs.length === 0) {
+    } else {
       return {
         status: 404,
-        message: "Çalışma günlüğü verisi bulunamadı",
-        data: workLogs,
+        message: `${dataType} verisi bulunamadı`,
+        data: [],
       };
     }
   } catch (error) {
-    console.error("Work log error:", error);
+    console.error("getWorkLogData error:", error);
     return {
       status: 500,
-      message: "Error while fetching work log data",
+      message: "Veri çekilirken bir hata oluştu",
     };
   }
 };

@@ -112,22 +112,25 @@ const FilterPanel = () => {
 
   //! Export için veri cekecek ve sonrasında sayfa yönlendirmesi yapacak fonksiyon...
   const handleExportData = async () => {
+    if (!filters.dataType) {
+      toast.error("Veri türünü seçiniz.(Sipariş-Ölçüm)");
+      return;
+    }
+
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getWorkLogData`,
-        {
-          params: {
-            params: {
-              section: filters.section.toLowerCase(),
-              area_name: filters.areaName.toLowerCase(),
-              machine: filters.machine,
-              process: filters.prosess,
-              startDate: filters.startDate,
-              endDate: filters.endDate,
-            },
-          },
-        }
-      );
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getWorkLogData`, {
+        params: {
+          section: filters.section.toLowerCase(),
+          area_name: filters.areaName.toLowerCase(),
+          machine: filters.machine,
+          process: filters.prosess,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          dataType: filters.dataType,
+          material_no: filters.metarial_no,
+          order_no: filters.order_no,
+        },
+      });
 
       if (response.status === 200) {
         dispatch(setExportData(response.data.data));
@@ -135,28 +138,29 @@ const FilterPanel = () => {
           `${process.env.NEXT_PUBLIC_BASE_URL}/home/analytics/export`
         );
       } else if (response.status === 404) {
-        toast.error(`${response.data.message}` || "Filtrelenen veri bulunamadı.");
+        toast.error(response.data.message || "Filtrelenen veri bulunamadı.");
       }
     } catch (err) {
       console.log(err);
-      toast.error(`${err.response.data.message}` || "Filtrelenen veri çekilemedi.");
+      toast.error(
+        err.response?.data?.message || "Filtrelenen veri çekilemedi."
+      );
     }
   };
-
 
   const dataType = [
     {
       name: "Sipariş Verisi",
-      key: "work_log"
+      key: "work_log",
     },
     {
       name: "Ölçüm Verisi",
-      key: "measurement_data"
-    }
-  ]
+      key: "measurement_data",
+    },
+  ];
 
   return (
-    <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 space-y-5 text-black ">
+    <div className="p-6 bg-gradient-to-br w-full from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 space-y-5 text-black ">
       <h2 className="text-xl font-semibold text-gray-800">
         🔎 Filtreleme Paneli
       </h2>
@@ -193,45 +197,48 @@ const FilterPanel = () => {
           ))}
         </select>
       </div>
-      {/* Prosess */}
-      <div className="space-y-1">
-        <label className="block text-sm text-gray-600 font-medium">
-          Proses
-        </label>
-        <select
-          value={filters.prosess}
-          onChange={(e) => handleChangeFilterObj("prosess", e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">Tüm Prosesler</option>
-          {processData?.map((process, index) => (
-            <option value={process.process_name} key={index}>
-              {process.process_name}
-            </option>
-          ))}
-        </select>
-      </div>
-      {/* Makine */}
-      <div className="space-y-1">
-        <label className="block text-sm text-gray-600 font-medium">
-          Makine
-        </label>
-        <select
-          value={filters.machine}
-          onChange={(e) => handleChangeFilterObj("machine", e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Tüm Makineler</option>
-          {machineData?.map((machine, index) => (
-            <option value={machine.machine_name} key={index}>
-              {machine.machine_name}
-            </option>
-          ))}
-        </select>
+      {/* process & makkine */}
+      <div className="flex gap-3 w-full">
+        {/* Prosess */}
+        <div className="space-y-1 flex-1">
+          <label className="block text-sm text-gray-600 font-medium">
+            Proses
+          </label>
+          <select
+            value={filters.prosess}
+            onChange={(e) => handleChangeFilterObj("prosess", e.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Tüm Prosesler</option>
+            {processData?.map((process, index) => (
+              <option value={process.process_name} key={index}>
+                {process.process_name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* Makine */}
+        <div className="space-y-1 flex-1">
+          <label className="block text-sm text-gray-600 font-medium">
+            Makine
+          </label>
+          <select
+            value={filters.machine}
+            onChange={(e) => handleChangeFilterObj("machine", e.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Tüm Makineler</option>
+            {machineData?.map((machine, index) => (
+              <option value={machine.machine_name} key={index}>
+                {machine.machine_name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Tarih Aralığı flex-1 class ı esnek olan elemenletın kalan alanı eşit şekilde paylaşmasını sağlar.  */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 w-full">
         <div className="flex-1 space-y-1">
           <label className="block text-sm text-gray-600 font-medium">
             Başlangıç
@@ -255,16 +262,55 @@ const FilterPanel = () => {
           />
         </div>
       </div>
+      {/* Sıparıs ve Malzeme no */}
+      <div className="flex gap-3">
+        <div className="flex-1 space-y-1">
+          <label className="block text-sm text-gray-600 font-medium">
+            Sipariş No
+          </label>
+          <input
+            type="text"
+            value={filters.order_no}
+            onChange={(e) => handleChangeFilterObj("order_no", e.target.value)}
+            className="w-full rounded-lg border border-gray-300 p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="#"
+          />
+        </div>
+        <div className="flex-1 space-y-1">
+          <label className="block text-sm text-gray-600 font-medium">
+            Malzeme No
+          </label>
+          <input
+            type="text"
+            value={filters.metarial_no}
+            onChange={(e) =>
+              handleChangeFilterObj("metarial_no", e.target.value)
+            }
+            className="w-full rounded-lg border border-gray-300 p-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="#"
+          />
+        </div>
+      </div>
       {/*Data filters checkbox*/}
       <div className="flex items-center gap-6 my-4">
-        {
-          dataType.map((item) => (
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" className="accent-blue-600 w-4 h-4" />
-              {item.name}
-            </label>
-          ))
-        }
+        {dataType.map((item) => (
+          <label
+            key={item.key}
+            className="flex items-center gap-2 text-sm text-gray-700"
+          >
+            <input
+              type="radio"
+              name="dataType"
+              value={item.key}
+              checked={filters.dataType === item.key}
+              onChange={(e) =>
+                handleChangeFilterObj("dataType", e.target.value)
+              }
+              className="accent-blue-600 w-4 h-4"
+            />
+            {item.name}
+          </label>
+        ))}
       </div>
 
       {/* buttons */}

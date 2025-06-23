@@ -75,27 +75,30 @@ const getIsUserOnBreak = async (startLog, currentDateTimeOffset) => {
       },
     });
 
-    const isSectionParticipated = await SectionParticiptionLogs.findOne({
-      where: {
-        operator_id,
-        exit_time: null,
-      },
-    });
+    let isSectionParticipated = null;
 
-    //? Eğer bir kullanıcı zaten bir bölümde çalışıyorsa molaya çıkacağı zaman bölümdeki çıkış zamanını güncelle
-    if (isSectionParticipated) {
-      const sectionParticipated = await SectionParticiptionLogs.update(
-        {
-          exit_time: currentDateTimeOffset,
-          status: "5", // status 5 bolumden mola sebebi ile çıktı
+    if (area_name === "telcekme" || area_name === "cekic") {
+      isSectionParticipated = await SectionParticiptionLogs.findOne({
+        where: {
+          operator_id,
+          exit_time: null,
         },
-        {
-          where: {
-            exit_time: null,
-            operator_id: operator_id,
+      });
+
+      if (isSectionParticipated) {
+        await SectionParticiptionLogs.update(
+          {
+            exit_time: currentDateTimeOffset,
+            status: "5", // status 5 bolumden mola sebebi ile çıktı
           },
-        }
-      );
+          {
+            where: {
+              exit_time: null,
+              operator_id,
+            },
+          }
+        );
+      }
     }
 
     const works = await WorkLog.findAll({
@@ -191,17 +194,18 @@ const onBreakUsers = async (areaName) => {
 //! bitmiş sayılacak...
 const returnToBreak = async ({ operator_id, end_time }) => {
   try {
-    // 1. BreakLog end_date güncelle
+    // 1. Molayı bitir
     await BreakLog.update(
       { end_date: end_time },
       {
         where: {
           end_date: null,
-          operator_id: operator_id,
+          operator_id,
         },
       }
     );
-    // 2. Eğer işi başlatan kişi ise work_status: 9 olan işleri geri başlat
+
+    // 2. Bu kullanıcı tarafından başlatılmış ve durdurulmuş işler varsa -> geri başlat
     const works = await WorkLog.findAll({
       where: {
         user_id_dec: operator_id,
@@ -210,12 +214,12 @@ const returnToBreak = async ({ operator_id, end_time }) => {
     });
 
     if (works.length > 0) {
-      await Promise.all(
-        works.map((work) =>
+      await Promise.all([
+        ...works.map((work) =>
           StoppedWorksLog.update(
             {
               stop_end_date: end_time,
-              user_who_started: work.user_id_dec,
+              user_who_started: operator_id,
             },
             {
               where: {
@@ -224,94 +228,100 @@ const returnToBreak = async ({ operator_id, end_time }) => {
               },
             }
           )
-        )
-      );
-
-      await Promise.all(
-        works.map((work) => {
+        ),
+        ...works.map((work) =>
           WorkLog.update(
-            {
-              work_status: "1",
-            },
+            { work_status: "1" },
             {
               where: {
                 user_id_dec: operator_id,
                 uniq_id: work.uniq_id,
               },
             }
-          );
-        })
-      );
+          )
+        ),
+      ]);
     }
 
-    // 3. SectionParticipationLogs'ta status: 5 (mola nedeniyle çıkmış) olan kayıtları bul
+    // 3. molada destekçi olarak çıkmış ama işi aktif olan kullanıcıları telcekme/cekic için tekrar bölüme al
     const exitedDuringBreak = await SectionParticiptionLogs.findAll({
       where: {
         operator_id,
         exit_time: { [Op.not]: null },
         status: "5",
+        area_name: { [Op.in]: ["telcekme", "cekic"] },
       },
     });
 
-    if (exitedDuringBreak.length > 0) {
-      for (const sectionLog of exitedDuringBreak) {
-        // 4. Bu iş hala aktif mi? (başkası başlatmış olsa bile)
-        const relatedWork = await WorkLog.findOne({
-          where: {
-            uniq_id: sectionLog.uniq_id,
-            order_no: sectionLog.order_no,
-            work_status: { [Op.in]: ["1", "2", "9"] },
-          },
+    for (const sectionLog of exitedDuringBreak) {
+      const { area_name, uniq_id, order_no } = sectionLog;
+
+      // Bu iş hala aktif mi?
+      const relatedWork = await WorkLog.findOne({
+        where: {
+          uniq_id,
+          order_no,
+          work_status: { [Op.in]: ["1", "2", "9"] },
+        },
+      });
+
+      if (!relatedWork) continue;
+
+      // Katılım zaten varsa tekrar oluşturma
+      const alreadyParticipating = await SectionParticiptionLogs.findOne({
+        where: {
+          operator_id,
+          uniq_id,
+          exit_time: null,
+        },
+      });
+
+      if (!alreadyParticipating) {
+        await SectionParticiptionLogs.create({
+          operator_id,
+          join_time: end_time,
+          exit_time: null,
+          status: "1",
+          uniq_id,
+          order_no,
+          section: sectionLog.section,
+          machine_name: sectionLog.machine_name,
+          area_name: sectionLog.area_name,
+          field: sectionLog.field,
         });
-
-        if (relatedWork) {
-          // Aynı uniq_id ile hâlihazırda aktif kayıt var mı kontrol et
-          // 5. Zaten aynı uniq_id ile tekrar giriş yapılmış mı?
-          const existingParticipation = await SectionParticiptionLogs.findOne({
-            where: {
-              operator_id,
-              uniq_id: sectionLog.uniq_id,
-              exit_time: null,
-            },
-          });
-
-          // 6. Bölüme tekrar katılımı kaydet
-          if (!existingParticipation) {
-            await SectionParticiptionLogs.create({
-              operator_id: sectionLog.operator_id,
-              join_time: end_time,
-              exit_time: null,
-              status: "1",
-              uniq_id: sectionLog.uniq_id,
-              order_no: sectionLog.order_no,
-              section: sectionLog.section,
-              machine_name: sectionLog.machine_name,
-              area_name: sectionLog.area_name,
-              field: sectionLog.field,
-            });
-          }
-
-          // 7. Katılımcı mola sebebiyle durdurulmuş işe destek veriyorsa, stop kaydını güncelle
-          await StoppedWorksLog.update(
-            {
-              stop_end_date: end_time,
-              user_who_started: operator_id,
-            },
-            {
-              where: {
-                work_log_uniq_id: sectionLog.uniq_id,
-                order_id: sectionLog.order_no,
-                stop_end_date: null,
-              },
-            }
-          );
-        }
       }
+
+      // Stop kaydı varsa stop_end_date güncelle
+      await StoppedWorksLog.update(
+        {
+          stop_end_date: end_time,
+          user_who_started: operator_id,
+        },
+        {
+          where: {
+            work_log_uniq_id: uniq_id,
+            order_id: order_no,
+            stop_end_date: null,
+          },
+        }
+      );
+
+      // Eğer destek verdiği iş hala duruyorsa tekrar aktif hale getir
+      await WorkLog.update(
+        { work_status: "1" },
+        {
+          where: {
+            uniq_id,
+            order_no,
+            work_status: "9",
+          },
+        }
+      );
     }
 
-    return 1; // Başarılı dönüş
+    return 1; // başarılı dönüş
   } catch (err) {
-    console.error(err);
+    console.error("Moladan dönüş hatası:", err);
     throw err;
   }
 };

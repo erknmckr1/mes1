@@ -89,7 +89,6 @@ function DashboardSection() {
 
     fetchAllAnalytics();
   }, []); // filtre değiştiğinde tekrar çek
-  console.log(analyticsData);
 
   //* activeMachineDuration
   const chartData = analyticsData.activeMachineDuration?.data?.map((item) => ({
