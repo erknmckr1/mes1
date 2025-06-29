@@ -363,11 +363,11 @@ const getWorkLogData = async (
         whereClause.machine_name = machine;
       if (process && process !== "all" && process !== "")
         whereClause.process_name = process;
-      if (order_no && order_no !== "all" && order_no !== "")
-        whereClause.order_no = order_no;
-      if (material_no && material_no !== "all" && material_no !== "")
-        whereClause.material_no = material_no;
-
+      if (order_no && Array.isArray(order_no) && order_no.length > 0) {
+        whereClause.order_no = {
+          [Op.in]: order_no,
+        };
+      }
       if (startDate && startDate !== "" && endDate && endDate !== "") {
         whereClause.work_start_date = {
           [Op.between]: [new Date(startDate), new Date(endDate)],
@@ -375,6 +375,34 @@ const getWorkLogData = async (
       } else if (startDate && startDate !== "") {
         whereClause.work_start_date = {
           [Op.gte]: new Date(startDate),
+        };
+      }
+
+      const isMachine = await WorkLog.findOne({
+        where: {
+          machine_name: machine,
+        },
+      });
+
+      if(!isMachine){
+        return {
+          status: 404,
+          message: `${machine} bilgisine ait veri bulunamadı.`,
+          data: [],
+        };
+      }
+
+      const isSection = await WorkLog.findOne({
+        where: {
+          section: section,
+        },
+      });
+
+      if(!isSection){
+        return {
+          status: 404,
+          message: `${section} bilgisine ait veri bulunamadı.`,
+          data: [],
         };
       }
 
@@ -392,8 +420,11 @@ const getWorkLogData = async (
           [Op.like]: `%${material_no}%`,
         };
 
-      if (order_no && order_no !== "all" && order_no !== "")
-        whereClause.order_no = order_no;
+      if (order_no && Array.isArray(order_no) && order_no.length > 0) {
+        whereClause.order_no = {
+          [Op.in]: order_no,
+        };
+      }
 
       if (startDate && startDate !== "" && endDate && endDate !== "") {
         whereClause.data_entry_date = {
@@ -410,6 +441,22 @@ const getWorkLogData = async (
         order: [["data_entry_date", "DESC"]],
         raw: true,
       });
+    }
+
+    if (!fetchData || fetchData.length === 0) {
+      if (dataType === "work_log") {
+        return {
+          status: 404,
+          message: "Filtrelenen sipariş verisine ait kayıt bulunamadı.",
+          data: [],
+        };
+      } else {
+        return {
+          status: 404,
+          message: "Filtrelenen ölçüm verisine ait kayıt bulunamadı.",
+          data: [],
+        };
+      }
     }
 
     if (fetchData && fetchData.length > 0) {

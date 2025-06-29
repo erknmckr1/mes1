@@ -122,7 +122,7 @@ function UserIdPopup() {
                 {loading ? (
                   <p className="text-gray-400">Yükleniyor...</p>
                 ) : (
-                  <ul className="mt-2 space-y-2">
+                  <ul className="mt-2 space-y-2 overflow-y-auto">
                     {usersByArea?.length > 0 ? (
                       usersByArea.map((user) => (
                         <li

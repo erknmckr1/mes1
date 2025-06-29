@@ -454,7 +454,7 @@ const getStoppedWorks = async ({ area_name, user_id_dec }) => {
 
     const where = {
       area_name,
-      work_status: {[Op.in]:["2","9"]},
+      work_status: { [Op.in]: ["2", "9"] },
     };
 
     if (area_name === "cila" && user_id_dec) {
@@ -910,7 +910,7 @@ async function getWorksWithoutId(areaName) {
       where: {
         area_name: areaName,
         work_status: {
-          [Op.in]: ["0", "1", "2", "6", "7","9"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["0", "1", "2", "6", "7", "9"], // '1' veya '2' durumundaki işleri getir
         },
       },
     });
@@ -2208,7 +2208,6 @@ async function finishTheGroup({ groups, id_dec }) {
 
 //! Grubu teslim edecek servis gs-6 ws-4
 async function deliverTheGroup(group, id_dec) {
-  console.log(group);
   try {
     // Grup status "5" değilse işlem yapılmayacak
     if (group.group_status !== "5") {
@@ -3755,7 +3754,13 @@ const getWorksHistoryLogData = async (id) => {
 };
 
 //! İşin sonraki adımına gececek fonksiyon... şimdilik sadece cila ekranında kullanılıyor.
-const nextProcess = async (uniq_id, process_name, process_id,product_count,produced_amount) => {
+const nextProcess = async (
+  uniq_id,
+  process_name,
+  process_id,
+  product_count,
+  produced_amount
+) => {
   try {
     const work = await WorkLog.findOne({
       where: {
@@ -3764,7 +3769,7 @@ const nextProcess = async (uniq_id, process_name, process_id,product_count,produ
       },
     });
 
-    console.log(work)
+    console.log(work);
 
     if (!work) {
       return { status: 404, message: "İş bulunamadı." };
@@ -3778,7 +3783,6 @@ const nextProcess = async (uniq_id, process_name, process_id,product_count,produ
         work_finished_op_dec: work.user_id_dec,
         product_count,
         produced_amount,
-
       },
       {
         where: {
@@ -3824,6 +3828,36 @@ const nextProcess = async (uniq_id, process_name, process_id,product_count,produ
   } catch (err) {
     console.error("Error in nextProcess function:", err);
     return { status: 500, message: "İç sunucu hatası: " + err.message };
+  }
+};
+
+//! Worklog tablosunda bulunan siparişleri disting olarak cekecek fonksiyon
+const getDistinctOrders = async () => {
+  try {
+    const orders = await MeasureData.findAll({
+      attributes: [
+        [Sequelize.fn("DISTINCT", Sequelize.col("Sipariş No")), "order_no"],
+      ],
+      where: {
+        order_no: { [Sequelize.Op.ne]: null },
+      },
+      order: [[Sequelize.col("Sipariş No"), "DESC"]],
+      raw: true,
+    });
+
+    const orderList = orders.map((order) => order.order_no);
+
+    return {
+      status: 200,
+      message: "Ölçüm tablosundan sipariş numaraları başarıyla çekildi.",
+      data: orderList,
+    };
+  } catch (err) {
+    return {
+      status: 500,
+      message: "İç sunucu hatası: " + err.message,
+      data: [],
+    };
   }
 };
 
@@ -3886,4 +3920,5 @@ module.exports = {
   getWorksLogData,
   getWorksHistoryLogData,
   nextProcess,
+  getDistinctOrders,
 };

@@ -111,7 +111,8 @@ const orderSlice = createSlice({
     usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
     selectedPersonInField:"", // alana katılmıs secılmıs kullanıyı tutacak state...
     workHistoryData: [], // İş geçmişi verilerini tutacak state
-    finishedPopupMode:null // İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
+    finishedPopupMode:null ,// İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
+    distincOrdersFromWorkLog:[]
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -198,6 +199,9 @@ const orderSlice = createSlice({
     },
     setFinishedPopupMode: (state, action) => {
       state.finishedPopupMode = action.payload; // İş bitirme popup modunu ayarlar
+    },
+    setDistincOrderFromWorkLog:(state,action) =>{
+      state.distincOrdersFromWorkLog = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -274,7 +278,8 @@ export const {
   setSelectedHammerSectionField,
   setSelectedPersonInField,
   setWorkHistoryData,
-  setFinishedPopupMode
+  setFinishedPopupMode,
+  setDistincOrderFromWorkLog
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

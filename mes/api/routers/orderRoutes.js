@@ -58,7 +58,8 @@ const {
   transferOrder,
   getWorksLogData,
   getWorksHistoryLogData,
-  nextProcess
+  nextProcess,
+  getDistinctOrders,
 } = require("../services/orderServices");
 const Processes = require("../../models/Processes");
 const Machines = require("../../models/Machines");
@@ -832,7 +833,6 @@ router.put("/startToProces", async (req, res) => {
 
 //! Bir işi farklı kullanıcıya devredecek route...
 router.put("/transferOrder", async (req, res) => {
-  console.log("xxx");
   const { workIds, user_id_dec, area_name, op_username } = req.body;
   const currentDateTimeOffset = new Date().toISOString();
   try {
@@ -864,15 +864,29 @@ router.get("/getWorkHistory", async (req, res) => {
     return res.status(500).json({ message: "Internal server error." });
   }
 });
-
+//! Sipariş bitir butonuna tıklamadan yeni bir proseste aynı order no ile iş baslatacak end point şimdilik cila ekranında kullanıyoruz.
 router.post("/nextProcess", async (req, res) => {
-  const { uniq_id,process_name,process_id,product_count,produced_amount } = req.body;
+  const { uniq_id, process_name, process_id, product_count, produced_amount } =
+    req.body;
   try {
-    const result = await nextProcess(uniq_id,process_name,process_id,product_count,produced_amount);
+    const result = await nextProcess(
+      uniq_id,
+      process_name,
+      process_id,
+      product_count,
+      produced_amount
+    );
     return res.status(result.status).json(result.message);
   } catch (error) {
     console.error("Error fetching next process:", error);
     return res.status(500).json({ message: "Internal server error." });
   }
+});
+
+router.get("/getDistinctOrders", async (req, res) => {
+  const result = await getDistinctOrders();
+  return res
+    .status(result.status)
+    .json({ data: result.data, message: result.message });
 });
 module.exports = router;

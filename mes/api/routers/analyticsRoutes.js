@@ -163,7 +163,6 @@ router.get("/getWorkLogData", async (req, res) => {
       order_no
     );
 
-    console.log(material_no)
     return res.status(result.status).json({
       message: result.message,
       data: result.data,

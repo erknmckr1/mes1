@@ -71,16 +71,16 @@ export const fetchAreaData = createAsyncThunk(
 );
 
 const initialState = {
-  filters: {
+  analyticFiltersForm: {
     section: "",
     areaName: "",
     machine: "",
     prosess: "",
     startDate: "",
     endDate: "",
-    dataType:"", // veri çekilecek tablo türü
-    order_no:"",
-    metarial_no:""
+    dataType: "", // veri çekilecek tablo türü
+    order_no: [],
+    metarial_no: "",
   },
   dailyChartData: [],
   machineData: [], // makine bılgısını tutacak state
@@ -101,18 +101,18 @@ const initialState = {
     machineStatusData: null,
     activeMachineDuration: null,
     repairReasonStats: null,
-    stoppedWorkDuration:null
+    stoppedWorkDuration: null,
   },
-  exportData:[],
-  activeView:"stopped"
+  exportData: [],
+  activeView: "stopped",
 };
 
 const dashboardSlice = createSlice({
   name: "dashboard",
   initialState,
   reducers: {
-    setFilters: (state, action) => {
-      state.filters = action.payload;
+    setAnalyticFiltersForm: (state, action) => {
+      state.analyticFiltersForm = action.payload;
     },
     setDashboardData: (state, action) => {
       state.dashboardData = action.payload;
@@ -142,12 +142,12 @@ const dashboardSlice = createSlice({
       const { key, data } = action.payload;
       state.analyticsData[key] = data;
     },
-    setActiveView:(state,action) =>{
+    setActiveView: (state, action) => {
       state.activeView = action.payload;
     },
-    setExportData:(state,action) =>{
+    setExportData: (state, action) => {
       state.exportData = action.payload;
-    }
+    },
   },
   extraReducers: (builder) => {
     // Makineleri çekerken
@@ -206,7 +206,7 @@ const dashboardSlice = createSlice({
 });
 
 export const {
-  setFilters,
+  setAnalyticFiltersForm,
   setDashboardData,
   setDailyChartData,
   setLoading,
@@ -217,7 +217,7 @@ export const {
   setAiGeneratedQuery,
   setAnalyticsData,
   setActiveView,
-  setExportData
+  setExportData,
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;

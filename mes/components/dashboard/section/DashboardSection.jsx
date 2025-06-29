@@ -2,17 +2,18 @@
 import React from "react";
 import Bar from "../charts/BarChart";
 import Pie from "../charts/Pie";
-import FilterPanel from "../uı/FilterPanel";
+import FilterPanel from "../parts/FilterPanel";
 import ChartCard from "../charts/ChartCard";
-import InsightPanel from "../uı/InsightPanel";
+import InsightPanel from "../parts/InsightPanel"; 
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import ChatBox from "../chatbox/ChatBox";
 import { useEffect } from "react";
 import { setAnalyticsData, setActiveView } from "@/redux/dashboardSlice";
-import DashboardCardGroup from "../uı/DashboardCardGroup";
+import DashboardCardGroup from "../parts/DashboardCardGroup";
+import { setDistincOrderFromWorkLog } from "@/redux/orderSlice";
 function DashboardSection() {
-  const { filters, analyticsData, activeView } = useSelector(
+  const { analyticFiltersForm, analyticsData, activeView } = useSelector(
     (state) => state.dashboard
   );
   const dispatch = useDispatch();
@@ -24,12 +25,13 @@ function DashboardSection() {
           machineStatusRes,
           activeWorks,
           repairReasonCount,
-          stoppedWorks
+          stoppedWorks,
+          getDistinctOrders,
         ] = await Promise.all([
           axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getWorkStatusData`,
             {
-              params: filters,
+              params: analyticFiltersForm,
             }
           ),
           axios.get(
@@ -42,13 +44,16 @@ function DashboardSection() {
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getRepairReasonStats`,
             {
               params: {
-                work_start_date: filters.startDate,
-                work_end_date: filters.endDate,
+                work_start_date: analyticFiltersForm.startDate,
+                work_end_date: analyticFiltersForm.endDate,
               },
             }
           ),
           axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getStoppedWorksDuration`
+          ),
+          axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getDistinctOrders`
           ),
         ]);
 
@@ -82,6 +87,12 @@ function DashboardSection() {
             data: stoppedWorks.data,
           })
         );
+        dispatch(
+          setDistincOrderFromWorkLog({
+            key: "getDistinctOrders",
+            data: getDistinctOrders.data,
+          })
+        );
       } catch (err) {
         console.error("Analytics verileri çekilemedi", err);
       }
@@ -89,6 +100,8 @@ function DashboardSection() {
 
     fetchAllAnalytics();
   }, []); // filtre değiştiğinde tekrar çek
+
+  console.log(analyticsData)
 
   //* activeMachineDuration
   const chartData = analyticsData.activeMachineDuration?.data?.map((item) => ({
