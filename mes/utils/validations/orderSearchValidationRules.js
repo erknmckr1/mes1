@@ -9,7 +9,7 @@ export const isValidProcessAndMachine = ({
   orderId,
   dispatch,
   setUser,
-  setSelectedPartners
+  setSelectedPartners,
 }) => {
   const isMachineEmpty = Object.keys(selectedMachine).length === 0;
   const isHammerSectionField =
@@ -31,7 +31,9 @@ export const isValidProcessAndMachine = ({
     }
   }
 
-  if ((areaName === "kalite" || areaName === "cila") && !selectedProcess) {
+  const isValidProcess = selectedProcess && selectedProcess.process_id;
+
+  if ((areaName === "kalite" || areaName === "cila") && !isValidProcess) {
     toast.error("Siparişi başlatmak için proses seçiniz.");
     dispatch(setUser(null));
     return false;

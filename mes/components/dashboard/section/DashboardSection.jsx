@@ -4,14 +4,18 @@ import Bar from "../charts/BarChart";
 import Pie from "../charts/Pie";
 import FilterPanel from "../parts/FilterPanel";
 import ChartCard from "../charts/ChartCard";
-import InsightPanel from "../parts/InsightPanel"; 
+import InsightPanel from "../parts/InsightPanel";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import ChatBox from "../chatbox/ChatBox";
 import { useEffect } from "react";
-import { setAnalyticsData, setActiveView } from "@/redux/dashboardSlice";
+import {
+  setAnalyticsData,
+  setActiveView,
+  setIsFilterDataLoading,
+} from "@/redux/dashboardSlice";
 import DashboardCardGroup from "../parts/DashboardCardGroup";
-import { setDistincOrderFromWorkLog } from "@/redux/orderSlice";
+
 function DashboardSection() {
   const { analyticFiltersForm, analyticsData, activeView } = useSelector(
     (state) => state.dashboard
@@ -19,6 +23,7 @@ function DashboardSection() {
   const dispatch = useDispatch();
   useEffect(() => {
     const fetchAllAnalytics = async () => {
+      dispatch(setIsFilterDataLoading(true));
       try {
         const [
           workStatusRes,
@@ -26,7 +31,6 @@ function DashboardSection() {
           activeWorks,
           repairReasonCount,
           stoppedWorks,
-          getDistinctOrders,
         ] = await Promise.all([
           axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getWorkStatusData`,
@@ -52,11 +56,11 @@ function DashboardSection() {
           axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/analytics/getStoppedWorksDuration`
           ),
-          axios.get(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getDistinctOrders`
-          ),
+          // axios.get(
+          //   `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getDistinctOrders`
+          // ),
         ]);
-
+        
         dispatch(
           setAnalyticsData({
             key: "workStatusData",
@@ -87,21 +91,21 @@ function DashboardSection() {
             data: stoppedWorks.data,
           })
         );
-        dispatch(
-          setDistincOrderFromWorkLog({
-            key: "getDistinctOrders",
-            data: getDistinctOrders.data,
-          })
-        );
+        // dispatch(
+        //   setDistincOrderFromWorkLog({
+        //     key: "getDistinctOrders",
+        //     data: getDistinctOrders.data,
+        //   })
+        // );
       } catch (err) {
         console.error("Analytics verileri çekilemedi", err);
-      }
+      }finally {
+      dispatch(setIsFilterDataLoading(false))
+    }
     };
 
     fetchAllAnalytics();
   }, []); // filtre değiştiğinde tekrar çek
-
-  console.log(analyticsData)
 
   //* activeMachineDuration
   const chartData = analyticsData.activeMachineDuration?.data?.map((item) => ({

@@ -40,7 +40,6 @@ function useOrderSearchLogic() {
   const { userInfo, user, selectedPartners } = useSelector(
     (state) => state.user
   );
-
   const userTimeoutEnabledScreens = ["buzlama"];
 
   useEffect(() => {
@@ -192,7 +191,7 @@ function useOrderSearchLogic() {
         orderId,
         dispatch,
         setUser,
-        setSelectedPartners
+        setSelectedPartners,
       })
     )
       return;

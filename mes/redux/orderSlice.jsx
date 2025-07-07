@@ -109,10 +109,10 @@ const orderSlice = createSlice({
     measurementEntryPopup: false,
     selectedHammerSectionField: "", // Cekic ekranındaki alan ismini tutacak state...
     usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
-    selectedPersonInField:"", // alana katılmıs secılmıs kullanıyı tutacak state...
+    selectedPersonInField: "", // alana katılmıs secılmıs kullanıyı tutacak state...
     workHistoryData: [], // İş geçmişi verilerini tutacak state
-    finishedPopupMode:null ,// İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
-    distincOrdersFromWorkLog:[]
+    finishedPopupMode: null,// İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
+    distincOrdersFromWorkLog: []
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -191,7 +191,7 @@ const orderSlice = createSlice({
     setSelectedHammerSectionField: (state, action) => {
       state.selectedHammerSectionField = action.payload;
     },
-    setSelectedPersonInField:(state,action) => {
+    setSelectedPersonInField: (state, action) => {
       state.selectedPersonInField = action.payload
     },
     setWorkHistoryData: (state, action) => {
@@ -200,7 +200,7 @@ const orderSlice = createSlice({
     setFinishedPopupMode: (state, action) => {
       state.finishedPopupMode = action.payload; // İş bitirme popup modunu ayarlar
     },
-    setDistincOrderFromWorkLog:(state,action) =>{
+    setDistincOrderFromWorkLog: (state, action) => {
       state.distincOrdersFromWorkLog = action.payload
     }
   },
@@ -229,9 +229,9 @@ const orderSlice = createSlice({
       })
 
       // getWorksWithoutId işlemleri operasyonn oncesı ıd gırılen ekranlar ıcın bu fonksıyonu kullanıyoruz.
-      .addCase(getWorksWithoutId.pending, (state) => {
-        state.workList = [];
-      })
+      //   .addCase(getWorksWithoutId.pending, (state) => {
+      //   state.workList = [];
+      // })
       .addCase(getWorksWithoutId.fulfilled, (state, action) => {
         state.workList = action.payload;
       })

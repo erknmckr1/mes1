@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import { getWorkList } from "@/api/client/cOrderOperations";
 import { getWorksWithoutId } from "@/redux/orderSlice";
 import { areaSelectionConfig } from "@/utils/config/areaConfig";
+import { setAreaName } from "@/redux/globalSlice";
+import { useMemo } from "react";
 const theme = createTheme({
   components: {
     MuiDataGrid: {
@@ -43,6 +45,12 @@ function JobTable() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const { userInfo } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (areaName) {
+      dispatch(setAreaName(areaName)); // Redux'a areaName'i bildiriyoruz
+    }
+  }, [areaName]);
 
   // Tekli veya çoklu seçim yönetimi
   const handleRowSelection = (params) => {
@@ -104,23 +112,21 @@ function JobTable() {
       const userId = userInfo?.id_dec;
 
       if (!isRequiredUserId && userId) {
-        // ID isteyen ekran değilse ve kullanıcı varsa
+        console.log("📢 getWorkList çalışıyor çünkü isRequiredUserId false");
         getWorkList({ areaName, userId, dispatch });
       } else if (isRequiredUserId) {
-        // ID zorunlu ekranlardaysa
+        console.log(
+          "📢 getWorksWithoutId çalışıyor çünkü isRequiredUserId true"
+        );
         dispatch(getWorksWithoutId({ areaName }));
       }
     };
 
-    // İlk veri çekme işlemi
     fetchData();
+    interval = setInterval(fetchData, 5 * 60 * 1000);
 
-    // Her 5 dakikada bir veri çekme işlemi
-    interval = setInterval(fetchData, 5 * 60 * 1000); // 5 dakika = 5 * 60 * 1000 milisaniye
-
-    // Bileşen unmount edildiğinde interval'i temizle
     return () => clearInterval(interval);
-  }, [areaName, userInfo, dispatch, selectedHammerSectionField]);
+  }, [areaName, isRequiredUserId, userInfo, dispatch]);
 
   const mapRowData = (item, index) => {
     const workStartDate = item.work_start_date
@@ -155,23 +161,25 @@ function JobTable() {
     areaName === "cekic" && selectedHammerSectionField !== "makine";
 
   const getFilteredRows = () => {
-    let filteredList = workList;
-
+    let filteredList = [...workList];
+    console.log("x", selectedMachine, isRequiredUserId);
     if (shouldFilterByMachine.includes(areaName)) {
-      filteredList = workList?.filter(
+      filteredList = filteredList.filter(
         (item) => item.machine_name === selectedMachine?.machine_name
       );
     }
 
     if (shouldFilterByHammer) {
-      filteredList = workList?.filter(
+      filteredList = filteredList.filter(
         (item) => item.field === selectedHammerSectionField
       );
     }
     return filteredList?.map(mapRowData);
   };
 
-  const rows = getFilteredRows();
+  const rows = useMemo(() => {
+    return getFilteredRows();
+  }, [workList, selectedMachine, selectedHammerSectionField]);
   // filtered rows for color
   const getRowClassName = (params) => {
     const { row } = params;
@@ -184,8 +192,8 @@ function JobTable() {
         return "green-row";
       case "2":
         return "red-row";
-        case "9":
-        return "red-row"
+      case "9":
+        return "red-row";
       case "0":
         return "bg-[#138d75]";
       case "6":
@@ -196,7 +204,7 @@ function JobTable() {
         return "";
     }
   };
-
+  console.log({ worklist: workList });
   return (
     <ThemeProvider theme={theme}>
       <div className="w-full h-full rounded-md border-2 transition-all ease-in-out duration-300">

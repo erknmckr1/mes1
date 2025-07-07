@@ -164,18 +164,16 @@ function FinishedWorkPopup() {
             )}
 
             {/* hurda input  */}
-            {areaName === "cila" ||
-              areaName === "cekic" ||
-              (areaName === "telcekme" && (
-                <Input
-                  addProps="h-20 text-[30px] text-center font-semibold text-black"
-                  placeholder="Hurda Miktarı (gr)"
-                  value={scrapAmount}
-                  onChange={(e) => setScrapAmount(e.target.value)}
-                  //  disabled={areaName !== "cekic" && finishedAmount > 0 ? false : true}
-                  type="number"
-                />
-              ))}
+            {areaName === "cila" || areaName === "cekic" && (
+              <Input
+                addProps="h-20 text-[30px] text-center font-semibold text-black"
+                placeholder="Hurda Miktarı (gr)"
+                value={scrapAmount}
+                onChange={(e) => setScrapAmount(e.target.value)}
+                //  disabled={areaName !== "cekic" && finishedAmount > 0 ? false : true}
+                type="number"
+              />
+            )}
             {/*  çıkan adet input  */}
             {areaName === "cila" && (
               <Input
@@ -262,7 +260,7 @@ function FinishedWorkPopup() {
             )}
 
             {/* Açıklama Alanı */}
-            {finishedAmount > 0 && (
+            {finishedAmount > 0 && areaName !== "telcekme" && (
               <div className="w-1/3 popup-table">
                 <div className="popup-table-header text-center py-2 text-xl ">
                   Açıklama Alanı

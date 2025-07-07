@@ -79,7 +79,7 @@ const initialState = {
     startDate: "",
     endDate: "",
     dataType: "", // veri çekilecek tablo türü
-    order_no: [],
+    order_no: "",
     metarial_no: "",
   },
   dailyChartData: [],
@@ -105,6 +105,7 @@ const initialState = {
   },
   exportData: [],
   activeView: "stopped",
+  isFilterDataLoading:false
 };
 
 const dashboardSlice = createSlice({
@@ -148,6 +149,9 @@ const dashboardSlice = createSlice({
     setExportData: (state, action) => {
       state.exportData = action.payload;
     },
+    setIsFilterDataLoading: (state,action) =>{
+      state.isFilterDataLoading = action.payload;
+    }
   },
   extraReducers: (builder) => {
     // Makineleri çekerken
@@ -218,6 +222,7 @@ export const {
   setAnalyticsData,
   setActiveView,
   setExportData,
+  setIsFilterDataLoading
 } = dashboardSlice.actions;
 
 export default dashboardSlice.reducer;

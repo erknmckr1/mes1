@@ -31,14 +31,17 @@ export const isHurdaDescriptionRequired = (
   scrapAmount
 ) => {
   // TELCEKME için özel kontrol
-  if (areaName === "telcekme") {
-    const scrapThreshold = finishedAmount * 0.1;
-    return scrapAmount >= scrapThreshold && desc.trim().length === 0;
-  }
+  // if (areaName === "telcekme") {
+  //   const scrapThreshold = finishedAmount * 0.1;
+  //   return scrapAmount >= scrapThreshold && desc.trim().length === 0;
+  // }
 
   // CİLA dışındaki alanlarda klasik kontrol
   return (
-    areaName !== "cila" && finishedAmount >= 100 && desc.trim().length === 0
+    areaName !== "cila" &&
+    areaName !== "telcekme" &&
+    finishedAmount >= 100 &&
+    desc.trim().length === 0
   );
 };
 

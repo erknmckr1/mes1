@@ -517,29 +517,29 @@ const createWork = async ({ work_info, currentDateTimeOffset }) => {
     };
   }
 
-  // TELCEKME ŞART...
-  if (
-    area_name === "telcekme" &&
-    process_name !== "ÖN HADDELEME" &&
-    process_name !== "TAMİR"
-  ) {
-    const work = await WorkLog.findOne({
-      where: {
-        area_name: "telcekme",
-        process_name: "ÖN HADDELEME",
-        order_no: order_id,
-        work_status: {
-          [Op.in]: ["4"],
-        },
-      },
-    });
-    if (!work) {
-      return {
-        status: 400,
-        message: "Bu sipariş için ön haddeleme işlemi yapılmamıştır.",
-      };
-    }
-  }
+  // TELCEKME ÖN HADDELEME ŞARTI...
+  // if (
+  //   area_name === "telcekme" &&
+  //   process_name !== "ÖN HADDELEME" &&
+  //   process_name !== "TAMİR"
+  // ) {
+  //   const work = await WorkLog.findOne({
+  //     where: {
+  //       area_name: "telcekme",
+  //       process_name: "ÖN HADDELEME",
+  //       order_no: order_id,
+  //       work_status: {
+  //         [Op.in]: ["4"],
+  //       },
+  //     },
+  //   });
+  //   if (!work) {
+  //     return {
+  //       status: 400,
+  //       message: "Bu sipariş için ön haddeleme işlemi yapılmamıştır.",
+  //     };
+  //   }
+  // }
 
   let existingOrderCount = 0;
   // Baslatılmaya calısılan iş daha önce başlatılmış mı kontrol et
