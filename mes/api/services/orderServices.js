@@ -910,7 +910,7 @@ async function getWorksWithoutId(areaName) {
       where: {
         area_name: areaName,
         work_status: {
-          [Op.in]: ["0", "1", "2", "6", "7", "9"], // '1' veya '2' durumundaki işleri getir
+          [Op.in]: ["0", "1", "2", "6", "7", "9"],
         },
       },
     });
@@ -925,8 +925,8 @@ async function getWorksWithoutId(areaName) {
     // Eğer sonuç yoksa 404 status ve mesaj dön
     else {
       return {
-        status: 404,
-        message: "No works found",
+        status: 200,
+        message: [],
       };
     }
   } catch (err) {

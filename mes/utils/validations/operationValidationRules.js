@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-
+import { areaSelectionConfig } from "../config/areaConfig";
 // Bir iş seçildi mi?
 export const isNoOrderSelected = (selectedOrder) =>
   !selectedOrder || selectedOrder.length === 0;
@@ -8,9 +8,22 @@ export const isNoOrderSelected = (selectedOrder) =>
 export const isAllStopped = (selectedOrder) =>
   selectedOrder.every((item) => item.work_status === "2");
 
-// Multi selected
-export const isMultipleOrdersSelected = (selectedOrder, isRequiredUserId) =>
-  selectedOrder.length > 1 && isRequiredUserId;
+// Multi selected oeprasyon öncesi userId ıstemeyen ekranlarda toplu sıparıse ızın yok 
+export const isValidOrderSelectionForRestart = (selectedOrders, areaName) => {
+  const isSingleSelectArea = areaSelectionConfig.singleSelect.includes(areaName);
+  const isMultiSelectArea = areaSelectionConfig.multiSelect.includes(areaName);
+
+  if (isSingleSelectArea && selectedOrders.length !== 1) {
+    return { valid: false, message: "Bu ekranda yalnızca 1 iş yeniden başlatılabilir." };
+  }
+
+  if (isMultiSelectArea && selectedOrders.length === 0) {
+    return { valid: false, message: "En az bir iş seçmelisiniz." };
+  }
+
+  return { valid: true };
+};
+
 
 // Sipariş setup a yollanmıs mı ?
 export const isOrderSentToSetup = (selectedOrder) =>

@@ -112,12 +112,8 @@ function JobTable() {
       const userId = userInfo?.id_dec;
 
       if (!isRequiredUserId && userId) {
-        console.log("📢 getWorkList çalışıyor çünkü isRequiredUserId false");
         getWorkList({ areaName, userId, dispatch });
       } else if (isRequiredUserId) {
-        console.log(
-          "📢 getWorksWithoutId çalışıyor çünkü isRequiredUserId true"
-        );
         dispatch(getWorksWithoutId({ areaName }));
       }
     };
@@ -156,42 +152,69 @@ function JobTable() {
     };
   };
 
-  const shouldFilterByMachine = ["buzlama", "telcekme", "cekic"];
-  const shouldFilterByHammer =
-    areaName === "cekic" && selectedHammerSectionField !== "makine";
+  // const shouldFilterByMachine = ["buzlama", "telcekme", "cekic"];
+  // const shouldFilterByHammer =
+  //   areaName === "cekic" && selectedHammerSectionField !== "makine";
 
   const getFilteredRows = () => {
     let filteredList = [...workList];
-    console.log("x", selectedMachine, isRequiredUserId);
-    if (shouldFilterByMachine.includes(areaName)) {
+
+    const isMachineArea = ["buzlama", "telcekme"].includes(areaName);
+    const isCekicArea = areaName === "cekic";
+
+    // 1. buzlama / telcekme gibi alanlar sadece machine_name'e göre filtrelenir
+    if (isMachineArea && selectedMachine?.machine_name) {
       filteredList = filteredList.filter(
-        (item) => item.machine_name === selectedMachine?.machine_name
+        (item) =>
+          item.machine_name &&
+          item.machine_name === selectedMachine.machine_name
       );
+      console.log({ filteredList_machine: filteredList });
     }
 
-    if (shouldFilterByHammer) {
-      filteredList = filteredList.filter(
-        (item) => item.field === selectedHammerSectionField
-      );
+    // 2. Eğer alan cekic ise...
+    if (isCekicArea) {
+      const selectedField = selectedHammerSectionField?.toLowerCase();
+
+      // 2a. "makine" seçilmişse → machine_name filtresi
+      if (selectedField === "makine" && selectedMachine?.machine_name) {
+        filteredList = filteredList.filter(
+          (item) =>
+            item.machine_name &&
+            item.machine_name === selectedMachine.machine_name
+        );
+
+        // 2b. Tezgah, açma, sarma vs seçilmişse → field filtresi
+      } else if (selectedField && selectedField !== "makine") {
+        filteredList = filteredList.filter(
+          (item) => item.field && item.field.toLowerCase() === selectedField
+        );
+        console.log({ filteredList_cekic_field: filteredList });
+      } else {
+        // Alan seçilmemişse → gösterme
+        return [];
+      }
     }
-    return filteredList?.map(mapRowData);
+
+    return filteredList.map(mapRowData);
   };
 
   const rows = useMemo(() => {
     return getFilteredRows();
-  }, [workList, selectedMachine, selectedHammerSectionField]);
+  }, [workList, selectedMachine, selectedHammerSectionField, selectedOrder]);
   // filtered rows for color
   const getRowClassName = (params) => {
     const { row } = params;
 
-    if (selectedOrder?.some((item) => item.id === row.id))
-      return "selected-row";
+    const isSelected = selectedOrder?.some((item) => item.id === row.id);
+    const status = row.work_status;
 
-    switch (row.work_status) {
+    if (isSelected) return "selected-row";
+
+    switch (status) {
       case "1":
         return "green-row";
       case "2":
-        return "red-row";
       case "9":
         return "red-row";
       case "0":
@@ -204,7 +227,6 @@ function JobTable() {
         return "";
     }
   };
-  console.log({ worklist: workList });
   return (
     <ThemeProvider theme={theme}>
       <div className="w-full h-full rounded-md border-2 transition-all ease-in-out duration-300">

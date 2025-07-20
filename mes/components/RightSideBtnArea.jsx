@@ -22,7 +22,7 @@ import { setFirePopup } from "@/redux/globalSlice";
 import {
   isNoOrderSelected,
   isAllStopped,
-  isMultipleOrdersSelected,
+  isValidOrderSelectionForRestart,
   isOrderSentToSetup,
   isOrdersActive,
 } from "@/utils/validations/operationValidationRules";
@@ -117,56 +117,6 @@ function RightSideBtnArea() {
     }
   }, [retryAction, user]);
 
-  // stop popup'ı aç asagıdakı fonksıyon gruplu ekranlar için...
-  // const handleOpenStopPopup = (actionType) => {
-  //   // grub secılı mı ?
-  //   if (selectedGroupNo.length <= 0 && actionType === "group") {
-  //     toast.error("Durduracağınız grubu seçin.");
-  //     return;
-  //   }
-  //   // grup aktif  mi ?
-  //   if (selectedGroupNo[0]?.group_status !== "3" && actionType === "group") {
-  //     toast.error("Durdurmak için devam eden bir grup seçin");
-  //     return;
-  //   }
-
-  //   if(areaName === "buzlama"){
-  //     if(!user || !user.id_dec){
-
-  //     }
-  //   }
-
-  //   if (actionType === "group") {
-  //     if (!user || !user.id_dec) {
-  //       // Eğer kullanıcı ID yoksa, pop-up aç
-  //       setRetryAction("handleOpenStopPopup"); // Parametreyi kaydediyoruz
-  //       dispatch(setUserIdPopup(true));
-  //       return;
-  //     }
-  //     if (
-  //       selectedGroupNo.length === 1 &&
-  //       selectedGroupNo[0].group_status === "3"
-  //     ) {
-  //       dispatch(setStopReasonPopup({ visible: true, actionType }));
-  //     } else if (selectedGroupNo.length > 1) {
-  //       toast.error("Durdurmak için sadece bir grup seçin.");
-  //     } else {
-  //       toast.error("Aktif bir grup seçin.");
-  //     }
-  //   } else if (actionType === "order") {
-  //     if (selectedOrder.length === 1 && selectedOrder[0].work_status === "1") {
-  //       dispatch(setStopReasonPopup({ visible: true, actionType }));
-  //     } else if (selectedOrder.length > 1) {
-  //       toast.error("Durdurmak için sadece bir sipariş seçin.");
-  //     } else {
-  //       toast.error("Aktif bir sipariş seçin.");
-  //     }
-  //   } else {
-  //     toast.error("Geçersiz işlem.");
-  //     dispatch(setUser(null));
-  //   }
-  // };
-
   // stop popup'ı aç
   const handleOpenStopPopup = (actionType) => {
     if (
@@ -210,8 +160,12 @@ function RightSideBtnArea() {
         return;
       }
 
-      if (isMultipleOrdersSelected(selectedOrder, isRequiredUserId)) {
-        toast.error("Bu ekranda yalnızca 1 iş yeniden başlatılabilir.");
+      const selectionValidation = isValidOrderSelectionForRestart(
+        selectedOrder,
+        areaName
+      );
+      if (!selectionValidation.valid) {
+        toast.error(selectionValidation.message);
         return;
       }
 
@@ -294,7 +248,7 @@ function RightSideBtnArea() {
     }
   };
 
-  //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor.
+  //! Bir ya da birden fazla sipariş iptal edecek fonksiyon, başlatılmadan önce kullanıcıdan id istiyor. Bitirken veri istemediğimiz ekranlarda
   const handleFinishWork = async () => {
     if (isNoOrderSelected(selectedOrder)) {
       toast.error("Bitireceğiniz siparişleri seçin.");
@@ -654,8 +608,13 @@ function RightSideBtnArea() {
         );
       }
     } catch (err) {
-      console.log(err);
-      toast.error(err?.response.data);
+      const errorMessage =
+        err?.response?.data?.message || // Eğer backend { message: "..."} formatındaysa
+        err?.response?.data || // Eğer backend direkt bir string döndüyse
+        err?.message || // Axios’un genel hata mesajı
+        "Setup başlatılamadı. Lütfen tekrar deneyin."; // fallback
+
+      toast.error(errorMessage);
       dispatch(setSelectedOrder([]));
       dispatch(setUser(null));
     }

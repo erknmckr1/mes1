@@ -4,6 +4,10 @@ import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
+  checkTelcekmeParticipation,
+  joinTelcekmeSection,
+} from "./joinSectionService/telcekmeService";
+import {
   isValidProcessAndMachine,
   checkCilaDuplicateOrder,
 } from "@/utils/validations/orderSearchValidationRules";
@@ -13,6 +17,7 @@ import {
   getJoinTheField,
   getWorksWithoutId,
   setWorkHistoryData,
+  clearScannedOrders
 } from "@/redux/orderSlice";
 import {
   setUser,
@@ -26,10 +31,9 @@ function useOrderSearchLogic() {
   const pathName = usePathname();
   const areaName = pathName.split("/")[3];
   const sectionName = pathName.split("/")[2];
-
   const [orderId, setOrderId] = useState("");
   const [retryAction, setRetryAction] = useState(null);
-
+  const {scannedOrders} = useSelector((state) => state.order);
   const {
     selectedProcess,
     selectedMachine,
@@ -44,15 +48,23 @@ function useOrderSearchLogic() {
 
   useEffect(() => {
     if (retryAction && user && user.id_dec) {
-      if (retryAction === "createOrder") handleGetOrder();
+      if (retryAction === "createOrder") {
+        handleGetOrder();
+      } else if (retryAction === "bulkCreateOrder") {
+        if (scannedOrders.length > 0) {
+          handleCreateOrderBulk(scannedOrders);
+        } else {
+          toast.warn("Başlatılacak sipariş bulunamadı.");
+        }
+      }
       setRetryAction(null);
     }
-  }, [retryAction, user]);
+  }, [retryAction, user, scannedOrders]);
 
   // Sipariş baslatırken id gerekli mi kontrolü yapacak ve kullanıcı ID'si girilmemişse popup açacak...
-  const checkUserIdRequirement = async () => {
+  const checkUserIdRequirement = async (retryType = "createOrder") => {
     if (isRequiredUserId && (!user || !user.id_dec)) {
-      setRetryAction("createOrder");
+      setRetryAction(retryType);
       dispatch(
         setUserIdPopup({
           visible: true,
@@ -65,16 +77,19 @@ function useOrderSearchLogic() {
   };
 
   // sipariş bilgilerini çekecek ve state'leri ayarlayacak metot...
-  const fetchOrderAndSetStates = async () => {
+  const fetchOrderAndSetStates = async (customOrderId) => {
     try {
+      const currentOrderId = customOrderId || orderId; // Öncelik parametrede, yoksa state'ten al
+      if (!currentOrderId) return null;
+
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getOrder`,
-        { params: { id: orderId } }
+        { params: { id: currentOrderId } }
       );
       if (response.status === 200) {
         dispatch(setReadOrder(response.data));
         setOrderId("");
-        await fetchAndSetWorkHistory(orderId);
+        await fetchAndSetWorkHistory(currentOrderId);
         return response.data;
       }
     } catch (err) {
@@ -86,6 +101,7 @@ function useOrderSearchLogic() {
 
   // Geçmiş iş verilerini çekecek ve state'e set edecek metot...
   const fetchAndSetWorkHistory = async (orderId) => {
+    if (areaName !== "cila") return false; // şimdilik sadece cila ekranında çalışsın..
     try {
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorkHistory`,
@@ -95,25 +111,6 @@ function useOrderSearchLogic() {
     } catch (error) {
       dispatch(setWorkHistoryData([]));
     }
-  };
-
-  // Telçekme alanına katılmak için gerekli işlemleri yapacak metot...
-  const checkTelcekmeParticipation = async () => {
-    if (areaName !== "telcekme") return false;
-    try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/check-participation`,
-        { user_id: user.id_dec, areaName }
-      );
-      if (res.data.joined) {
-        toast.error(res.data.message);
-        dispatch(setUser(null));
-        return true;
-      }
-    } catch (err) {
-      console.log("Katılım hatası:", err);
-    }
-    return false;
   };
 
   // İş oluştur ve uniq ID döndür
@@ -135,36 +132,6 @@ function useOrderSearchLogic() {
     return null;
   };
 
-  // Telçekme alanına katılma işlemi
-  const joinTelcekmeSection = async (orderId, uniqId) => {
-    try {
-      const partnerIds = selectedPartners.map((p) => p.id_dec);
-      const userIds = [user.id_dec, ...partnerIds];
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/join-section`,
-        {
-          section: sectionName,
-          areaName,
-          user_id: userIds,
-          machine_name: selectedMachine?.machine_name,
-          workIds: [orderId],
-          uniqIds: [uniqId],
-          field: selectedHammerSectionField,
-        }
-      );
-      if (res.status === 200) {
-        toast.success("Bölüme katılım başarılı.");
-        dispatch(getJoinTheField({ areaName }));
-        return true;
-      }
-    } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Katılım işlemi başarısız oldu."
-      );
-      dispatch(setUser(null));
-    }
-    return false;
-  };
   // İş tablosunu güncelleyecek metot...
   const updateWorkTables = () => {
     if (isRequiredUserId) {
@@ -181,6 +148,7 @@ function useOrderSearchLogic() {
   };
 
   //! Gırılen sıparıs no ıcın detayları getırecek servise isteği atacak ve yeni işi olusturacak metot. metot...
+  //! Tekli sipariş okutmalarda çalışacak fonksiyon...
   const handleGetOrder = async () => {
     if (
       !isValidProcessAndMachine({
@@ -211,14 +179,90 @@ function useOrderSearchLogic() {
       selectedHammerSectionField,
     });
     if (!workInfo) return;
-    if (await checkTelcekmeParticipation()) return;
+    if (await checkTelcekmeParticipation(areaName, user)) return;
     const uniqId = await createWorkLogAndReturnUniqId(workInfo);
     if (!uniqId) return;
     if (areaName === "telcekme") {
-      const joined = await joinTelcekmeSection(orderData.ORDER_ID, uniqId);
+      const joined = await joinTelcekmeSection({
+        orderId: orderData.ORDER_ID,
+        uniqId,
+        dispatch,
+        setUser,
+        toast,
+        selectedPartners,
+        user,
+        sectionName,
+        areaName,
+        selectedMachine,
+        selectedHammerSectionField,
+        getJoinTheField,
+      });
       if (!joined) return;
     }
     updateWorkTables();
+  };
+
+  //! Çoklu sipariş okutmalarda çalışacak fonksiyon...
+  const handleCreateOrderBulk = async (orderIds) => {
+    const groupId = `GRP-${Date.now()}`; // örnek: GRP-1720368500000
+    if (await checkUserIdRequirement("bulkCreateOrder")) return;
+
+    for (const currentOrderId of orderIds) {
+      if (
+        !isValidProcessAndMachine({
+          selectedMachine,
+          selectedHammerSectionField,
+          areaName,
+          selectedProcess,
+          orderId: currentOrderId,
+          dispatch,
+          setUser,
+          setSelectedPartners,
+        })
+      )
+        return;
+      const orderData = await fetchOrderAndSetStates(currentOrderId); // parametre almalı
+      if (!orderData) continue;
+
+      const workInfo = orderSearchBuildWorkInfo({
+        orderData,
+        user,
+        userInfo,
+        areaName,
+        sectionName,
+        selectedProcess,
+        selectedMachine,
+        selectedHammerSectionField,
+        groupId
+      });
+      if (!workInfo) continue;
+
+      if (await checkTelcekmeParticipation(areaName, user)) continue;
+
+      const uniqId = await createWorkLogAndReturnUniqId(workInfo);
+      if (!uniqId) continue;
+
+      if (areaName === "telcekme") {
+        const joined = await joinTelcekmeSection({
+          orderId: orderData.ORDER_ID,
+          uniqId,
+          dispatch,
+          setUser,
+          toast,
+          selectedPartners,
+          user,
+          sectionName,
+          areaName,
+          selectedMachine,
+          selectedHammerSectionField,
+          getJoinTheField,
+        });
+        if (!joined) continue;
+      }
+
+      updateWorkTables(); // HER sipariş sonunda çağrılmalı
+      dispatch(clearScannedOrders());
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -245,6 +289,7 @@ function useOrderSearchLogic() {
     setOrderId,
     handleKeyDown,
     handleChangeOrder,
+    handleCreateOrderBulk,
   };
 }
 

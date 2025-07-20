@@ -63,6 +63,7 @@ export const getWorksWithoutId = createAsyncThunk(
   async (params, thunkAPI) => {
     const { areaName } = params;
     try {
+       console.log("getWorksWithoutId called with:", areaName);
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/order/getWorksWithoutId`,
         {
@@ -111,8 +112,9 @@ const orderSlice = createSlice({
     usersJoinedTheField: [], // Alana katılan kullanıcıların tutulacagı state
     selectedPersonInField: "", // alana katılmıs secılmıs kullanıyı tutacak state...
     workHistoryData: [], // İş geçmişi verilerini tutacak state
-    finishedPopupMode: null,// İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
-    distincOrdersFromWorkLog: []
+    finishedPopupMode: null, // İş bitirme popup modunu tutacak state örn cilada sonraki prosesi acarken...
+    distincOrdersFromWorkLog: [],
+    scannedOrders: [], // Çoklu başlatılacak siparişleri tutacak state
   },
   reducers: {
     setSelectedOrder: (state, action) => {
@@ -192,7 +194,7 @@ const orderSlice = createSlice({
       state.selectedHammerSectionField = action.payload;
     },
     setSelectedPersonInField: (state, action) => {
-      state.selectedPersonInField = action.payload
+      state.selectedPersonInField = action.payload;
     },
     setWorkHistoryData: (state, action) => {
       state.workHistoryData = action.payload;
@@ -201,8 +203,14 @@ const orderSlice = createSlice({
       state.finishedPopupMode = action.payload; // İş bitirme popup modunu ayarlar
     },
     setDistincOrderFromWorkLog: (state, action) => {
-      state.distincOrdersFromWorkLog = action.payload
-    }
+      state.distincOrdersFromWorkLog = action.payload;
+    },
+    setScannedOrders: (state, action) => {
+      state.scannedOrders = action.payload;
+    },
+    clearScannedOrders: (state) => {
+      state.scannedOrders = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -229,9 +237,9 @@ const orderSlice = createSlice({
       })
 
       // getWorksWithoutId işlemleri operasyonn oncesı ıd gırılen ekranlar ıcın bu fonksıyonu kullanıyoruz.
-      //   .addCase(getWorksWithoutId.pending, (state) => {
-      //   state.workList = [];
-      // })
+        .addCase(getWorksWithoutId.pending, (state) => {
+         state.workList = [];
+       })
       .addCase(getWorksWithoutId.fulfilled, (state, action) => {
         state.workList = action.payload;
       })
@@ -279,7 +287,9 @@ export const {
   setSelectedPersonInField,
   setWorkHistoryData,
   setFinishedPopupMode,
-  setDistincOrderFromWorkLog
+  setDistincOrderFromWorkLog,
+  setScannedOrders,
+  clearScannedOrders
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

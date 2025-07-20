@@ -18,7 +18,7 @@ function Header() {
     <header
       className={`w-screen h-[150px] header ${theme} flex items-center border-b-4 border-secondary shadow-2xl transition-all`}
     >
-      <div className="lg:container mx-auto w-full">
+      <div className="px-2  w-full">
         {/* header ıtems */}
         <div className={"flex items-center justify-between w-full"}>
           {area_name === "cila" && panel === "2" ? (

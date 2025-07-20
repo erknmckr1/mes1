@@ -95,6 +95,7 @@ export const useBreakPopupLogic = () => {
       area_name: areaName,
       op_name: user.op_username,
       section,
+      field: user.field,
     };
     try {
       const response = await axios.post(

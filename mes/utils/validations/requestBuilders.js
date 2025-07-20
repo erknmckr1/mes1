@@ -28,6 +28,7 @@ export const orderSearchBuildWorkInfo = ({
   selectedProcess,
   selectedMachine,
   selectedHammerSectionField,
+  groupId
 }) => {
   try {
     const info = {
@@ -43,6 +44,9 @@ export const orderSearchBuildWorkInfo = ({
       production_amount: orderData.PRODUCTION_AMOUNT,
       machine_name: selectedMachine?.machine_name,
     };
+    if(groupId){
+      info.group_record_id = groupId
+    }
 
     if (["buzlama", "telcekme", "kurutiras"].includes(areaName)) {
       info.user_id_dec = user.id_dec;
